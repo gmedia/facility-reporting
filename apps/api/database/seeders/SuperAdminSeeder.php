@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -20,7 +21,7 @@ class SuperAdminSeeder extends Seeder
                 'name' => 'Super Admin',
                 'nim' => null,
                 'password' => 'password',
-                'role' => User::ROLE_SUPER_ADMIN,
+                'role' => UserRole::SuperAdmin->value,
             ],
         );
     }
