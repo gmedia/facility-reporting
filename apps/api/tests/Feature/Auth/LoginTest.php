@@ -10,19 +10,24 @@ use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function (): void {
-    $this->withHeader('Origin', 'http://localhost:5173');
-
-    $this->user = User::factory()->create([
+function makeLoginUser(): User
+{
+    return User::factory()->create([
         'nim' => '12345678',
         'role' => UserRole::User->value,
         'password' => 'secret-password',
     ]);
+}
+
+beforeEach(function (): void {
+    $this->withHeader('Origin', 'http://localhost:5173');
 });
 
 it('logs in with nim', function (): void {
+    $user = makeLoginUser();
+
     $response = postJson('/api/v1/auth/login', [
-        'identifier' => $this->user->nim,
+        'identifier' => $user->nim,
         'password' => 'secret-password',
     ]);
 
@@ -31,8 +36,10 @@ it('logs in with nim', function (): void {
 });
 
 it('logs in with email', function (): void {
+    $user = makeLoginUser();
+
     $response = postJson('/api/v1/auth/login', [
-        'identifier' => $this->user->email,
+        'identifier' => $user->email,
         'password' => 'secret-password',
     ]);
 
@@ -40,13 +47,17 @@ it('logs in with email', function (): void {
 });
 
 it('rejects invalid password', function (): void {
+    $user = makeLoginUser();
+
     postJson('/api/v1/auth/login', [
-        'identifier' => $this->user->email,
+        'identifier' => $user->email,
         'password' => 'wrong-password',
     ])->assertUnauthorized();
 });
 
 it('rejects unknown identifier', function (): void {
+    makeLoginUser();
+
     postJson('/api/v1/auth/login', [
         'identifier' => 'not-registered',
         'password' => 'secret-password',
@@ -58,10 +69,12 @@ it('requires identifier and password', function (): void {
 });
 
 it('returns the authenticated user', function (): void {
-    $this->actingAs($this->user)
+    $user = makeLoginUser();
+
+    $this->actingAs($user)
         ->getJson('/api/v1/auth/me')
         ->assertOk()
-        ->assertJsonPath('data.email', $this->user->email);
+        ->assertJsonPath('data.email', $user->email);
 });
 
 it('returns 401 on me without session', function (): void {
@@ -69,7 +82,7 @@ it('returns 401 on me without session', function (): void {
 });
 
 it('logs out', function (): void {
-    $this->actingAs($this->user)
+    $this->actingAs(makeLoginUser())
         ->postJson('/api/v1/auth/logout')
         ->assertOk();
 });
