@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Data\LoginData;
+use App\Data\StoreUserData;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginRequest extends FormRequest
+class StoreUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,15 +26,17 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
         ];
     }
 
-    public function toDTO(): LoginData
+    public function toDTO(): StoreUserData
     {
-        return new LoginData(
-            identifier: $this->validated('identifier'),
+        return new StoreUserData(
+            name: $this->validated('name'),
+            email: $this->validated('email'),
             password: $this->validated('password'),
         );
     }

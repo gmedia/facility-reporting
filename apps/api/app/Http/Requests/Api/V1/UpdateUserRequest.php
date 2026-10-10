@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Data\LoginData;
+use App\Data\UpdateUserData;
+use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginRequest extends FormRequest
+class UpdateUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,16 +26,21 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
+        $routeUser = $this->route('user');
+        $userId = $routeUser instanceof User ? $routeUser->id : null;
+
         return [
-            'identifier' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$userId],
+            'password' => ['sometimes', 'string', 'min:8'],
         ];
     }
 
-    public function toDTO(): LoginData
+    public function toDTO(): UpdateUserData
     {
-        return new LoginData(
-            identifier: $this->validated('identifier'),
+        return new UpdateUserData(
+            name: $this->validated('name'),
+            email: $this->validated('email'),
             password: $this->validated('password'),
         );
     }
