@@ -135,8 +135,8 @@ export interface components {
     UserResource: {
       id: number
       name: string
-      nim: string
-      email: string
+      nim: string | null
+      email: string | null
       role: string
     }
   }
@@ -202,6 +202,7 @@ export interface operations {
       }
     }
     responses: {
+      /** @description `UserResource` */
       200: {
         headers: {
           [name: string]: unknown
@@ -247,6 +248,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description `UserResource` */
       200: {
         headers: {
           [name: string]: unknown
@@ -291,6 +293,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description Array of `UserResource` */
       200: {
         headers: {
           [name: string]: unknown
@@ -317,6 +320,7 @@ export interface operations {
       }
     }
     responses: {
+      /** @description `UserResource` */
       201: {
         headers: {
           [name: string]: unknown
@@ -347,6 +351,7 @@ export interface operations {
       }
     }
     responses: {
+      /** @description `UserResource` */
       200: {
         headers: {
           [name: string]: unknown

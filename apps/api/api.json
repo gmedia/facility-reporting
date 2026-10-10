@@ -29,7 +29,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "`UserResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -92,7 +92,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "`UserResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -152,7 +152,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "Array of `UserResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -195,7 +195,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "",
+                        "description": "`UserResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -250,7 +250,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "",
+                        "description": "`UserResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -393,10 +393,16 @@
                         "type": "string"
                     },
                     "nim": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "email": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "role": {
                         "type": "string"
