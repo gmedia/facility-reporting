@@ -68,6 +68,42 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List all admin accounts */
+    get: operations['users.index']
+    put?: never
+    /** Create a new admin account */
+    post: operations['users.store']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/users/{user}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Update an admin account */
+    put: operations['users.update']
+    post?: never
+    /** Delete an admin account */
+    delete: operations['users.destroy']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -81,12 +117,26 @@ export interface components {
     StatusResource: {
       status: string
     }
+    /** StoreUserRequest */
+    StoreUserRequest: {
+      name: string
+      /** Format: email */
+      email: string
+      password: string
+    }
+    /** UpdateUserRequest */
+    UpdateUserRequest: {
+      name?: string
+      /** Format: email */
+      email?: string
+      password?: string
+    }
     /** UserResource */
     UserResource: {
       id: number
       name: string
-      nim: string | null
-      email: string | null
+      nim: string
+      email: string
       role: string
     }
   }
@@ -109,6 +159,18 @@ export interface components {
     }
     /** @description Unauthenticated */
     AuthenticationException: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': {
+          /** @description Error overview. */
+          message: string
+        }
+      }
+    }
+    /** @description Not found */
+    ModelNotFoundException: {
       headers: {
         [name: string]: unknown
       }
@@ -218,6 +280,109 @@ export interface operations {
           }
         }
       }
+    }
+  }
+  'users.index': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource'][]
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'users.store': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StoreUserRequest']
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'users.update': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['UpdateUserRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'users.destroy': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
     }
   }
 }
