@@ -7,8 +7,6 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Actions\Admin\CreateUser;
 use App\Actions\Admin\DeleteUser;
 use App\Actions\Admin\UpdateUser;
-use App\Data\StoreUserData;
-use App\Data\UpdateUserData;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreUserRequest;
@@ -36,13 +34,7 @@ final class UserController extends Controller
      */
     public function store(StoreUserRequest $request, CreateUser $action): JsonResponse
     {
-        $data = new StoreUserData(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-            password: $request->validated('password'),
-        );
-
-        return (new UserResource($action($data)))->response()->setStatusCode(201);
+        return (new UserResource($action($request->toDTO())))->response()->setStatusCode(201);
     }
 
     /**
@@ -52,13 +44,7 @@ final class UserController extends Controller
     {
         abort_unless($user->role === UserRole::Admin->value, 404);
 
-        $data = new UpdateUserData(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-            password: $request->validated('password'),
-        );
-
-        return new UserResource($action($data, $user));
+        return new UserResource($action($request->toDTO(), $user));
     }
 
     /**

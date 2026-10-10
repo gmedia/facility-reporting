@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Data\UpdateUserData;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,5 +34,14 @@ class UpdateUserRequest extends FormRequest
             'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,'.$userId],
             'password' => ['sometimes', 'string', 'min:8'],
         ];
+    }
+
+    public function toDTO(): UpdateUserData
+    {
+        return new UpdateUserData(
+            name: $this->validated('name'),
+            email: $this->validated('email'),
+            password: $this->validated('password'),
+        );
     }
 }
