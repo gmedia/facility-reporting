@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Data\LoginData;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -28,5 +29,13 @@ class LoginRequest extends FormRequest
             'identifier' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    public function toDTO(): LoginData
+    {
+        return new LoginData(
+            identifier: $this->validated('identifier'),
+            password: $this->validated('password'),
+        );
     }
 }
