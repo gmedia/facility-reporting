@@ -6,7 +6,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    tanstackRouter({
+      target: 'react',
+      // Lazy chunk (dynamic import) terlalu lambat di jsdom -> test flaky.
+      autoCodeSplitting: !process.env.VITEST,
+    }),
     react(),
     tailwindcss(),
   ],
