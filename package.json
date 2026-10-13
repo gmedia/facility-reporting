@@ -10,6 +10,6 @@
     "audit": "composer --working-dir=apps/api audit && pnpm audit --audit-level high"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.6"
   }
 }
