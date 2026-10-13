@@ -4,6 +4,9 @@ import type { paths } from './schema'
 export const api = createClient<paths>({
   baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
   credentials: 'include',
+  // Tanpa header ini browser kirim `Accept: */*` -> Laravel anggap bukan JSON,
+  // coba redirect ke route('login') yang belum ada -> 500, bukan 401.
+  headers: { Accept: 'application/json' },
 })
 
 api.use({
