@@ -1,7 +1,14 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { Toaster } from '@/components/ui/sonner'
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute('/_protected/admin')({
+  beforeLoad: ({ context }) => {
+    // Cuma super admin. Selain itu lempar ke /dashboard — bukan /login,
+    // karena orangnya emang udah berhasil login.
+    if (context.user.role !== 'super_admin') {
+      throw redirect({ to: '/dashboard' })
+    }
+  },
   component: AdminLayout,
 })
 

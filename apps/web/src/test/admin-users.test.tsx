@@ -48,10 +48,19 @@ function fail(status: number, message: string) {
   } as never
 }
 
-function renderAdmin() {
+// GET dijawab SESUAI PATH — sejak /admin masuk guard, halaman ini ikut
+// manggil GET /auth/me, jadi nggak boleh dibalas data tabel.
+function mockGet(handlers: Record<string, () => unknown>) {
+  vi.mocked(api.GET).mockImplementation((async (path: string) => {
+    const handler = handlers[path]
+    return handler ? handler() : fail(401, 'Unauthenticated')
+  }) as never)
+}
+
+function renderAt(path: string) {
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ['/admin'] }),
+    history: createMemoryHistory({ initialEntries: [path] }),
   })
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -64,31 +73,65 @@ afterEach(cleanup)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(api.GET).mockResolvedValue(ok({ data: [superAdmin] }))
   vi.mocked(api.POST).mockResolvedValue(ok({ data: superAdmin }))
   vi.mocked(api.DELETE).mockResolvedValue({
     response: new Response(null, { status: 204 }),
   } as never)
+  mockGet({
+    '/auth/me': () => ok({ data: superAdmin }),
+    '/admin/users': () => ok({ data: [superAdmin] }),
+  })
+})
+
+describe('guard /admin', () => {
+  it('mengizinkan super admin membuka /admin', async () => {
+    renderAt('/admin')
+
+    expect(await screen.findByText('Super Admin')).toBeInTheDocument()
+    expect(api.GET).toHaveBeenCalledWith('/auth/me')
+  })
+
+  it('melempar user biasa ke /dashboard', async () => {
+    mockGet({
+      '/auth/me': () => ok({ data: { ...superAdmin, role: 'user' } }),
+      '/admin/users': () => ok({ data: [superAdmin] }),
+    })
+    renderAt('/admin')
+
+    expect(await screen.findByText('Anda masuk sebagai')).toBeInTheDocument()
+  })
+
+  it('mengarahkan ke /login kalau sesi tidak ada', async () => {
+    vi.mocked(api.GET).mockResolvedValue(fail(401, 'Unauthenticated'))
+    renderAt('/admin')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Masuk' }),
+    ).toBeInTheDocument()
+  })
 })
 
 describe('dashboard CRUD admin', () => {
   it('menampilkan daftar akun admin', async () => {
-    renderAdmin()
+    renderAt('/admin')
 
     expect(await screen.findByText('Super Admin')).toBeInTheDocument()
     expect(screen.getByText('superadmin@facility.test')).toBeInTheDocument()
     expect(api.GET).toHaveBeenCalledWith('/admin/users')
   })
 
-  it('menampilkan akses ditolak saat bukan super admin', async () => {
-    vi.mocked(api.GET).mockResolvedValue(fail(403, 'Forbidden'))
-    renderAdmin()
+  it('menampilkan akses ditolak ketika API menjawab 403', async () => {
+    mockGet({
+      '/auth/me': () => ok({ data: superAdmin }),
+      '/admin/users': () => fail(403, 'Forbidden'),
+    })
+    renderAt('/admin')
 
     expect(await screen.findByText('Akses ditolak')).toBeInTheDocument()
   })
 
   it('menambahkan akun admin baru', async () => {
-    renderAdmin()
+    renderAt('/admin')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Tambah akun' }))
     const dialog = await screen.findByRole('dialog')
@@ -116,7 +159,7 @@ describe('dashboard CRUD admin', () => {
   })
 
   it('menghapus akun admin setelah konfirmasi', async () => {
-    renderAdmin()
+    renderAt('/admin')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Ya, hapus' }))
