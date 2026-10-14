@@ -11,6 +11,51 @@
         }
     ],
     "paths": {
+        "/reports": {
+            "post": {
+                "operationId": "laporan.store",
+                "summary": "Store a new facility report",
+                "tags": [
+                    "Laporan"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreLaporanRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`LaporanResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LaporanResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -311,6 +356,61 @@
     },
     "components": {
         "schemas": {
+            "LaporanResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "kategori": {
+                        "type": "string"
+                    },
+                    "lokasi": {
+                        "type": "string"
+                    },
+                    "deskripsi": {
+                        "type": "string"
+                    },
+                    "foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "user_id",
+                    "kategori",
+                    "lokasi",
+                    "deskripsi",
+                    "foto",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LaporanResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -339,6 +439,30 @@
                     "status"
                 ],
                 "title": "StatusResource"
+            },
+            "StoreLaporanRequest": {
+                "type": "object",
+                "properties": {
+                    "kategori": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "lokasi": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "deskripsi": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 2000
+                    }
+                },
+                "required": [
+                    "kategori",
+                    "lokasi",
+                    "deskripsi"
+                ],
+                "title": "StoreLaporanRequest"
             },
             "StoreUserRequest": {
                 "type": "object",
