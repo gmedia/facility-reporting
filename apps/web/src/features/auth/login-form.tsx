@@ -22,6 +22,13 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>
 
+// Input — bg abu muda + inner shadow, radius penuh. Pas focus: putih + ring.
+const inputSoft =
+  'h-11 w-full min-w-0 rounded-full border border-neutral-200 bg-white px-4 text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors outline-none focus-visible:border-[#1e6a52] focus-visible:ring-2 focus-visible:ring-[#1e6a52]/15'
+
+// Tombol "Masuk" — gradient gelap (atas terang → bawah gelap) + shadow ke bawah
+const tombolSoft =
+  'h-11 w-full rounded-full bg-[#1e6a52] text-sm font-medium text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[#1a5f4a] hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] active:translate-y-px active:bg-[#16523f] active:shadow-[0_3px_8px_-3px_rgba(0,0,0,0.3)] disabled:pointer-events-none disabled:opacity-60'
 export function LoginForm() {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -48,17 +55,19 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       {serverError && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-sm text-red-600">
           {serverError}
         </p>
       )}
 
       <Field>
-        <FieldLabel htmlFor="identifier">Email atau NIM</FieldLabel>
+        <FieldLabel htmlFor="identifier" className="text-sm text-neutral-700">
+          Email atau NIM
+        </FieldLabel>
         <FieldContent>
           <Input
             id="identifier"
-            className="h-10 rounded-full border-green-200 bg-green-100/60 focus-visible:border-green-700 focus-visible:ring-green-700/20"
+            className={inputSoft}
             autoComplete="username"
             placeholder="superadmin@facility.test"
             aria-invalid={!!errors.identifier}
@@ -69,13 +78,15 @@ export function LoginForm() {
       </Field>
 
       <Field>
-        <FieldLabel htmlFor="password">Password</FieldLabel>
+        <FieldLabel htmlFor="password" className="text-sm text-neutral-700">
+          Password
+        </FieldLabel>
         <FieldContent>
           <Input
             id="password"
             type="password"
             autoComplete="current-password"
-            className="h-10 rounded-full border-green-200 bg-green-100/60 focus-visible:border-green-700 focus-visible:ring-green-700/20"
+            className={inputSoft}
             placeholder="Masukkan password"
             aria-invalid={!!errors.password}
             {...form.register('password')}
@@ -84,11 +95,7 @@ export function LoginForm() {
         </FieldContent>
       </Field>
 
-      <Button
-        type="submit"
-        disabled={login.isPending}
-        className="h-10 w-full rounded-full bg-green-950 text-green-50 hover:bg-green-900"
-      >
+      <Button type="submit" disabled={login.isPending} className={tombolSoft}>
         {login.isPending ? 'Masuk...' : 'Masuk'}
       </Button>
     </form>
