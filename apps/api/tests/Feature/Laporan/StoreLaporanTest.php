@@ -6,8 +6,8 @@ use App\Enums\LaporanStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Pest\Laravel\postJson;
 
@@ -102,14 +102,12 @@ it('stores a report with a photo', function (): void {
     Storage::fake('public');
 
     $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg==');
-    $path = tempnam(sys_get_temp_dir(), 'laporan_');
-    file_put_contents($path, $png);
 
     $user = makeReporter();
 
     $response = $this->actingAs($user)
         ->post('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => new UploadedFile($path, 'foto.png', 'image/png', null, true),
+            'foto' => UploadedFile::fake()->createWithContent('foto.png', $png),
         ]), ['Accept' => 'application/json'])
         ->assertCreated();
 
@@ -127,12 +125,11 @@ it('rejects a photo larger than 2 MB', function (): void {
     Storage::fake('public');
 
     $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg==');
-    $path = tempnam(sys_get_temp_dir(), 'laporan_');
-    file_put_contents($path, $png.str_repeat("\0", 3 * 1024 * 1024));
+    $content = $png.str_repeat("\0", 3 * 1024 * 1024);
 
     $this->actingAs(makeReporter())
         ->post('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => new UploadedFile($path, 'foto.jpg', 'image/jpeg', null, true),
+            'foto' => UploadedFile::fake()->createWithContent('foto.jpg', $content),
         ]), ['Accept' => 'application/json'])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['foto']);
@@ -141,12 +138,9 @@ it('rejects a photo larger than 2 MB', function (): void {
 it('rejects a non-image file', function (): void {
     Storage::fake('public');
 
-    $path = tempnam(sys_get_temp_dir(), 'laporan_');
-    file_put_contents($path, '%PDF-1.4 fake pdf');
-
     $this->actingAs(makeReporter())
         ->post('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => new UploadedFile($path, 'foto.pdf', 'application/pdf', null, true),
+            'foto' => UploadedFile::fake()->createWithContent('foto.pdf', '%PDF-1.4 fake pdf'),
         ]), ['Accept' => 'application/json'])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['foto']);
