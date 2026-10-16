@@ -150,9 +150,15 @@ export interface components {
     }
     /** StoreLaporanRequest */
     StoreLaporanRequest: {
-      kategori: string
+      /** @enum {string} */
+      kategori: 'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
       lokasi: string
       deskripsi: string
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto?: string | null
     }
     /** StoreUserRequest */
     StoreUserRequest: {
@@ -235,7 +241,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['StoreLaporanRequest']
+        'multipart/form-data': components['schemas']['StoreLaporanRequest']
       }
     }
     responses: {
