@@ -108,9 +108,9 @@ it('stores a report with a photo', function (): void {
     $user = makeReporter();
 
     $response = $this->actingAs($user)
-        ->postJson('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => UploadedFile::create($path, 'foto.png', 'image/png'),
-        ]))
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => new UploadedFile($path, 'foto.png', 'image/png', null, true),
+        ]), ['Accept' => 'application/json'])
         ->assertCreated();
 
     $foto = $response->json('data.foto');
@@ -131,9 +131,9 @@ it('rejects a photo larger than 2 MB', function (): void {
     file_put_contents($path, $png.str_repeat("\0", 3 * 1024 * 1024));
 
     $this->actingAs(makeReporter())
-        ->postJson('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => UploadedFile::create($path, 'foto.jpg', 'image/jpeg'),
-        ]))
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => new UploadedFile($path, 'foto.jpg', 'image/jpeg', null, true),
+        ]), ['Accept' => 'application/json'])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['foto']);
 });
@@ -145,9 +145,9 @@ it('rejects a non-image file', function (): void {
     file_put_contents($path, '%PDF-1.4 fake pdf');
 
     $this->actingAs(makeReporter())
-        ->postJson('/api/v1/reports', array_merge(validReportPayload(), [
-            'foto' => UploadedFile::create($path, 'foto.pdf', 'application/pdf'),
-        ]))
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => new UploadedFile($path, 'foto.pdf', 'application/pdf', null, true),
+        ]), ['Accept' => 'application/json'])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['foto']);
 });
