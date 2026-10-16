@@ -16,6 +16,7 @@ final class StoreLaporan
             'kategori' => $data->kategori,
             'lokasi' => $data->lokasi,
             'deskripsi' => $data->deskripsi,
+            'foto' => $data->foto,
         ]);
     }
 }

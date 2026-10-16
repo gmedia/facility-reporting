@@ -10,5 +10,6 @@ final readonly class StoreLaporanData
         public string $kategori,
         public string $lokasi,
         public string $deskripsi,
+        public ?string $foto = null,
     ) {}
 }

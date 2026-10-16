@@ -26,18 +26,26 @@ class StoreLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kategori' => ['required', 'string', 'max:100'],
+            'kategori' => ['required', 'string', 'in:elektronik,furnitur,mekanik,bangunan,lainnya'],
             'lokasi' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
+            'foto' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 
     public function toDTO(): StoreLaporanData
     {
+        $foto = null;
+        if ($this->hasFile('foto')) {
+            $fotoPath = $this->file('foto')->store('laporan', 'public');
+            $foto = $fotoPath !== false ? $fotoPath : null;
+        }
+
         return new StoreLaporanData(
             kategori: $this->validated('kategori'),
             lokasi: $this->validated('lokasi'),
             deskripsi: $this->validated('deskripsi'),
+            foto: $foto,
         );
     }
 }
