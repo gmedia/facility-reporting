@@ -125,6 +125,12 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /**
+     * LaporanKategori
+     * @enum {string}
+     */
+    LaporanKategori:
+      'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
     /** LaporanResource */
     LaporanResource: {
       id: number
@@ -150,9 +156,14 @@ export interface components {
     }
     /** StoreLaporanRequest */
     StoreLaporanRequest: {
-      kategori: string
+      kategori: components['schemas']['LaporanKategori']
       lokasi: string
       deskripsi: string
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto?: string | null
     }
     /** StoreUserRequest */
     StoreUserRequest: {
@@ -235,7 +246,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['StoreLaporanRequest']
+        'multipart/form-data': components['schemas']['StoreLaporanRequest']
       }
     }
     responses: {

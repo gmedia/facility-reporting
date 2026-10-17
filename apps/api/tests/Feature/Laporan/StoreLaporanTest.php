@@ -6,6 +6,8 @@ use App\Enums\LaporanStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\postJson;
 
@@ -94,4 +96,52 @@ it('ignores user_id sent by the client', function (): void {
         ]))
         ->assertCreated()
         ->assertJsonPath('data.user_id', $user->id);
+});
+
+it('stores a report with a photo', function (): void {
+    Storage::fake('public');
+
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg==');
+
+    $user = makeReporter();
+
+    $response = $this->actingAs($user)
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => UploadedFile::fake()->createWithContent('foto.png', $png),
+        ]), ['Accept' => 'application/json'])
+        ->assertCreated();
+
+    $foto = $response->json('data.foto');
+    expect($foto)->not->toBeNull();
+    expect(Storage::disk('public')->exists($foto))->toBeTrue();
+
+    $this->assertDatabaseHas('laporans', [
+        'user_id' => $user->id,
+        'foto' => $foto,
+    ]);
+});
+
+it('rejects a photo larger than 2 MB', function (): void {
+    Storage::fake('public');
+
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg==');
+    $content = $png.str_repeat("\0", 3 * 1024 * 1024);
+
+    $this->actingAs(makeReporter())
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => UploadedFile::fake()->createWithContent('foto.jpg', $content),
+        ]), ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['foto']);
+});
+
+it('rejects a non-image file', function (): void {
+    Storage::fake('public');
+
+    $this->actingAs(makeReporter())
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'foto' => UploadedFile::fake()->createWithContent('foto.pdf', '%PDF-1.4 fake pdf'),
+        ]), ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['foto']);
 });
