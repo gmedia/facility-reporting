@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Requests\Api\V1;
 
 use App\Data\StoreLaporanData;
+use App\Enums\LaporanKategori;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreLaporanRequest extends FormRequest
 {
@@ -26,7 +28,7 @@ class StoreLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kategori' => ['required', 'string', 'in:elektronik,furnitur,mekanik,bangunan,lainnya'],
+            'kategori' => ['required', 'string', Rule::enum(LaporanKategori::class)],
             'lokasi' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
             'foto' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

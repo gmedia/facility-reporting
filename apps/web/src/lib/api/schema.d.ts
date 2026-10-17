@@ -125,6 +125,12 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /**
+     * LaporanKategori
+     * @enum {string}
+     */
+    LaporanKategori:
+      'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
     /** LaporanResource */
     LaporanResource: {
       id: number
@@ -150,8 +156,7 @@ export interface components {
     }
     /** StoreLaporanRequest */
     StoreLaporanRequest: {
-      /** @enum {string} */
-      kategori: 'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
+      kategori: components['schemas']['LaporanKategori']
       lokasi: string
       deskripsi: string
       /**

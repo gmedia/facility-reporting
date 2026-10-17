@@ -356,6 +356,17 @@
     },
     "components": {
         "schemas": {
+            "LaporanKategori": {
+                "type": "string",
+                "enum": [
+                    "elektronik",
+                    "furnitur",
+                    "mekanik",
+                    "bangunan",
+                    "lainnya"
+                ],
+                "title": "LaporanKategori"
+            },
             "LaporanResource": {
                 "type": "object",
                 "properties": {
@@ -444,14 +455,7 @@
                 "type": "object",
                 "properties": {
                     "kategori": {
-                        "type": "string",
-                        "enum": [
-                            "elektronik",
-                            "furnitur",
-                            "mekanik",
-                            "bangunan",
-                            "lainnya"
-                        ]
+                        "$ref": "#/components/schemas/LaporanKategori"
                     },
                     "lokasi": {
                         "type": "string",
