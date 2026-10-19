@@ -7,3 +7,4 @@ vendor/
 dist/
 coverage/
 .DS_Store
+apps/api/database/seeders/data/
