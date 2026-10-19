@@ -1,229 +1,253 @@
-import { useState } from 'react'
+import { AlertTriangle, BadgeCheck, Clock, Wrench } from 'lucide-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { UserFormDialog } from '@/features/admin/user-form'
-import {
-  adminUsersQueryOptions,
-  errorMessage,
-  errorStatus,
-  useDeleteAdminUser,
-  type AdminUser,
-} from '@/features/admin/users-query'
+  antrianVerifikasi,
+  laporanPerHari,
+  periodeHarian,
+  prioritas,
+  readFilter,
+  statCards,
+  type AntrianFilter,
+  type LaporanStatus,
+} from '@/features/admin/dashboard-data'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/_protected/admin/')({
-  component: AdminUsersPage,
+  // ?filter=menunggu | ?filter=terverifikasi — tab-nya ada di header layout.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { filter: AntrianFilter } => ({
+    filter: readFilter(search),
+  }),
+  component: AdminDashboardPage,
 })
 
-function AdminUsersPage() {
-  const users = useQuery(adminUsersQueryOptions)
-  const deleteMutation = useDeleteAdminUser()
-  const [form, setForm] = useState<{ open: boolean; user: AdminUser | null }>({
-    open: false,
-    user: null,
-  })
-  const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
+const statusStyle: Record<LaporanStatus, string> = {
+  menunggu: 'bg-amber-100 text-amber-700',
+  terverifikasi: 'bg-sky-100 text-sky-700',
+}
 
-  function handleDelete() {
-    if (!pendingDelete) return
-    deleteMutation.mutate(pendingDelete.id, {
-      onSuccess: () => {
-        toast.success(`Akun ${pendingDelete.name} dihapus`)
-        setPendingDelete(null)
-      },
-      onError: (error) => toast.error(errorMessage(error)),
-    })
-  }
+const statusLabel: Record<LaporanStatus, string> = {
+  menunggu: 'Menunggu',
+  terverifikasi: 'Terverifikasi',
+}
+
+function AdminDashboardPage() {
+  const { filter } = Route.useSearch()
+
+  const antrian =
+    filter === 'semua'
+      ? antrianVerifikasi
+      : antrianVerifikasi.filter((row) => row.status === filter)
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="flex flex-col gap-6">
+      {/* Judul + tombol tambah */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Akun Admin</h1>
-          <p className="text-muted-foreground text-sm">
-            Kelola akun dengan role admin.
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="mt-1 text-xs font-medium tracking-widest text-neutral-400 uppercase">
+            Ringkasan laporan fasilitas · Semua gedung
           </p>
         </div>
-        <Button
+        <button
           type="button"
-          onClick={() => setForm({ open: true, user: null })}
+          aria-label="Tambah laporan"
+          className="flex size-12 items-center justify-center rounded-2xl bg-[#2f9e78] text-white shadow-sm transition-colors hover:bg-[#278866]"
         >
-          Tambah akun
-        </Button>
+          <span aria-hidden="true" className="text-xl leading-none">
+            +
+          </span>
+        </button>
       </div>
 
-      {users.isPending ? (
-        <Card>
-          <CardContent className="flex flex-col gap-3 py-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-5/6" />
-            <Skeleton className="h-8 w-2/3" />
-          </CardContent>
-        </Card>
-      ) : users.isError ? (
-        <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar akun</CardTitle>
-            <CardDescription>
-              {users.data.length} akun terdaftar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {users.data.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Belum ada akun admin. Klik Tambah akun untuk membuat yang
-                pertama.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>NIM</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.data.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email ?? '-'}</TableCell>
-                      <TableCell>{user.nim ?? '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setForm({ open: true, user })}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => setPendingDelete(user)}
-                          >
-                            Hapus
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Kartu statistik */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {statCards.map((card) => (
+          <div
+            key={card.label}
+            className="flex flex-col items-center gap-2 rounded-2xl bg-[#faf5e9] px-4 py-6"
+          >
+            <span className="flex size-11 items-center justify-center rounded-full bg-white text-[#2f9e78]">
+              <StatIcon name={card.icon} />
+            </span>
+            <p className="text-3xl font-bold">{card.value}</p>
+            <p className="text-sm text-neutral-500">{card.label}</p>
+          </div>
+        ))}
+      </div>
 
-      {pendingDelete && (
-        <Alert variant="destructive">
-          <AlertTitle>Hapus akun {pendingDelete.name}?</AlertTitle>
-          <AlertDescription>
-            Tindakan ini tidak bisa dibatalkan.
-            <div className="mt-3 flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setPendingDelete(null)}
-                disabled={deleteMutation.isPending}
-              >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Menghapus...' : 'Ya, hapus'}
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Antrian + prioritas */}
+      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+        <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <h2 className="text-lg font-semibold">Antrian verifikasi</h2>
+          <table className="mt-4 w-full text-sm">
+            <thead>
+              <tr className="text-left text-neutral-400">
+                <th className="pb-2 font-medium">ID</th>
+                <th className="pb-2 font-medium">Laporan</th>
+                <th className="pb-2 text-right font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {antrian.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="py-6 text-center text-neutral-400">
+                    Belum ada laporan pada filter ini.
+                  </td>
+                </tr>
+              ) : (
+                antrian.map((row) => (
+                  <tr key={row.id} className="border-t border-neutral-100">
+                    <td className="py-3 pr-4 text-neutral-500">{row.id}</td>
+                    <td className="py-3 pr-4 font-medium">{row.laporan}</td>
+                    <td className="py-3 text-right">
+                      <span
+                        className={cn(
+                          'inline-block rounded-lg px-3 py-1 text-xs font-medium',
+                          statusStyle[row.status],
+                        )}
+                      >
+                        {statusLabel[row.status]}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </section>
 
-      <UserFormDialog
-        key={form.user?.id ?? 'create'}
-        open={form.open}
-        user={form.user}
-        onOpenChange={(open) => setForm((current) => ({ ...current, open }))}
-      />
+        <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Prioritas</h2>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+              {prioritas.bulan}
+            </span>
+          </div>
+
+          <div className="my-6 flex justify-center">
+            <DonutChart percent={prioritas.terverifikasiPersen} />
+          </div>
+
+          <ProgressStat
+            percent={prioritas.bahayaTinggiPersen}
+            label="Bahaya tinggi"
+            className="bg-rose-400"
+          />
+          <div className="mt-4" />
+          <ProgressStat
+            percent={prioritas.tindakLanjutPersen}
+            label="Perlu tindak lanjut"
+            className="bg-sky-400"
+          />
+        </section>
+      </div>
+
+      {/* Laporan per hari */}
+      <section className="rounded-2xl border border-neutral-200 bg-white p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Laporan per hari</h2>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            {periodeHarian}
+          </span>
+        </div>
+        <div className="mt-8 flex items-end justify-between gap-2 sm:gap-4">
+          {laporanPerHari.map((bar) => {
+            const max = Math.max(...laporanPerHari.map((item) => item.jumlah))
+            return (
+              <div
+                key={bar.tanggal}
+                className="flex flex-1 flex-col items-center gap-2"
+              >
+                {bar.sorot && (
+                  <span className="text-xs font-semibold text-[#2f9e78]">
+                    {bar.jumlah}
+                  </span>
+                )}
+                <div
+                  role="img"
+                  aria-label={`${bar.jumlah} laporan pada 0${bar.tanggal}`}
+                  className={cn(
+                    'w-full max-w-10 rounded-xl transition-colors',
+                    bar.sorot ? 'bg-[#2f9e78]' : 'bg-[#ede2c4]',
+                  )}
+                  style={{ height: `${(bar.jumlah / max) * 9}rem` }}
+                />
+                <span className="text-xs text-neutral-400">{bar.tanggal}</span>
+              </div>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 }
 
-function ErrorAlert({
-  error,
-  onRetry,
-}: {
-  error: unknown
-  onRetry: () => void
-}) {
-  const status = errorStatus(error)
+function StatIcon({ name }: { name: string }) {
+  if (name === 'check')
+    return <BadgeCheck aria-hidden="true" className="size-5" />
+  if (name === 'alert')
+    return <AlertTriangle aria-hidden="true" className="size-5" />
+  if (name === 'wrench') return <Wrench aria-hidden="true" className="size-5" />
+  return <Clock aria-hidden="true" className="size-5" />
+}
 
-  if (status === 401) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Sesi berakhir</AlertTitle>
-        <AlertDescription>
-          Silakan login ulang untuk mengelola akun admin.{' '}
-          <a href="/login">Ke halaman login</a>
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (status === 403) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Akses ditolak</AlertTitle>
-        <AlertDescription>
-          Hanya super admin yang boleh mengelola akun admin.
-        </AlertDescription>
-      </Alert>
-    )
-  }
+function DonutChart({ percent }: { percent: number }) {
+  // Lingkaran donut SVG — circumference 2πr dengan r=60 → 376.99
+  const circumference = 2 * Math.PI * 60
+  const offset = circumference - (percent / 100) * circumference
 
   return (
-    <Alert variant="destructive">
-      <AlertTitle>Gagal memuat data</AlertTitle>
-      <AlertDescription className="flex items-center gap-3">
-        <span>{errorMessage(error)}</span>
-        <Button type="button" size="sm" variant="outline" onClick={onRetry}>
-          Coba lagi
-        </Button>
-      </AlertDescription>
-    </Alert>
+    <div className="relative size-48">
+      <svg viewBox="0 0 160 160" className="size-full -rotate-90">
+        <circle
+          cx="80"
+          cy="80"
+          r="60"
+          fill="none"
+          stroke="#f1ead6"
+          strokeWidth="14"
+        />
+        <circle
+          cx="80"
+          cy="80"
+          r="60"
+          fill="none"
+          stroke="#d9b854"
+          strokeWidth="14"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <p className="text-3xl font-bold">{percent}%</p>
+        <p className="text-sm text-neutral-500">Terverifikasi</p>
+      </div>
+    </div>
+  )
+}
+
+function ProgressStat({
+  percent,
+  label,
+  className,
+}: {
+  percent: number
+  label: string
+  className: string
+}) {
+  return (
+    <div>
+      <p className="text-xl font-bold">{percent} %</p>
+      <p className="text-sm text-neutral-500">{label}</p>
+      <div className="mt-2 h-1.5 rounded-full bg-neutral-100">
+        <div
+          className={cn('h-full rounded-full', className)}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+    </div>
   )
 }
