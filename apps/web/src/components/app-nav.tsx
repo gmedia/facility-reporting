@@ -27,24 +27,24 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 // masukin path yang belum ada = tsc langsung merah.
 //
 // Rute yang MENYUSUL (tambahin satu baris pas sudah ada):
-//   admin        → /verifikasi, /prioritas
-//   user         → /laporan/saya  ⚠️ lihat catatan nesting di
-//                                    routes/_protected/laporan.tsx
+//   admin        → /prioritas
+//   user         → /laporan/saya  (aman — bukan anak /verifikasi lagi,
+//                                  lihat catatan di routes/_protected/verifikasi.tsx)
 //   super_admin  → /admin/pengaturan, /admin/statistik
 // ============================================================
 type MenuItem = {
-  to: '/dashboard' | '/lapor' | '/laporan' | '/admin'
+  to: '/dashboard' | '/lapor' | '/verifikasi' | '/admin'
   label: string
 }
 
 const MENU_PER_ROLE: Record<string, MenuItem[]> = {
   super_admin: [
-    { to: '/laporan', label: 'Daftar Laporan' },
+    { to: '/verifikasi', label: 'Daftar Laporan' },
     { to: '/admin', label: 'Kelola Akun' },
   ],
   admin: [
     { to: '/dashboard', label: 'Beranda' },
-    { to: '/laporan', label: 'Daftar Laporan' },
+    { to: '/verifikasi', label: 'Daftar Laporan' },
   ],
   user: [
     { to: '/dashboard', label: 'Beranda' },

@@ -6,15 +6,15 @@ import { LaporanList } from '@/features/laporan/laporan-list'
 // otomatis ketolak, bukan kebagian akses.
 const PENGELOLA = ['admin', 'super_admin']
 
-export const Route = createFileRoute('/_protected/laporan')({
-  // /laporan khusus pengelola. Mahasiswa dilempar ke /dashboard, bukan
+export const Route = createFileRoute('/_protected/verifikasi')({
+  // /verifikasi khusus pengelola. Mahasiswa dilempar ke /dashboard, bukan
   // /login, karena dia emang udah berhasil login.
   //
-  // ⚠️ CATATAN BUAT RIWAYAT 28 OKT (/laporan/saya):
-  // di routing berbasis file, file `laporan/saya.tsx` jadi ANAK dari file
-  // ini, jadi guard di atas juga menimpanya — user biasa bakal kelempar.
-  // Kalau nanti mau nambah riwayat user, taruh di path yang GAK bersarang
-  // (mis. /riwayat), atau guard-nya harus ngecek `location.pathname`.
+  // RIWAYAT RISET 28 OKT (/laporan/saya): route ini dulu bernama /laporan.
+  // Waktu itu `laporan/saya.tsx` bakal jadi ANAK file ini, dan guard di
+  // bawah ikut nimpa user biasa. Setelah rename ke /verifikasi, file
+  // `laporan/saya.tsx` jatuhnya ke parent `_protected` — jadinya aman,
+  // gak perlu guard khusus lagi.
   beforeLoad: ({ context }) => {
     if (!PENGELOLA.includes(context.user.role)) {
       throw redirect({ to: '/dashboard' })

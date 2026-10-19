@@ -148,9 +148,9 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks())
 
-describe('halaman /laporan', () => {
+describe('halaman /verifikasi', () => {
   it('role admin: menampilkan tabel laporan dari GET /reports', async () => {
-    renderAt('/laporan')
+    renderAt('/verifikasi')
 
     expect(await screen.findByText('gedung h')).toBeInTheDocument()
     expect(screen.getByText('Bangunan')).toBeInTheDocument()
@@ -168,7 +168,7 @@ describe('halaman /laporan', () => {
   })
 
   it('role admin: bisa ubah status lewat PATCH', async () => {
-    renderAt('/laporan')
+    renderAt('/verifikasi')
     await screen.findByText('gedung h')
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Selesai' }))
@@ -186,7 +186,7 @@ describe('halaman /laporan', () => {
 
   it('role user: diarahkan ke /dashboard', async () => {
     currentUser = mahasiswa
-    const router = renderAt('/laporan')
+    const router = renderAt('/verifikasi')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
@@ -196,7 +196,7 @@ describe('halaman /laporan', () => {
 
   it('data kosong: menampilkan pesan, bukan tabel kosong', async () => {
     vi.mocked(api.GET).mockResolvedValue(ok({ data: [] }))
-    renderAt('/laporan')
+    renderAt('/verifikasi')
 
     expect(
       await screen.findByText('Belum ada laporan masuk.'),
