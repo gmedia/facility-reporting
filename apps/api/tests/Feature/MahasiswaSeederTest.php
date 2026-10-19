@@ -17,7 +17,12 @@ it('seeds mahasiswa from CSV idempotently', function (): void {
     }
 
     $file = $directory.'/mahasiswa-test-'.uniqid().'.csv';
-    file_put_contents($file, "No.,NIM,Nama,Angkatan,Prodi,Email,JK,HP,Status\n1.,999999999999,Mahasiswa Uji,2023,Teknik Informatika,mahasiswa-uji@facility.test,L,080000000000,Aktif\n");
+    file_put_contents(
+        $file,
+        "No.,NIM,Nama,Angkatan,Prodi,Email,JK,HP,Status\n"
+        ."1.,999999999999,Mahasiswa Uji,2023,Teknik Informatika,mahasiswa-uji@facility.test,L,080000000000,Aktif\n"
+        ."2.,kolom-kurang\n",
+    );
 
     try {
         $this->seed(MahasiswaSeeder::class);

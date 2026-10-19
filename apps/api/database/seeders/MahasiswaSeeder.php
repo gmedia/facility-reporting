@@ -61,6 +61,10 @@ class MahasiswaSeeder extends Seeder
         $header = is_array($header) ? array_map(static fn (mixed $value): string => trim((string) $value), $header) : [];
 
         while (($row = fgetcsv($handle, null, $this->delimiter($file))) !== false) {
+            if (count($row) !== count($header)) {
+                continue;
+            }
+
             $data = array_combine($header, array_map(static fn (mixed $value): string => trim((string) $value), $row)) ?: [];
 
             $nim = $data['NIM'] ?? '';
