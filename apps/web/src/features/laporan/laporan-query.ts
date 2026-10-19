@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, initializeCsrf } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
 
@@ -42,6 +42,81 @@ export const FOTO_MIME_IZIN: readonly string[] = [
 // Dipakai di atribut `accept` supaya file picker cuma menawarkan format
 // yang bakal diterima server — `image/*` kelebaran, ikut nimpa GIF/SVG/BMP.
 export const FOTO_ACCEPT = FOTO_MIME_IZIN.join(',')
+
+// ============================================================
+// Status laporan (LaporanStatus di schema.d.ts).
+// Record<> bikin kuncinya type-safe: backend nambah status tanpa
+// update baris ini = tsc langsung merah, jadi gak mungkin kelewat.
+// ============================================================
+export type LaporanStatus = components['schemas']['LaporanStatus']
+
+export const STATUS_LABEL: Record<LaporanStatus, string> = {
+  menunggu_verifikasi: 'Menunggu Verifikasi',
+  valid: 'Valid',
+  ditolak: 'Ditolak',
+  diproses: 'Diproses',
+  selesai: 'Selesai',
+}
+
+export const STATUS_VALUES = Object.keys(STATUS_LABEL) as LaporanStatus[]
+
+// Tones dipakai laporan-list.tsx buat nge-style badge-nya.
+export const STATUS_TONE: Record<LaporanStatus, string> = {
+  menunggu_verifikasi: 'bg-amber-100 text-amber-800 ring-amber-200',
+  valid: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+  ditolak: 'bg-red-100 text-red-800 ring-red-200',
+  diproses: 'bg-sky-100 text-sky-800 ring-sky-200',
+  selesai: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
+}
+
+// Daftar laporan. Backend sudah menyeleksi per role:
+//   user → cuma laporannya sendiri, admin/super_admin → semua.
+// Jadi gak perlu difilter lagi di sisi klien.
+export function useLaporanList() {
+  return useQuery({
+    queryKey: ['laporan', 'list'],
+    queryFn: async () => {
+      const { data, error, response } = await api.GET('/reports')
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal memuat daftar laporan.')
+      }
+      return data.data
+    },
+  })
+}
+
+// Aksi admin: ubah status lewat PATCH /reports/{laporan}/status.
+export function useUpdateLaporanStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: number
+      status: LaporanStatus
+    }) => {
+      await initializeCsrf() // wajib — lupa = 419 Page Expired
+
+      const { data, error, response } = await api.PATCH(
+        '/reports/{laporan}/status',
+        { params: { path: { laporan: id } }, body: { status } },
+      )
+
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal mengubah status laporan.')
+      }
+
+      return data.data
+    },
+    onSuccess: () => {
+      // Tabelnya list-based, jadi invalidasi per-kunci 'laporan' cukup
+      // buat nimpa list sekaligus (queryFn-nya pakai prefix yang sama).
+      void queryClient.invalidateQueries({ queryKey: ['laporan'] })
+    },
+  })
+}
 
 export function useCreateLaporan() {
   return useMutation({

@@ -28,14 +28,24 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 //
 // Rute yang MENYUSUL (tambahin satu baris pas sudah ada):
 //   admin        → /verifikasi, /prioritas
-//   user         → /laporan/saya
+//   user         → /laporan/saya  ⚠️ lihat catatan nesting di
+//                                    routes/_protected/laporan.tsx
 //   super_admin  → /admin/pengaturan, /admin/statistik
 // ============================================================
-type MenuItem = { to: '/dashboard' | '/lapor' | '/admin'; label: string }
+type MenuItem = {
+  to: '/dashboard' | '/lapor' | '/laporan' | '/admin'
+  label: string
+}
 
 const MENU_PER_ROLE: Record<string, MenuItem[]> = {
-  super_admin: [{ to: '/admin', label: 'Kelola Akun' }],
-  admin: [{ to: '/dashboard', label: 'Beranda' }],
+  super_admin: [
+    { to: '/laporan', label: 'Daftar Laporan' },
+    { to: '/admin', label: 'Kelola Akun' },
+  ],
+  admin: [
+    { to: '/dashboard', label: 'Beranda' },
+    { to: '/laporan', label: 'Daftar Laporan' },
+  ],
   user: [
     { to: '/dashboard', label: 'Beranda' },
     { to: '/lapor', label: 'Lapor Kerusakan' },
