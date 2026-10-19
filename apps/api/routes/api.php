@@ -18,7 +18,12 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/logout', LogoutController::class);
         Route::get('auth/me', MeController::class);
 
+        Route::get('reports', [LaporanController::class, 'index']);
         Route::post('reports', [LaporanController::class, 'store']);
+
+        Route::middleware('admin')->group(function (): void {
+            Route::patch('reports/{laporan}/status', [LaporanController::class, 'updateStatus']);
+        });
 
         Route::middleware('super_admin')->group(function (): void {
             Route::apiResource('admin/users', UserController::class)

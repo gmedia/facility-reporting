@@ -11,7 +11,11 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /**
+     * List the reports visible to the authenticated user
+     * @description A regular user only sees their own reports; admins see every report.
+     */
+    get: operations['laporan.index']
     put?: never
     /** Store a new facility report */
     post: operations['laporan.store']
@@ -19,6 +23,27 @@ export interface paths {
     options?: never
     head?: never
     patch?: never
+    trace?: never
+  }
+  '/reports/{laporan}/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Change the status of a report
+     * @description Guarded by the `admin` middleware, so only admins and super admins
+     *     can reach this method.
+     */
+    patch: operations['laporan.updateStatus']
     trace?: never
   }
   '/auth/login': {
@@ -145,6 +170,12 @@ export interface components {
       /** Format: date-time */
       updated_at: string | null
     }
+    /**
+     * LaporanStatus
+     * @enum {string}
+     */
+    LaporanStatus:
+      'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
     /** LoginRequest */
     LoginRequest: {
       identifier: string
@@ -171,6 +202,10 @@ export interface components {
       /** Format: email */
       email: string
       password: string
+    }
+    /** UpdateLaporanStatusRequest */
+    UpdateLaporanStatusRequest: {
+      status: components['schemas']['LaporanStatus']
     }
     /** UpdateUserRequest */
     UpdateUserRequest: {
@@ -229,6 +264,18 @@ export interface components {
         }
       }
     }
+    /** @description Authorization error */
+    AuthorizationException: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': {
+          /** @description Error overview. */
+          message: string
+        }
+      }
+    }
   }
   parameters: never
   requestBodies: never
@@ -237,6 +284,29 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
+  'laporan.index': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Array of `LaporanResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanResource'][]
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
   'laporan.store': {
     parameters: {
       query?: never
@@ -262,6 +332,39 @@ export interface operations {
         }
       }
       401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'laporan.updateStatus': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateLaporanStatusRequest']
+      }
+    }
+    responses: {
+      /** @description `LaporanResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      403: components['responses']['AuthorizationException']
+      404: components['responses']['ModelNotFoundException']
       422: components['responses']['ValidationException']
     }
   }
