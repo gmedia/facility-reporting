@@ -21,7 +21,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "$ref": "#/components/schemas/StoreLaporanRequest"
                             }
@@ -356,6 +356,17 @@
     },
     "components": {
         "schemas": {
+            "LaporanKategori": {
+                "type": "string",
+                "enum": [
+                    "elektronik",
+                    "furnitur",
+                    "mekanik",
+                    "bangunan",
+                    "lainnya"
+                ],
+                "title": "LaporanKategori"
+            },
             "LaporanResource": {
                 "type": "object",
                 "properties": {
@@ -444,8 +455,7 @@
                 "type": "object",
                 "properties": {
                     "kategori": {
-                        "type": "string",
-                        "maxLength": 100
+                        "$ref": "#/components/schemas/LaporanKategori"
                     },
                     "lokasi": {
                         "type": "string",
@@ -455,6 +465,15 @@
                         "type": "string",
                         "minLength": 10,
                         "maxLength": 2000
+                    },
+                    "foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
                     }
                 },
                 "required": [
