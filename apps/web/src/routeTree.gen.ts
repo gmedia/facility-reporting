@@ -14,6 +14,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedAdminRouteRouteImport } from './routes/_protected/admin/route'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,6 +41,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedLaporRoute = ProtectedLaporRouteImport.update({
+  id: '/lapor',
+  path: '/lapor',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -51,12 +57,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/dashboard': typeof ProtectedDashboardRoute
+  '/lapor': typeof ProtectedLaporRoute
   '/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/lapor': typeof ProtectedLaporRoute
   '/admin': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -66,13 +74,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/lapor': typeof ProtectedLaporRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/admin' | '/dashboard' | '/admin/'
+  fullPaths: '/' | '/login' | '/admin' | '/dashboard' | '/lapor' | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/admin'
+  to: '/' | '/login' | '/dashboard' | '/lapor' | '/admin'
   id:
     | '__root__'
     | '/'
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_protected/admin'
     | '/_protected/dashboard'
+    | '/_protected/lapor'
     | '/_protected/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -126,6 +136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/lapor': {
+      id: '/_protected/lapor'
+      path: '/lapor'
+      fullPath: '/lapor'
+      preLoaderRoute: typeof ProtectedLaporRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/admin/': {
       id: '/_protected/admin/'
       path: '/'
@@ -150,11 +167,13 @@ const ProtectedAdminRouteRouteWithChildren =
 interface ProtectedRouteChildren {
   ProtectedAdminRouteRoute: typeof ProtectedAdminRouteRouteWithChildren
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedLaporRoute: typeof ProtectedLaporRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAdminRouteRoute: ProtectedAdminRouteRouteWithChildren,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedLaporRoute: ProtectedLaporRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

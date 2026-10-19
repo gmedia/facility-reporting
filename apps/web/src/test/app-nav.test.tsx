@@ -1,0 +1,128 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRouter,
+} from '@tanstack/react-router'
+import { routeTree } from '../routeTree.gen'
+
+type Role = 'user' | 'admin' | 'super_admin'
+type Akun = { id: number; name: string; nim: string; email: string; role: Role }
+
+const mahasiswa: Akun = {
+  id: 1,
+  name: 'Mahasiswa Baru',
+  nim: '12345',
+  email: 'user@facility.test',
+  role: 'user',
+}
+
+const admin: Akun = {
+  ...mahasiswa,
+  id: 2,
+  name: 'Admin Satu',
+  email: 'admin@facility.test',
+  role: 'admin',
+}
+
+const superAdmin: Akun = {
+  ...mahasiswa,
+  id: 3,
+  name: 'Super Admin',
+  email: 'superadmin@facility.test',
+  role: 'super_admin',
+}
+
+// Ditukar per test. `currentUser` dibaca pas query-nya jalan (waktu render),
+// bukan pas factory mock-nya dipanggil, jadi aman diganti di dalam `it()`.
+let currentUser: Akun = mahasiswa
+
+vi.mock('@/features/auth/auth-query', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/features/auth/auth-query')>()
+  return {
+    ...actual,
+    meQueryOptions: {
+      queryKey: ['me'],
+      queryFn: async () => currentUser,
+      retry: false,
+      staleTime: 0,
+    },
+  }
+})
+
+vi.mock('@/lib/api/client', () => ({
+  api: { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), DELETE: vi.fn() },
+  initializeCsrf: vi.fn(() => Promise.resolve()),
+}))
+
+vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
+
+function renderAt(path: string) {
+  const router = createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  })
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  currentUser = mahasiswa
+})
+
+afterEach(() => vi.clearAllMocks())
+
+// Inti dari issue #37: "AppNav yang menampilkan menu beda per role".
+//
+// Yang dites cuma menu-item yang routenya SUDAH ADA. /verifikasi,
+// /prioritas, /laporan/saya, /admin/statistik dll. belum dibuat, jadi
+// belum dimasukin ke MENU_PER_ROLE — lihat komentar di app-nav.tsx.
+describe('AppNav — menu per role', () => {
+  it('role user: lihat Beranda dan Lapor Kerusakan', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    expect(
+      await screen.findByRole('link', { name: 'Beranda' }),
+    ).toHaveAttribute('href', '/dashboard')
+
+    // Ini pembeda utamanya — role lain gak boleh lihat ini.
+    expect(
+      screen.getByRole('link', { name: 'Lapor Kerusakan' }),
+    ).toHaveAttribute('href', '/lapor')
+
+    // Pemicu dropdown akun selalu ada, apa pun rolenya.
+    expect(screen.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
+  })
+
+  it('role admin: gak dapat menu Lapor Kerusakan', async () => {
+    currentUser = admin
+    renderAt('/dashboard')
+
+    expect(
+      await screen.findByRole('link', { name: 'Beranda' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('role super_admin: dapat Kelola Akun, bukan Lapor Kerusakan', async () => {
+    currentUser = superAdmin
+    renderAt('/dashboard')
+
+    expect(
+      await screen.findByRole('link', { name: 'Kelola Akun' }),
+    ).toHaveAttribute('href', '/admin')
+    expect(
+      screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
+    ).not.toBeInTheDocument()
+  })
+})
