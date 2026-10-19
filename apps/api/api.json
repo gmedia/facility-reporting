@@ -12,6 +12,40 @@
     ],
     "paths": {
         "/reports": {
+            "get": {
+                "operationId": "laporan.index",
+                "description": "A regular user only sees their own reports; admins see every report.",
+                "summary": "List the reports visible to the authenticated user",
+                "tags": [
+                    "Laporan"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LaporanResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LaporanResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
             "post": {
                 "operationId": "laporan.store",
                 "summary": "Store a new facility report",
@@ -52,6 +86,69 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/reports/{laporan}/status": {
+            "patch": {
+                "operationId": "laporan.updateStatus",
+                "description": "Guarded by the `admin` middleware, so only admins and super admins\ncan reach this method.",
+                "summary": "Change the status of a report",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LaporanResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LaporanResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
             }
@@ -422,6 +519,17 @@
                 ],
                 "title": "LaporanResource"
             },
+            "LaporanStatus": {
+                "type": "string",
+                "enum": [
+                    "menunggu_verifikasi",
+                    "valid",
+                    "ditolak",
+                    "diproses",
+                    "selesai"
+                ],
+                "title": "LaporanStatus"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -506,6 +614,18 @@
                     "password"
                 ],
                 "title": "StoreUserRequest"
+            },
+            "UpdateLaporanStatusRequest": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/LaporanStatus"
+                    }
+                },
+                "required": [
+                    "status"
+                ],
+                "title": "UpdateLaporanStatusRequest"
             },
             "UpdateUserRequest": {
                 "type": "object",
@@ -613,6 +733,25 @@
             },
             "ModelNotFoundException": {
                 "description": "Not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthorizationException": {
+                "description": "Authorization error",
                 "content": {
                     "application/json": {
                         "schema": {
