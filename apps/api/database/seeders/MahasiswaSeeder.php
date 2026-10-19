@@ -75,10 +75,15 @@ class MahasiswaSeeder extends Seeder
             }
 
             $email = $data['Email'] ?? '';
+            $email = $email !== '' ? $email : null;
+
+            if ($email !== null && User::query()->where('email', $email)->where('nim', '!=', $nim)->exists()) {
+                $email = null;
+            }
 
             $user = User::firstOrNew(['nim' => $nim]);
             $user->name = $name;
-            $user->email = $email !== '' ? $email : null;
+            $user->email = $email;
             $user->role = UserRole::User->value;
 
             if (! $user->exists) {
