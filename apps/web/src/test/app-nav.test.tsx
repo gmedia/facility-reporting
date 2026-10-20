@@ -81,9 +81,9 @@ afterEach(() => vi.clearAllMocks())
 
 // Inti dari issue #37: "AppNav yang menampilkan menu beda per role".
 //
-// Yang dites cuma menu-item yang routenya SUDAH ADA. /verifikasi,
-// /prioritas, /laporan/saya, /admin/statistik dll. belum dibuat, jadi
-// belum dimasukin ke MENU_PER_ROLE — lihat komentar di app-nav.tsx.
+// Yang dites cuma menu-item yang routenya SUDAH ADA. /prioritas,
+// /laporan/saya, /admin/statistik dll. belum dibuat, jadi belum
+// dimasukin ke MENU_PER_ROLE — lihat komentar di app-nav.tsx.
 describe('AppNav — menu per role', () => {
   it('role user: lihat Beranda dan Lapor Kerusakan', async () => {
     currentUser = mahasiswa
@@ -97,6 +97,11 @@ describe('AppNav — menu per role', () => {
     expect(
       screen.getByRole('link', { name: 'Lapor Kerusakan' }),
     ).toHaveAttribute('href', '/lapor')
+
+    // Issue #42: /verifikasi khusus pengelola, user biasa gak boleh lihat.
+    expect(
+      screen.queryByRole('link', { name: 'Verifikasi' }),
+    ).not.toBeInTheDocument()
 
     // Pemicu dropdown akun selalu ada, apa pun rolenya.
     expect(screen.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
@@ -112,6 +117,12 @@ describe('AppNav — menu per role', () => {
     expect(
       screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
+
+    // Issue #42: admin boleh buka halaman daftar laporan di /verifikasi.
+    expect(screen.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
+      'href',
+      '/verifikasi',
+    )
   })
 
   it('role super_admin: dapat Kelola Akun, bukan Lapor Kerusakan', async () => {
@@ -124,5 +135,11 @@ describe('AppNav — menu per role', () => {
     expect(
       screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
+
+    // Issue #42: super_admin juga boleh buka /verifikasi.
+    expect(screen.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
+      'href',
+      '/verifikasi',
+    )
   })
 })

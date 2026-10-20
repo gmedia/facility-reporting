@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedAdminRouteRouteImport } from './routes/_protected/admin/route'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
+import { Route as ProtectedVerifikasiRouteImport } from './routes/_protected/verifikasi'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const ProtectedLaporRoute = ProtectedLaporRouteImport.update({
   path: '/lapor',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedVerifikasiRoute = ProtectedVerifikasiRouteImport.update({
+  id: '/verifikasi',
+  path: '/verifikasi',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/verifikasi': typeof ProtectedVerifikasiRoute
   '/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/verifikasi': typeof ProtectedVerifikasiRoute
   '/admin': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -75,13 +83,21 @@ export interface FileRoutesById {
   '/_protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/lapor': typeof ProtectedLaporRoute
+  '/_protected/verifikasi': typeof ProtectedVerifikasiRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/admin' | '/dashboard' | '/lapor' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/dashboard'
+    | '/lapor'
+    | '/verifikasi'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/lapor' | '/admin'
+  to: '/' | '/login' | '/dashboard' | '/lapor' | '/verifikasi' | '/admin'
   id:
     | '__root__'
     | '/'
@@ -90,6 +106,7 @@ export interface FileRouteTypes {
     | '/_protected/admin'
     | '/_protected/dashboard'
     | '/_protected/lapor'
+    | '/_protected/verifikasi'
     | '/_protected/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -143,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedLaporRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/verifikasi': {
+      id: '/_protected/verifikasi'
+      path: '/verifikasi'
+      fullPath: '/verifikasi'
+      preLoaderRoute: typeof ProtectedVerifikasiRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/admin/': {
       id: '/_protected/admin/'
       path: '/'
@@ -168,12 +192,14 @@ interface ProtectedRouteChildren {
   ProtectedAdminRouteRoute: typeof ProtectedAdminRouteRouteWithChildren
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedLaporRoute: typeof ProtectedLaporRoute
+  ProtectedVerifikasiRoute: typeof ProtectedVerifikasiRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAdminRouteRoute: ProtectedAdminRouteRouteWithChildren,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedLaporRoute: ProtectedLaporRoute,
+  ProtectedVerifikasiRoute: ProtectedVerifikasiRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
