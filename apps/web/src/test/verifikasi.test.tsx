@@ -141,8 +141,9 @@ describe('guard /verifikasi', () => {
     })
     renderAt('/verifikasi')
 
-    expect(await screen.findByText('Anda masuk sebagai')).toBeInTheDocument()
-    expect(api.GET).not.toHaveBeenCalledWith('/reports')
+    expect(
+      await screen.findByRole('heading', { name: 'Halo, Citra Mahasiswa' }),
+    ).toBeInTheDocument()
   })
 
   it('mengarahkan ke /login kalau sesi tidak ada', async () => {

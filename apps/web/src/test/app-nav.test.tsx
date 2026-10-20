@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -89,28 +89,34 @@ describe('AppNav — menu per role', () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
 
-    expect(
-      await screen.findByRole('link', { name: 'Beranda' }),
-    ).toHaveAttribute('href', '/dashboard')
+    // Scope ke header nav — tombol aksi di dashboard juga berlabel
+    // "Lapor Kerusakan", jadi jangan query seluruh halaman.
+    const nav = within(await screen.findByRole('banner'))
+
+    expect(nav.getByRole('link', { name: 'Beranda' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
 
     // Ini pembeda utamanya — role lain gak boleh lihat ini.
-    expect(
-      screen.getByRole('link', { name: 'Lapor Kerusakan' }),
-    ).toHaveAttribute('href', '/lapor')
+    expect(nav.getByRole('link', { name: 'Lapor Kerusakan' })).toHaveAttribute(
+      'href',
+      '/lapor',
+    )
 
     // Pemicu dropdown akun selalu ada, apa pun rolenya.
-    expect(screen.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
+    expect(nav.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
   })
 
   it('role admin: gak dapat menu Lapor Kerusakan', async () => {
     currentUser = admin
     renderAt('/dashboard')
 
+    const nav = within(await screen.findByRole('banner'))
+
+    expect(nav.getByRole('link', { name: 'Beranda' })).toBeInTheDocument()
     expect(
-      await screen.findByRole('link', { name: 'Beranda' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
+      nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
   })
 
@@ -118,11 +124,14 @@ describe('AppNav — menu per role', () => {
     currentUser = superAdmin
     renderAt('/dashboard')
 
+    const nav = within(await screen.findByRole('banner'))
+
+    expect(nav.getByRole('link', { name: 'Kelola Akun' })).toHaveAttribute(
+      'href',
+      '/admin',
+    )
     expect(
-      await screen.findByRole('link', { name: 'Kelola Akun' }),
-    ).toHaveAttribute('href', '/admin')
-    expect(
-      screen.queryByRole('link', { name: 'Lapor Kerusakan' }),
+      nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
   })
 })
