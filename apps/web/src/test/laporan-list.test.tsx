@@ -78,27 +78,33 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
     <div className="px-2 py-1.5">{children}</div>
   ),
   DropdownMenuSeparator: () => <hr />,
+  // AppNav juga render modul ini, jadi semua export yang dipakai AppNav
+  // harus ada di mock — kalau kurang, AppNav crash.
+  DropdownMenuGroup: ({ children }: { children?: ReactNode }) => (
+    <div role="group">{children}</div>
+  ),
   DropdownMenuTrigger: ({ children }: { children?: ReactNode }) => (
     <button type="button">{children}</button>
   ),
   DropdownMenuContent: ({ children }: { children?: ReactNode }) => (
     <div role="menu">{children}</div>
   ),
+  // ⚠️ Mock ini WAJIB nurutin API asli Base UI: Menu.Item cuma punya
+  // `onClick`, TIDAK punya `onSelect`. Dulu mock-nya menerima `onSelect`
+  // dan memetakannya ke onClick — makanya test ijo padahal di browser
+  // handler-nya gak pernah kepicu (onSelect itu event DOM, bukan prop
+  // Base UI). Kalau item-nya pakai `onSelect`, `onClick`-nya undefined
+  // -> test ini harus merah.
   DropdownMenuItem: ({
     children,
-    onSelect,
+    onClick,
     disabled,
   }: {
     children?: ReactNode
-    onSelect?: () => void
+    onClick?: () => void
     disabled?: boolean
   }) => (
-    <button
-      type="button"
-      role="menuitem"
-      disabled={disabled}
-      onClick={onSelect}
-    >
+    <button type="button" role="menuitem" disabled={disabled} onClick={onClick}>
       {children}
     </button>
   ),

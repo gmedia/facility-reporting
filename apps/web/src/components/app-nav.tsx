@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -132,14 +133,28 @@ export function AppNav({ user }: { user: User }) {
             Akun
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>
-              <div className="text-sm font-medium">{user.name}</div>
-              <div className="text-muted-foreground text-xs font-normal">
-                {user.role}
-              </div>
-            </DropdownMenuLabel>
+            {/*
+              GroupLabel WAJIB di dalam Menu.Group — kalau tidak, Base UI
+              lempar "MenuGroupContext is missing" dan seluruh halaman
+              crash (error boundary nangkep). Jadi jangan dihapus bungkusnya.
+            */}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>
+                <div className="text-sm font-medium">{user.name}</div>
+                <div className="text-muted-foreground text-xs font-normal">
+                  {user.role}
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onLogout}>Keluar</DropdownMenuItem>
+            {/*
+              Base UI Menu.Item cuma punya `onClick` — `onSelect` itu event
+              DOM (untuk <input type="text">), jadi kalau dipake di sini
+              React gak ngepasang handler-nya dan itemnya jadi mati.
+            */}
+            <DropdownMenuItem onClick={() => void onLogout()}>
+              Keluar
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
