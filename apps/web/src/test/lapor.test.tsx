@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -226,5 +232,64 @@ describe('halaman /lapor', () => {
     await waitFor(() =>
       expect(screen.queryByLabelText('Lokasi')).not.toBeInTheDocument(),
     )
+  })
+})
+
+// Issue #50: /lapor jadi dua kolom — form di kiri, panduan di kanan.
+// Yang diuji: panduan-nya muncul dan isinya nyambung sama field form.
+// Fungsi form-nya sendiri sudah dijaga test di atas.
+describe('panduan pengisian di /lapor', () => {
+  it('menampilkan 4 langkah', async () => {
+    renderAt('/lapor')
+
+    const panduan = within(await screen.findByLabelText('Panduan pengisian'))
+
+    for (const judul of [
+      'Pilih kategori',
+      'Sebutkan lokasi',
+      'Ceritakan kerusakannya',
+      'Lampirkan foto',
+    ]) {
+      expect(panduan.getByText(judul)).toBeInTheDocument()
+    }
+
+    expect(panduan.getByText('Langkah 1')).toBeInTheDocument()
+    expect(panduan.getByText('Langkah 4')).toBeInTheDocument()
+  })
+
+  it('menampilkan contoh deskripsi, pilihan kategori, dan alur status', async () => {
+    renderAt('/lapor')
+
+    const panduan = within(await screen.findByLabelText('Panduan pengisian'))
+
+    // Contoh konkret, bukan cuma teori.
+    expect(
+      panduan.getByText(/Lampu AC di ruang 301 mati total sejak Senin/),
+    ).toBeInTheDocument()
+    expect(
+      panduan.getByText('Gedung H, Lantai 2, Ruang 214'),
+    ).toBeInTheDocument()
+
+    // Kategori diambil dari KATEGORI_LABEL, jadi sinkron sama form.
+    expect(panduan.getByText('Elektronik')).toBeInTheDocument()
+    expect(panduan.getByText('Lainnya')).toBeInTheDocument()
+
+    // Alur status pakai label yang sama kayak badge di tabel admin.
+    expect(panduan.getByText('Alur laporan')).toBeInTheDocument()
+    expect(panduan.getByText('Menunggu Verifikasi')).toBeInTheDocument()
+    expect(panduan.getByText('Selesai')).toBeInTheDocument()
+  })
+
+  it('form tetap utuh di halaman yang sama', async () => {
+    renderAt('/lapor')
+
+    // Semua field form masih ada — panduan cuma tambahan, bukan pengganti.
+    expect(await screen.findByLabelText('Kategori')).toBeInTheDocument()
+    expect(screen.getByLabelText('Lokasi')).toBeInTheDocument()
+    expect(screen.getByLabelText('Deskripsi')).toBeInTheDocument()
+    expect(screen.getByLabelText('Foto (opsional)')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Kirim Laporan' }),
+    ).toBeInTheDocument()
   })
 })
