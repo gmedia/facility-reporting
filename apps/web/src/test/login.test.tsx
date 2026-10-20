@@ -38,6 +38,21 @@ vi.mock('@/features/status/status-query', () => ({
   },
 }))
 
+// Dashboard manggil GET /reports pas mount. Jangan biarkan test nembak
+// jaringan beneran — balas array kosong biar halaman render empty state.
+vi.mock('@/lib/api/client', () => ({
+  api: {
+    GET: vi.fn(async () => ({
+      data: { data: [] },
+      response: new Response(null, { status: 200 }),
+    })),
+    POST: vi.fn(),
+    PUT: vi.fn(),
+    DELETE: vi.fn(),
+  },
+  initializeCsrf: vi.fn(() => Promise.resolve()),
+}))
+
 function renderLogin() {
   const router = createRouter({
     routeTree,
@@ -86,7 +101,9 @@ describe('halaman login', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
     )
-    expect(await screen.findByText('User Biasa')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Keluar' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Halo, User Biasa' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
   })
 })
