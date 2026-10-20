@@ -1,43 +1,92 @@
-import { useMutation } from '@tanstack/react-query'
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { logoutMutationOptions } from '@/features/auth/auth-query'
+import { Skeleton } from '@/components/ui/skeleton'
+import type { User } from '@/features/auth/auth-query'
+import { DashboardActions } from '@/features/dashboard/dashboard-actions'
+import {
+  dashboardQueryOptions,
+  hitungStatistik,
+} from '@/features/dashboard/dashboard-query'
+import { DashboardRecent } from '@/features/dashboard/dashboard-recent'
+import { DashboardStats } from '@/features/dashboard/dashboard-stats'
 
 export const Route = createFileRoute('/_protected/dashboard')({
   component: DashboardPage,
 })
 
 function DashboardPage() {
-  const router = useRouter()
   const { user } = Route.useRouteContext()
-  const logout = useMutation(logoutMutationOptions)
-
-  const onLogout = async () => {
-    await logout.mutateAsync()
-    await router.navigate({ to: '/login' })
-  }
+  const laporan = useQuery(dashboardQueryOptions)
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-5 px-6">
-      <div>
-        <p className="text-muted-foreground text-sm">Anda masuk sebagai</p>
-        <h1 className="text-3xl font-semibold tracking-tight">{user.name}</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          {user.role}
-          {user.email ? ` · ${user.email}` : ''}
-          {user.nim ? ` · NIM ${user.nim}` : ''}
-        </p>
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Halo, {user.name}
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500">{identitas(user)}</p>
+        </div>
+        <DashboardActions role={user.role} />
       </div>
-      <div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onLogout}
-          disabled={logout.isPending}
-        >
-          {logout.isPending ? 'Keluar...' : 'Keluar'}
-        </Button>
-      </div>
+
+      {laporan.isPending ? (
+        <DashboardSkeleton />
+      ) : laporan.isError ? (
+        <Alert variant="destructive" className="mt-6">
+          <AlertTitle>Gagal memuat dashboard</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            {laporan.error.message}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-xl"
+              onClick={() => laporan.refetch()}
+            >
+              Coba lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="mt-6 flex flex-col gap-6">
+          <DashboardStats statistik={hitungStatistik(laporan.data)} />
+          <DashboardRecent laporans={laporan.data} role={user.role} />
+        </div>
+      )}
     </main>
+  )
+}
+
+function identitas(user: User): string {
+  if (user.role === 'user') {
+    return ['user', user.nim ? `NIM ${user.nim}` : null]
+      .filter(Boolean)
+      .join(' · ')
+  }
+  return [user.role, user.email].filter(Boolean).join(' · ')
+}
+
+const KARTU_SKELETON = ['total', 'menunggu', 'diproses', 'selesai']
+const BARIS_SKELETON = ['satu', 'dua', 'tiga']
+
+function DashboardSkeleton() {
+  return (
+    <div className="mt-6 flex flex-col gap-6">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {KARTU_SKELETON.map((key) => (
+          <Skeleton key={key} className="h-[158px] rounded-[26px]" />
+        ))}
+      </div>
+      <div className="rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6">
+        <Skeleton className="h-6 w-40" />
+        <div className="mt-4 flex flex-col gap-3">
+          {BARIS_SKELETON.map((key) => (
+            <Skeleton key={key} className="h-14 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
