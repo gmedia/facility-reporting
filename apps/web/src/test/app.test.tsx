@@ -15,8 +15,19 @@ vi.mock('@/features/status/status-query', () => ({
   },
 }))
 
+vi.mock('@/features/auth/auth-query', () => ({
+  homeFor: (role: string) => (role === 'super_admin' ? '/admin' : '/dashboard'),
+  meQueryOptions: {
+    queryKey: ['me'],
+    retry: false,
+    queryFn: async () => {
+      throw new Error('Unauthenticated')
+    },
+  },
+}))
+
 describe('application shell', () => {
-  it('renders through the router with a shadcn button', async () => {
+  it('menampilkan landing page untuk tamu', async () => {
     const router = createRouter({
       routeTree,
       history: createMemoryHistory({ initialEntries: ['/'] }),
@@ -26,9 +37,20 @@ describe('application shell', () => {
         <RouterProvider router={router} />
       </QueryClientProvider>,
     )
+
     expect(
-      await screen.findByRole('heading', { name: 'Facility Reporting' }),
+      await screen.findByRole('heading', {
+        name: /perbaikan dimulai dari laporan yang rapi/i,
+      }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'UI ready' })).toBeInTheDocument()
+
+    const cta = screen.getByRole('link', {
+      name: /masuk dan mulai lapor/i,
+    })
+    expect(cta).toHaveAttribute('href', '/login')
+
+    expect((await screen.findAllByText('Sistem aktif')).length).toBeGreaterThan(
+      0,
+    )
   })
 })
