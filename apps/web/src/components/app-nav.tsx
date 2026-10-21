@@ -26,16 +26,30 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 // TanStack Router ngetik `to` sebagai union of real paths —
 // masukin path yang belum ada = tsc langsung merah.
 //
+// CATATAN: AppNav NGGAK dirender di route /admin* & /verifikasi (lihat
+// _protected.tsx) — di situ bingkai AdminShell (sidebar hijau) yang dipakai,
+// jadi nav di sini cuma buat /dashboard & /lapor.
+//
 // Rute yang MENYUSUL (tambahin satu baris pas sudah ada):
-//   admin        → /verifikasi, /prioritas
+//   admin        → /prioritas
 //   user         → /laporan/saya
-//   super_admin  → /admin/pengaturan, /admin/statistik
+//   super_admin  → /admin/pengaturan, /admin/statistik (dijangkau via sidebar)
 // ============================================================
-type MenuItem = { to: '/dashboard' | '/lapor' | '/admin'; label: string }
+type MenuItem = {
+  to: '/dashboard' | '/lapor' | '/admin' | '/verifikasi'
+  label: string
+}
 
 const MENU_PER_ROLE: Record<string, MenuItem[]> = {
-  super_admin: [{ to: '/admin', label: 'Kelola Akun' }],
-  admin: [{ to: '/dashboard', label: 'Beranda' }],
+  super_admin: [
+    { to: '/dashboard', label: 'Beranda' },
+    { to: '/verifikasi', label: 'Verifikasi' },
+    { to: '/admin', label: 'Kelola Akun' },
+  ],
+  admin: [
+    { to: '/dashboard', label: 'Beranda' },
+    { to: '/verifikasi', label: 'Verifikasi' },
+  ],
   user: [
     { to: '/dashboard', label: 'Beranda' },
     { to: '/lapor', label: 'Lapor Kerusakan' },

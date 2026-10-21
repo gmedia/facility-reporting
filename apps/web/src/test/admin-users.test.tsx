@@ -95,10 +95,13 @@ describe('guard /admin', () => {
     mockGet({
       '/auth/me': () => ok({ data: { ...superAdmin, role: 'user' } }),
       '/admin/users': () => ok({ data: [superAdmin] }),
+      '/reports': () => ok({ data: [] }),
     })
     renderAt('/admin')
 
-    expect(await screen.findByText('Anda masuk sebagai')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: 'Halo, Super Admin' }),
+    ).toBeInTheDocument()
   })
 
   it('mengarahkan ke /login kalau sesi tidak ada', async () => {
