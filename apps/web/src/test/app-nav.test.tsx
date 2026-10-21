@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -7,6 +13,7 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 import { routeTree } from '../routeTree.gen'
+import { api } from '@/lib/api/client'
 
 type Role = 'user' | 'admin' | 'super_admin'
 type Akun = { id: number; name: string; nim: string; email: string; role: Role }
@@ -75,6 +82,12 @@ function renderAt(path: string) {
 beforeEach(() => {
   vi.clearAllMocks()
   currentUser = mahasiswa
+  // openapi-fetch selalu balikin objek { data, error, response } — kalau
+  // mock-nya return undefined, destructuring di mutation jadi error.
+  vi.mocked(api.POST).mockResolvedValue({
+    data: { message: 'Logged out' },
+    response: new Response(null, { status: 200 }),
+  } as never)
 })
 
 afterEach(() => vi.clearAllMocks())
@@ -150,5 +163,33 @@ describe('AppNav — menu per role', () => {
       'href',
       '/verifikasi',
     )
+  })
+
+  // Regression: DropdownMenuLabel (Base UI Menu.GroupLabel) harus di dalam
+  // Menu.Group. Kalau tidak, Base UI lempar "MenuGroupContext is missing"
+  // dan seluruh halaman crash saat dropdown dibuka. Konten menu di-mount
+  // lazy, jadi tanpa test ini bugnya lolos dari CI.
+  it('dropdown akun bisa dibuka tanpa crash', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Akun' }))
+
+    // Pakai role menuitem, bukan teks: dashboard juga punya tombol "Keluar".
+    expect(
+      await screen.findByRole('menuitem', { name: 'Keluar' }),
+    ).toBeInTheDocument()
+  })
+
+  // Regression: Base UI Menu.Item cuma punya `onClick`. Kalau pakai
+  // `onSelect` (event DOM), handler-nya gak pernah kepicu.
+  it('item Keluar di dropdown akun benar-benar ngejalanin logout', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Akun' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Keluar' }))
+
+    await waitFor(() => expect(api.POST).toHaveBeenCalled())
   })
 })

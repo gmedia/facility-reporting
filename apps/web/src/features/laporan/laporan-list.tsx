@@ -172,7 +172,7 @@ export function LaporanList() {
                           <DropdownMenuItem
                             key={s}
                             disabled={s === laporan.status}
-                            onSelect={() => void ubahStatus(laporan.id, s)}
+                            onClick={() => void ubahStatus(laporan.id, s)}
                           >
                             {STATUS_LABEL[s]}
                           </DropdownMenuItem>
