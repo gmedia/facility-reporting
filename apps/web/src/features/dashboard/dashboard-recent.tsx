@@ -1,16 +1,15 @@
 import { AlertTriangle } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { KATEGORI_LABEL } from '@/features/laporan/laporan-query'
-import { cn } from '@/lib/utils'
 import {
+  KATEGORI_LABEL,
   STATUS_LABEL,
-  formatTanggal,
   type Laporan,
   type LaporanStatus,
-} from './dashboard-query'
+} from '@/features/laporan/laporan-query'
+import { cn } from '@/lib/utils'
+import { formatTanggal } from './dashboard-query'
 
-// Warna badge ngikutin palet di /verifikasi. Nanti kalau PR #44 merge,
-// labelnya bisa diambil dari features/laporan/laporan-query.
+// Warna badge khusus dashboard; label status diambil dari features/laporan.
 const STATUS_BADGE: Record<LaporanStatus, string> = {
   menunggu_verifikasi: 'bg-[#fbe9cc] text-[#b9772a]',
   valid: 'bg-[#dff1f7] text-[#3a8fb0]',

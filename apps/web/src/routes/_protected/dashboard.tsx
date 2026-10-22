@@ -1,16 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/features/auth/auth-query'
 import { DashboardActions } from '@/features/dashboard/dashboard-actions'
-import {
-  dashboardQueryOptions,
-  hitungStatistik,
-} from '@/features/dashboard/dashboard-query'
+import { hitungStatistik } from '@/features/dashboard/dashboard-query'
 import { DashboardRecent } from '@/features/dashboard/dashboard-recent'
 import { DashboardStats } from '@/features/dashboard/dashboard-stats'
+import { useLaporanList } from '@/features/laporan/laporan-query'
 
 export const Route = createFileRoute('/_protected/dashboard')({
   component: DashboardPage,
@@ -18,7 +15,7 @@ export const Route = createFileRoute('/_protected/dashboard')({
 
 function DashboardPage() {
   const { user } = Route.useRouteContext()
-  const laporan = useQuery(dashboardQueryOptions)
+  const laporan = useLaporanList()
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
