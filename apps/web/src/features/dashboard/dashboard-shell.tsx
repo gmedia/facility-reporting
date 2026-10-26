@@ -53,8 +53,9 @@ function initialsOf(name: string): string {
     .toUpperCase()
 }
 
-// Bingkai sidebar hijau untuk dashboard pengelola. Guard role tetap di
-// route /dashboard; komponen ini murni tampilan.
+// Bingkai sidebar hijau untuk halaman pengelola (dashboard, verifikasi,
+// akun admin). Guard role tetap di masing-masing route; komponen ini murni
+// tampilan.
 export function DashboardShell({
   user,
   header,

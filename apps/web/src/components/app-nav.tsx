@@ -27,9 +27,9 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 // TanStack Router ngetik `to` sebagai union of real paths —
 // masukin path yang belum ada = tsc langsung merah.
 //
-// CATATAN: dashboard pengelola memakai DashboardShell (sidebar hijau),
-// jadi AppNav tidak dipakai di sana. AppNav tetap dipakai di /admin*,
-// /verifikasi, dashboard user, dan /lapor.
+// CATATAN: dashboard pengelola, /verifikasi, dan /admin* memakai
+// DashboardShell (sidebar hijau). AppNav dipakai di halaman user dan route
+// lain seperti /lapor & /laporan/saya.
 //
 // Rute yang MENYUSUL (tambahin satu baris pas sudah ada):
 //   admin        → /prioritas
