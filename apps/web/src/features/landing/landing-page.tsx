@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Check, ChevronDown, Wrench } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Wrench } from 'lucide-react'
 import heroKampusImage from '@/assets/landing/hero-kampus.jpg'
 import ctaKampusImage from '@/assets/landing/cta-kampus.jpg'
 import { homeFor, meQueryOptions } from '@/features/auth/auth-query'
@@ -100,65 +100,6 @@ function Avatar({ inisial }: { inisial: string }) {
     <span className="bg-r-sage text-r-fg inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[13px] font-semibold">
       {inisial}
     </span>
-  )
-}
-
-function TestiCard({
-  testi,
-  featured = false,
-  className = '',
-}: {
-  testi: (typeof TESTIMONI)[number]
-  featured?: boolean
-  className?: string
-}) {
-  return (
-    <article
-      className={`flex h-full flex-col ${
-        featured
-          ? 'bg-r-fg rounded-[18px] p-[clamp(24px,3vw,38px)] text-white'
-          : 'bg-r-beige rounded-[14px] p-6'
-      } ${className}`}
-    >
-      {featured ? (
-        <span
-          aria-hidden="true"
-          className="text-r-accent text-[52px] leading-[0.7] font-semibold"
-        >
-          “
-        </span>
-      ) : null}
-      <blockquote
-        className={
-          featured
-            ? 'mt-4 text-[clamp(20px,2.1vw,27px)] leading-[1.42] font-medium tracking-[-0.012em]'
-            : 'text-[15.5px] leading-[1.62]'
-        }
-      >
-        {testi.quote}
-      </blockquote>
-      <div
-        className={`mt-auto flex items-center gap-3 ${featured ? 'pt-8' : 'pt-5'}`}
-      >
-        <Avatar inisial={testi.inisial} />
-        <div>
-          <div
-            className={`text-sm font-semibold ${featured ? '' : 'text-r-fg'}`}
-          >
-            {testi.nama}
-          </div>
-          <div
-            className={
-              featured
-                ? 'text-r-on-dark-soft text-[12.5px]'
-                : 'text-r-muted text-[12.5px]'
-            }
-          >
-            {testi.peran}
-          </div>
-        </div>
-      </div>
-    </article>
   )
 }
 
@@ -1021,6 +962,7 @@ function useActiveSection() {
 export function LandingPage() {
   useSectionReveal()
   const activeSection = useActiveSection()
+  const [testiIndex, setTestiIndex] = useState(0)
   const { data: user } = useQuery(meQueryOptions)
 
   return (
@@ -1300,23 +1242,59 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="mt-12 grid gap-5 lg:grid-cols-12">
-              <TestiCard
-                testi={TESTIMONI[0]!}
-                featured
-                className="lg:col-span-7"
-              />
-              <div className="grid gap-5 lg:col-span-5">
-                <TestiCard testi={TESTIMONI[1]!} />
-                <TestiCard testi={TESTIMONI[2]!} />
+            <div className="mt-14 flex flex-col items-center gap-9">
+              <div
+                key={testiIndex}
+                aria-live="polite"
+                className="animate-rise flex min-h-[clamp(260px,32vw,300px)] w-full max-w-[54ch] flex-col items-center justify-center gap-7"
+              >
+                <blockquote className="text-center text-[clamp(21px,2.4vw,31px)] leading-[1.4] font-medium tracking-[-0.015em]">
+                  {TESTIMONI[testiIndex]!.quote}
+                </blockquote>
+                <div className="flex items-center gap-3">
+                  <Avatar inisial={TESTIMONI[testiIndex]!.inisial} />
+                  <div className="text-left">
+                    <div className="text-r-fg text-sm font-semibold">
+                      {TESTIMONI[testiIndex]!.nama}
+                    </div>
+                    <div className="text-r-muted text-[12.5px]">
+                      {TESTIMONI[testiIndex]!.peran}
+                    </div>
+                  </div>
+                </div>
               </div>
-              {TESTIMONI.slice(3).map((testi) => (
-                <TestiCard
-                  key={testi.nama}
-                  testi={testi}
-                  className="lg:col-span-4"
-                />
-              ))}
+
+              <div className="flex items-center gap-5">
+                <button
+                  type="button"
+                  aria-label="Cerita sebelumnya"
+                  onClick={() =>
+                    setTestiIndex(
+                      (i) => (i + TESTIMONI.length - 1) % TESTIMONI.length,
+                    )
+                  }
+                  className="border-r-line text-r-muted hover:border-r-fg hover:text-r-fg flex h-11 w-11 items-center justify-center rounded-full border transition-colors active:translate-y-px"
+                >
+                  <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
+                </button>
+                <span className="text-r-muted font-mono text-[13px] tabular-nums">
+                  {String(testiIndex + 1).padStart(2, '0')} /{' '}
+                  {String(TESTIMONI.length).padStart(2, '0')}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Cerita berikutnya"
+                  onClick={() =>
+                    setTestiIndex((i) => (i + 1) % TESTIMONI.length)
+                  }
+                  className="border-r-line text-r-muted hover:border-r-fg hover:text-r-fg flex h-11 w-11 items-center justify-center rounded-full border transition-colors active:translate-y-px"
+                >
+                  <ArrowRight
+                    className="h-[18px] w-[18px]"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </section>
