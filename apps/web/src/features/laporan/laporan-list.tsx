@@ -19,7 +19,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   KATEGORI_LABEL,
   STATUS_LABEL,
-  STATUS_TONE,
   STATUS_VALUES,
   errorMessage,
   useLaporanList,
@@ -28,6 +27,7 @@ import {
   type LaporanKategori,
   type LaporanStatus,
 } from './laporan-query'
+import { StatusBadge } from './status-badge'
 
 type StatusFilter = 'semua' | LaporanStatus
 
@@ -43,19 +43,6 @@ const FILTERS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: 'ditolak', label: 'Ditolak' },
 ]
 
-// schema.d.ts ngetik `LaporanResource['status']` sebagai `string`, padahal
-// backend cuma mau 5 nilai `LaporanStatus`. Karena itu semua akses ke
-// STATUS_LABEL/STATUS_TONE harus lewat helper ini — dan tetap ditampilkan
-// apa adanya kalau nilainya di luar enum, biar gak lenyap diam-diam.
-function statusInfo(status: string): { label: string; tone: string } {
-  const key = status as LaporanStatus
-  return {
-    label: STATUS_LABEL[key] ?? status,
-    tone:
-      STATUS_TONE[key] ?? 'bg-neutral-100 text-neutral-700 ring-neutral-200',
-  }
-}
-
 function kategoriLabel(kategori: string): string {
   return KATEGORI_LABEL[kategori as LaporanKategori] ?? kategori
 }
@@ -69,17 +56,6 @@ function tanggal(iso: string | null): string {
     month: 'short',
     year: 'numeric',
   })
-}
-
-function Badge({ status }: { status: string }) {
-  const { label, tone } = statusInfo(status)
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs whitespace-nowrap ring-1 ${tone}`}
-    >
-      {label}
-    </span>
-  )
 }
 
 export function LaporanList() {
@@ -238,7 +214,7 @@ export function LaporanList() {
                         {tanggal(laporan.created_at)}
                       </td>
                       <td className="py-3 pr-3">
-                        <Badge status={laporan.status} />
+                        <StatusBadge status={laporan.status} />
                       </td>
                       <td className="py-3">
                         {/* Pilih DropdownMenu, bukan Select: <SelectValue> Base UI
@@ -257,7 +233,8 @@ export function LaporanList() {
                               />
                             }
                           >
-                            {statusInfo(laporan.status).label}
+                            {STATUS_LABEL[laporan.status as LaporanStatus] ??
+                              laporan.status}
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {STATUS_VALUES.map((s) => (

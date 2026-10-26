@@ -28,7 +28,7 @@ export function StatusBadge({ status }: { status: string }) {
   const { label, tone } = statusInfo(status)
   return (
     <span
-      className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${tone}`}
+      className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ${tone}`}
     >
       {label}
     </span>
