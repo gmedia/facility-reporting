@@ -4,17 +4,46 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/features/auth/auth-query'
 import { DashboardActions } from '@/features/dashboard/dashboard-actions'
+import { DashboardAdmin } from '@/features/dashboard/dashboard-admin'
 import { hitungStatistik } from '@/features/dashboard/dashboard-query'
 import { DashboardRecent } from '@/features/dashboard/dashboard-recent'
 import { DashboardStats } from '@/features/dashboard/dashboard-stats'
+import {
+  identitas,
+  readFilter,
+  type AntrianFilter,
+} from '@/features/dashboard/dashboard-utils'
 import { useLaporanList } from '@/features/laporan/laporan-query'
 
 export const Route = createFileRoute('/_protected/dashboard')({
+  // ?filter=menunggu | ?filter=terverifikasi — tab-nya ada di header
+  // DashboardShell. User biasa tetap memakai dashboard lamanya.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { filter?: AntrianFilter } => ({
+    filter: readFilter(search),
+  }),
   component: DashboardPage,
 })
 
 function DashboardPage() {
   const { user } = Route.useRouteContext()
+
+  if (user.role === 'admin' || user.role === 'super_admin') {
+    return <DashboardPengelola />
+  }
+
+  return <DashboardUser user={user} />
+}
+
+function DashboardPengelola() {
+  const { user } = Route.useRouteContext()
+  const search = Route.useSearch()
+
+  return <DashboardAdmin user={user} filter={readFilter(search)} />
+}
+
+function DashboardUser({ user }: { user: User }) {
   const laporan = useLaporanList()
 
   return (
@@ -54,15 +83,6 @@ function DashboardPage() {
       )}
     </main>
   )
-}
-
-function identitas(user: User): string {
-  if (user.role === 'user') {
-    return ['user', user.nim ? `NIM ${user.nim}` : null]
-      .filter(Boolean)
-      .join(' · ')
-  }
-  return [user.role, user.email].filter(Boolean).join(' · ')
 }
 
 const KARTU_SKELETON = ['total', 'menunggu', 'diproses', 'selesai']

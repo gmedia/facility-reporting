@@ -97,7 +97,7 @@ afterEach(() => vi.clearAllMocks())
 // Yang dites cuma menu-item yang routenya SUDAH ADA. /prioritas,
 // /laporan/saya, /admin/statistik dll. belum dibuat, jadi belum
 // dimasukin ke MENU_PER_ROLE — lihat komentar di app-nav.tsx.
-describe('AppNav — menu per role', () => {
+describe('Navigasi per role', () => {
   it('role user: lihat Beranda dan Lapor Kerusakan', async () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
@@ -126,13 +126,18 @@ describe('AppNav — menu per role', () => {
     expect(nav.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
   })
 
-  it('role admin: gak dapat menu Lapor Kerusakan', async () => {
+  it('role admin: dashboard memakai sidebar tanpa menu Lapor Kerusakan', async () => {
     currentUser = admin
     renderAt('/dashboard')
 
-    const nav = within(await screen.findByRole('banner'))
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
 
-    expect(nav.getByRole('link', { name: 'Beranda' })).toBeInTheDocument()
+    expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
     expect(
       nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
@@ -142,15 +147,24 @@ describe('AppNav — menu per role', () => {
       'href',
       '/verifikasi',
     )
+    expect(
+      nav.queryByRole('link', { name: 'Akun Admin' }),
+    ).not.toBeInTheDocument()
   })
 
-  it('role super_admin: dapat Kelola Akun, bukan Lapor Kerusakan', async () => {
+  it('role super_admin: sidebar dapat Akun Admin, bukan Lapor Kerusakan', async () => {
     currentUser = superAdmin
     renderAt('/dashboard')
 
-    const nav = within(await screen.findByRole('banner'))
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
 
-    expect(nav.getByRole('link', { name: 'Kelola Akun' })).toHaveAttribute(
+    expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
+    expect(nav.getByRole('link', { name: 'Akun Admin' })).toHaveAttribute(
       'href',
       '/admin',
     )
