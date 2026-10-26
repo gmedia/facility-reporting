@@ -195,6 +195,51 @@ describe('halaman /verifikasi', () => {
     expect(api.GET).toHaveBeenCalledWith('/reports')
   })
 
+  it('menampilkan ringkasan, prioritas, dan grafik dari data real', async () => {
+    renderAt('/verifikasi')
+
+    expect(await screen.findByText('Antrian verifikasi')).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Ringkasan laporan' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Prioritas')).toBeInTheDocument()
+    expect(screen.getByText('Laporan per hari')).toBeInTheDocument()
+    expect(api.GET).toHaveBeenCalledWith('/reports')
+  })
+
+  it('klik kartu statistik menyaring tabel', async () => {
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({
+        data: [
+          satuLaporan[0],
+          {
+            ...satuLaporan[0],
+            id: 2,
+            kategori: 'furnitur',
+            lokasi: 'kelas a',
+            deskripsi: 'meja rusak',
+            status: 'selesai',
+          },
+        ],
+      }),
+    )
+    renderAt('/verifikasi')
+
+    await screen.findByText('lampu mati')
+    const ringkasan = within(
+      screen.getByRole('region', { name: 'Ringkasan laporan' }),
+    )
+
+    fireEvent.click(ringkasan.getByRole('button', { name: /Selesai/ }))
+
+    expect(ringkasan.getByRole('button', { name: /Selesai/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByText('meja rusak')).toBeInTheDocument()
+    expect(screen.queryByText('lampu mati')).not.toBeInTheDocument()
+  })
+
   it('role admin: bisa ubah status lewat PATCH', async () => {
     renderAt('/verifikasi')
     await screen.findByText('gedung h')
