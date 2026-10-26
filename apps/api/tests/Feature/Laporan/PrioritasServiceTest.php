@@ -50,6 +50,30 @@ it('menolak nilai di luar skala 1 sampai 5', function (array $nilai): void {
     'frekuensi 6' => [[3, 3, 3, 6]],
 ]);
 
+it('menempatkan skor 2,95 pada kategori rendah', function (): void {
+    $hasil = app(PrioritasService::class)->hitung(3, 4, 3, 1);
+
+    expect($hasil->skor)->toBe(2.95)
+        ->and($hasil->kategori)->toBe(PrioritasKategori::Rendah);
+});
+
+it('menempatkan skor 3,95 pada kategori sedang', function (): void {
+    $hasil = app(PrioritasService::class)->hitung(4, 5, 4, 2);
+
+    expect($hasil->skor)->toBe(3.95)
+        ->and($hasil->kategori)->toBe(PrioritasKategori::Sedang);
+});
+
+it('menolak nilai negatif', function (array $nilai): void {
+    expect(fn () => app(PrioritasService::class)->hitung(...$nilai))
+        ->toThrow(InvalidArgumentException::class);
+})->with([
+    'kerusakan -1' => [[-1, 3, 3, 3]],
+    'risiko -5' => [[3, -5, 3, 3]],
+    'dampak -1' => [[3, 3, -1, 3]],
+    'frekuensi -5' => [[3, 3, 3, -5]],
+]);
+
 it('memakai total bobot satu', function (): void {
     $bobot = config('prioritas.bobot');
 
