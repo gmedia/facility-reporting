@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -134,7 +140,11 @@ function renderAt(path: string) {
     history: createMemoryHistory({ initialEntries: [path] }),
   })
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
@@ -198,6 +208,86 @@ describe('halaman /verifikasi', () => {
       expect(router.state.location.pathname).toBe('/dashboard'),
     )
     expect(screen.queryByText('gedung h')).not.toBeInTheDocument()
+  })
+
+  it('filter status menyaring tabel sesuai pilihan', async () => {
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({
+        data: [
+          satuLaporan[0],
+          {
+            ...satuLaporan[0],
+            id: 2,
+            kategori: 'furnitur',
+            lokasi: 'kelas a',
+            deskripsi: 'meja rusak',
+            status: 'selesai',
+          },
+        ],
+      }),
+    )
+    renderAt('/verifikasi')
+
+    await screen.findByText('lampu mati')
+    const filterGroup = screen.getByRole('group', { name: 'Filter status' })
+
+    fireEvent.click(
+      within(filterGroup).getByRole('button', { name: /^Menunggu/ }),
+    )
+    expect(screen.getByText('lampu mati')).toBeInTheDocument()
+    expect(screen.queryByText('meja rusak')).not.toBeInTheDocument()
+
+    fireEvent.click(
+      within(filterGroup).getByRole('button', { name: /^Selesai/ }),
+    )
+    expect(screen.getByText('meja rusak')).toBeInTheDocument()
+    expect(screen.queryByText('lampu mati')).not.toBeInTheDocument()
+
+    fireEvent.click(within(filterGroup).getByRole('button', { name: /^Semua/ }))
+    expect(screen.getByText('lampu mati')).toBeInTheDocument()
+    expect(screen.getByText('meja rusak')).toBeInTheDocument()
+  })
+
+  it('filter tanpa hasil: empty state mengikuti filter aktif', async () => {
+    renderAt('/verifikasi')
+
+    await screen.findByText('lampu mati')
+    const filterGroup = screen.getByRole('group', { name: 'Filter status' })
+
+    fireEvent.click(
+      within(filterGroup).getByRole('button', { name: /^Terverifikasi/ }),
+    )
+
+    expect(
+      screen.getByText('Belum ada laporan berstatus Terverifikasi.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(
+      within(filterGroup).getByRole('button', { name: /^Semua/ }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tampilkan semua' }))
+    expect(await screen.findByRole('table')).toBeInTheDocument()
+  })
+
+  it('loading state: menampilkan pesan memuat', async () => {
+    vi.mocked(api.GET).mockReturnValue(new Promise(() => {}) as never)
+    renderAt('/verifikasi')
+
+    expect(await screen.findByText('Memuat laporan…')).toBeInTheDocument()
+  })
+
+  it('error state: menampilkan pesan dan tombol coba lagi', async () => {
+    vi.mocked(api.GET).mockRejectedValue(new Error('jaringan putus'))
+    renderAt('/verifikasi')
+
+    expect(
+      await screen.findByText('Gagal memuat daftar laporan.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('jaringan putus')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Coba lagi' }),
+    ).toBeInTheDocument()
   })
 
   it('data kosong: menampilkan pesan, bukan tabel kosong', async () => {
