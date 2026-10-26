@@ -30,6 +30,21 @@
   --color-muted-ink: #5f6e6a;
   --color-on-dark: #a8bdb8;
   --color-on-dark-soft: #9db5b0;
+  --color-r-bg: var(--rawat-bg);
+  --color-r-surface: var(--rawat-surface);
+  --color-r-fg: var(--rawat-fg);
+  --color-r-muted: var(--rawat-muted);
+  --color-r-line: var(--rawat-line);
+  --color-r-accent: var(--rawat-accent);
+  --color-r-accent-ink: var(--rawat-accent-ink);
+  --color-r-accent-glow: var(--rawat-accent-glow);
+  --color-r-accent-soft: var(--rawat-accent-soft);
+  --color-r-btn-hover: var(--rawat-btn-hover);
+  --color-r-dark-hover: var(--rawat-dark-hover);
+  --color-r-sage: var(--rawat-sage);
+  --color-r-beige: var(--rawat-beige);
+  --color-r-on-dark-soft: var(--rawat-on-dark-soft);
+  --color-r-on-dark-line: var(--rawat-on-dark-line);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -95,6 +110,49 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
+  --rawat-bg: #fbf8f2;
+  --rawat-surface: #ffffff;
+  --rawat-fg: #0f3b2e;
+  --rawat-muted: #42524a;
+  --rawat-line: #e6e1d6;
+  --rawat-accent: #e8812f;
+  --rawat-accent-ink: color-mix(
+    in oklch,
+    var(--rawat-accent) 60%,
+    var(--rawat-fg)
+  );
+  --rawat-accent-glow: color-mix(
+    in oklch,
+    var(--rawat-accent) 72%,
+    var(--rawat-surface)
+  );
+  --rawat-btn-hover: color-mix(
+    in oklch,
+    var(--rawat-accent) 86%,
+    var(--rawat-surface)
+  );
+  --rawat-dark-hover: color-mix(
+    in oklch,
+    var(--rawat-fg) 88%,
+    var(--rawat-surface)
+  );
+  --rawat-sage: color-mix(in oklch, var(--rawat-bg) 93%, var(--rawat-fg));
+  --rawat-beige: color-mix(in oklch, var(--rawat-bg) 88%, var(--rawat-accent));
+  --rawat-accent-soft: color-mix(
+    in oklch,
+    var(--rawat-accent) 14%,
+    transparent
+  );
+  --rawat-on-dark-soft: color-mix(
+    in oklch,
+    var(--rawat-surface) 78%,
+    transparent
+  );
+  --rawat-on-dark-line: color-mix(
+    in oklch,
+    var(--rawat-surface) 18%,
+    transparent
+  );
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -159,12 +217,12 @@
 
 @layer utilities {
   .reveal > :first-child {
-    transform: translateY(32px);
+    transform: translateY(32px) scale(0.98);
     transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .reveal-visible > :first-child {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 
   .reveal:not(.reveal-visible) [data-stagger] > * {
@@ -194,9 +252,45 @@
       transition: none;
     }
 
+    .reveal-visible > :first-child {
+      transform: none;
+    }
+
     .reveal:not(.reveal-visible) [data-stagger] > * {
       translate: none;
       transition: none;
+    }
+  }
+
+  .rawat-hero-scrim {
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--rawat-fg) 96%, transparent) 0%,
+        color-mix(in oklch, var(--rawat-fg) 88%, transparent) 22%,
+        color-mix(in oklch, var(--rawat-fg) 40%, transparent) 48%,
+        color-mix(in oklch, var(--rawat-fg) 6%, transparent) 62%,
+        transparent 84%
+      ),
+      linear-gradient(
+        0deg,
+        color-mix(in oklch, var(--rawat-fg) 44%, transparent) 0%,
+        color-mix(in oklch, var(--rawat-fg) 6%, transparent) 36%
+      );
+  }
+
+  .rawat-banner-scrim {
+    background: color-mix(in oklch, var(--rawat-fg) 72%, transparent);
+  }
+
+  @media (max-width: 1023px) {
+    .rawat-hero-scrim {
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--rawat-fg) 90%, transparent) 12%,
+        color-mix(in oklch, var(--rawat-fg) 86%, transparent) 60%,
+        color-mix(in oklch, var(--rawat-fg) 78%, transparent) 100%
+      );
     }
   }
 
