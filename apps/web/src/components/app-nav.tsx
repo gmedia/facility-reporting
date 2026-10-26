@@ -33,11 +33,10 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 //
 // Rute yang MENYUSUL (tambahin satu baris pas sudah ada):
 //   admin        → /prioritas
-//   user         → /laporan/saya
 //   super_admin  → /admin/pengaturan, /admin/statistik (dijangkau via sidebar)
 // ============================================================
 type MenuItem = {
-  to: '/dashboard' | '/lapor' | '/admin' | '/verifikasi'
+  to: '/dashboard' | '/lapor' | '/laporan/saya' | '/admin' | '/verifikasi'
   label: string
 }
 
@@ -54,6 +53,7 @@ const MENU_PER_ROLE: Record<string, MenuItem[]> = {
   user: [
     { to: '/dashboard', label: 'Beranda' },
     { to: '/lapor', label: 'Lapor Kerusakan' },
+    { to: '/laporan/saya', label: 'Riwayat Laporan' },
   ],
 }
 
