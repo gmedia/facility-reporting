@@ -17,9 +17,9 @@ function statusInfo(status: string): { label: string; tone: string } {
   }
 }
 
-// Dipakai bareng halaman riwayat mahasiswa (/laporan/saya) dan antrean
-// verifikasi (/verifikasi). Palet warnanya tetap dari STATUS_TONE, jadi
-// label status konsisten di kedua halaman.
+// Dipakai di halaman riwayat mahasiswa (/laporan/saya) dan ringkasan
+// dashboard. /verifikasi punya pill status sendiri yang bisa diklik untuk
+// mengubah status.
 export function StatusBadge({ status }: { status: string }) {
   const { label, tone } = statusInfo(status)
   return (

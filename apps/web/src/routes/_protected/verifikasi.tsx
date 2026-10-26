@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { DashboardShell } from '@/features/dashboard/dashboard-shell'
-import { LaporanList } from '@/features/laporan/laporan-list'
+import { VerifikasiPage } from '@/features/laporan/verifikasi-page'
 
 // Role yang boleh melihat laporan SEMUA mahasiswa.
 // Sengaja whitelist, bukan blacklist - role baru yang belum dikenal
@@ -27,24 +26,5 @@ export const Route = createFileRoute('/_protected/verifikasi')({
 function LaporanPage() {
   const { user } = Route.useRouteContext()
 
-  return (
-    <DashboardShell
-      user={user}
-      header={
-        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-          Admin / Verifikasi
-        </p>
-      }
-    >
-      <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Verifikasi</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Daftar laporan dari semua mahasiswa.
-          </p>
-        </div>
-        <LaporanList />
-      </div>
-    </DashboardShell>
-  )
+  return <VerifikasiPage user={user} />
 }

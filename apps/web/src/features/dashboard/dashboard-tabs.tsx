@@ -17,7 +17,7 @@ export function DashboardTabs() {
   return (
     <nav
       aria-label="Filter antrian verifikasi"
-      className="flex scrollbar-none gap-6 overflow-x-auto"
+      className="flex h-full scrollbar-none items-stretch gap-7 overflow-x-auto"
     >
       {filters.map((item) => (
         <Link
@@ -27,10 +27,10 @@ export function DashboardTabs() {
           resetScroll={false}
           aria-current={filter === item.value ? 'page' : undefined}
           className={cn(
-            '-mb-px border-b-2 pb-2.5 text-sm font-medium whitespace-nowrap transition-colors',
+            'flex items-center border-b-[3px] text-[15px] whitespace-nowrap transition-colors',
             filter === item.value
-              ? 'text-foreground border-amber-400'
-              : 'border-transparent text-neutral-400 hover:text-neutral-600',
+              ? 'border-[#dfc787] font-bold text-neutral-800'
+              : 'border-transparent font-medium text-[#8a8f87] hover:text-neutral-700',
           )}
         >
           {item.label}

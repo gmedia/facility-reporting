@@ -60,7 +60,7 @@ export const STATUS_LABEL: Record<LaporanStatus, string> = {
 
 export const STATUS_VALUES = Object.keys(STATUS_LABEL) as LaporanStatus[]
 
-// Tones dipakai laporan-list.tsx buat nge-style badge-nya.
+// Tones dipakai status-badge.tsx buat nge-style badge-nya.
 export const STATUS_TONE: Record<LaporanStatus, string> = {
   menunggu_verifikasi: 'bg-amber-100 text-amber-800 ring-amber-200',
   valid: 'bg-emerald-100 text-emerald-800 ring-emerald-200',

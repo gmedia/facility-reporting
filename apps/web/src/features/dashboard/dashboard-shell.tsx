@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
-  ClipboardList,
+  Building2,
   LayoutDashboard,
+  Menu,
   ShieldCheck,
   Users,
+  X,
 } from 'lucide-react'
 import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
@@ -18,7 +21,7 @@ type NavTo = '/dashboard' | '/verifikasi' | '/admin'
 interface NavItem {
   label: string
   to: NavTo
-  icon: typeof ClipboardList
+  icon: typeof LayoutDashboard
   end?: boolean
 }
 
@@ -68,6 +71,7 @@ export function DashboardShell({
   const router = useRouter()
   const logout = useMutation(logoutMutationOptions)
   const navItems = navFor(user.role)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const onLogout = async () => {
     await logout.mutateAsync()
@@ -80,80 +84,98 @@ export function DashboardShell({
       : { title: 'Admin', desc: 'Verifikasi laporan masuk.' }
 
   return (
-    <div className="min-h-dvh bg-[#f6f3ea] p-0 lg:p-4">
-      <div className="flex min-h-dvh overflow-hidden rounded-none bg-[#2f9e78] lg:min-h-[calc(100dvh-2rem)] lg:rounded-[2rem] lg:pt-3 lg:pr-3 lg:pb-3">
-        <aside
-          aria-label="Navigasi admin"
-          className="hidden w-64 shrink-0 flex-col justify-between p-6 pl-7 lg:flex"
+    <div className="min-h-dvh bg-[#3b9b6b] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Tutup menu"
+          className="fixed inset-0 z-30 bg-black/35 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      <aside
+        aria-label="Navigasi admin"
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 w-[270px] flex-col overflow-y-auto bg-[#3b9b6b] text-white shadow-xl lg:sticky lg:top-0 lg:z-0 lg:flex lg:h-dvh lg:w-auto lg:translate-x-0 lg:shadow-none',
+          mobileOpen ? 'flex translate-x-0' : 'hidden -translate-x-full',
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Tutup menu"
+          className="absolute top-4 right-4 grid size-9 place-items-center rounded-full text-white/80 hover:bg-white/10 hover:text-white lg:hidden"
+          onClick={() => setMobileOpen(false)}
         >
-          <div className="flex flex-col gap-8">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                <ClipboardList
-                  aria-hidden="true"
-                  className="size-5 text-white"
-                />
-              </span>
-              <p className="text-lg leading-tight font-bold text-white">
-                Pelaporan
-                <br />
-                Fasilitas
-              </p>
-            </div>
+          <X aria-hidden="true" className="size-5" />
+        </button>
 
-            <nav className="flex flex-col gap-1.5">
-              {navItems.map((item) => (
-                <NavLink key={item.to} {...item} />
-              ))}
-            </nav>
-          </div>
-
-          <div className="rounded-2xl bg-white/12 p-4">
-            <p className="text-sm font-semibold text-white">{who.title}</p>
-            <p className="mt-1 text-xs leading-relaxed text-emerald-50/80">
-              {who.desc}
-            </p>
-            <button
-              type="button"
-              onClick={onLogout}
-              disabled={logout.isPending}
-              className="mt-3 rounded-lg bg-[#f6efdc] px-4 py-1.5 text-sm font-semibold text-[#0d3f31] transition-colors hover:bg-white disabled:opacity-60"
-            >
-              {logout.isPending ? 'Keluar...' : 'Keluar'}
-            </button>
-          </div>
-        </aside>
-
-        <div className="flex min-w-0 flex-1 flex-col bg-white lg:rounded-[1.25rem]">
-          <nav
-            aria-label="Navigasi admin mobile"
-            className="flex scrollbar-none items-center gap-1 overflow-x-auto border-b border-neutral-100 bg-[#2f9e78] px-4 py-2 lg:hidden"
-          >
-            {navItems.map((item) => (
-              <NavLink key={item.to} {...item} mobile />
-            ))}
-          </nav>
-
-          <header className="flex items-center justify-between gap-4 border-b border-neutral-100 px-5 py-3.5 lg:px-8">
-            <div className="min-w-0">{header}</div>
-
-            <div className="flex shrink-0 items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-full bg-[#2f9e78] text-xs font-semibold text-white">
-                {initialsOf(user.name)}
-              </span>
-              <span className="hidden text-right sm:block">
-                <span className="block text-sm font-medium text-neutral-700">
-                  {user.name}
-                </span>
-                <span className="block text-xs text-neutral-400">
-                  {who.title}
-                </span>
-              </span>
-            </div>
-          </header>
-
-          <main className="flex-1 px-5 py-6 pb-10 lg:px-8">{children}</main>
+        <div className="flex items-center gap-3 px-5 pt-5 pb-6 text-[17px] leading-tight font-bold">
+          <Building2 aria-hidden="true" className="size-6 shrink-0" />
+          <span>
+            Pelaporan
+            <br />
+            Fasilitas
+          </span>
         </div>
+
+        <nav className="flex flex-col gap-1.5">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              {...item}
+              onNavigate={() => setMobileOpen(false)}
+            />
+          ))}
+        </nav>
+
+        <div className="mx-3 mt-auto mb-2 rounded-[20px] bg-white/15 p-[18px]">
+          <p className="text-base font-semibold text-white">{who.title}</p>
+          <p className="mt-0.5 text-sm text-white/90">{who.desc}</p>
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={logout.isPending}
+            className="mt-3.5 rounded-[10px] bg-[#f0e2b8] px-4 py-2 text-sm font-semibold text-[#5a4a1d] transition hover:brightness-95 disabled:opacity-60"
+          >
+            {logout.isPending ? 'Keluar...' : 'Keluar'}
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex min-h-dvh min-w-0 flex-col bg-white">
+        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b-[1.5px] border-[#efe9d8] bg-white px-4 lg:px-10">
+          <button
+            type="button"
+            aria-label="Buka menu"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-neutral-700 transition-colors hover:bg-[#faf3e5] lg:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu aria-hidden="true" className="size-5" />
+          </button>
+
+          <div className="flex min-w-0 flex-1 items-center self-stretch">
+            {header}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3 py-2">
+            <span className="flex size-11 items-center justify-center rounded-full bg-[#3b9b6b] text-sm font-semibold text-white">
+              {initialsOf(user.name)}
+            </span>
+            <span className="hidden text-right sm:block">
+              <span className="block text-sm font-semibold text-neutral-800">
+                {user.name}
+              </span>
+              <span className="block text-xs text-neutral-400">
+                {who.title}
+              </span>
+            </span>
+          </div>
+        </header>
+
+        <main className="flex-1 px-4 pt-5 pb-8 lg:px-10 lg:pt-5 lg:pb-10">
+          {children}
+        </main>
       </div>
     </div>
   )
@@ -164,13 +186,13 @@ function NavLink({
   to,
   icon: Icon,
   end,
-  mobile,
+  onNavigate,
 }: {
   label: string
   to: NavTo
-  icon: typeof ClipboardList
+  icon: typeof LayoutDashboard
   end?: boolean
-  mobile?: boolean
+  onNavigate?: () => void
 }) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -182,16 +204,16 @@ function NavLink({
   return (
     <Link
       to={to}
+      onClick={onNavigate}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+        'mx-3 flex items-center gap-3.5 rounded-xl px-4 py-3 text-[15px] transition-colors',
         active
-          ? 'bg-white text-[#0d6b4f] shadow-sm'
-          : 'text-emerald-50/90 hover:bg-white/10 hover:text-white',
-        mobile && 'shrink-0 px-3 py-1.5 text-xs',
+          ? 'bg-white/20 font-bold text-white'
+          : 'font-medium text-white/90 hover:bg-white/10 hover:text-white',
       )}
     >
-      <Icon aria-hidden="true" className="size-4 shrink-0" />
+      <Icon aria-hidden="true" className="size-5 shrink-0" />
       {label}
     </Link>
   )
