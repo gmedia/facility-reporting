@@ -118,8 +118,17 @@ describe('dashboard CRUD admin', () => {
   it('menampilkan daftar akun admin', async () => {
     renderAt('/admin')
 
-    expect(await screen.findByText('Super Admin')).toBeInTheDocument()
-    expect(screen.getByText('superadmin@facility.test')).toBeInTheDocument()
+    expect(
+      await screen.findByText('superadmin@facility.test'),
+    ).toBeInTheDocument()
+
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
+    expect(nav.getByRole('link', { name: 'Akun Admin' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     expect(api.GET).toHaveBeenCalledWith('/admin/users')
   })
 

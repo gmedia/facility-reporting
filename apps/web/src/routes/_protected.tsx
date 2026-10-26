@@ -23,16 +23,20 @@ function ProtectedLayout() {
     select: (state) => state.location.pathname,
   })
 
-  // Dashboard pengelola memakai DashboardShell (sidebar hijau). Sembunyikan
-  // AppNav biar tidak ada dua navigasi. Dashboard user tetap pakai AppNav.
-  const pakaiDashboardShell = pathname === '/dashboard' && user.role !== 'user'
+  // Dashboard, Verifikasi, dan area /admin memakai DashboardShell (sidebar
+  // hijau). Sembunyikan AppNav biar tidak ada dua navigasi. Halaman user
+  // tetap memakai AppNav.
+  const pakaiShellPengelola =
+    user.role !== 'user' &&
+    (pathname === '/dashboard' ||
+      pathname === '/verifikasi' ||
+      pathname.startsWith('/admin'))
 
   return (
     <div className="bg-muted/40 min-h-screen">
-      {!pakaiDashboardShell && <AppNav user={user} />}
+      {!pakaiShellPengelola && <AppNav user={user} />}
       <Outlet />
-      {/* Toaster global. Anas juga punya satu di _protected/admin/route.tsx -
-          kabarin dia supaya dilepas, biar nggak dobel. */}
+      {/* Toaster global untuk semua halaman protected. */}
       <Toaster position="top-right" />
     </div>
   )

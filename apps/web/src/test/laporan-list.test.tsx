@@ -172,6 +172,18 @@ describe('halaman /verifikasi', () => {
     expect(screen.getByText('Bangunan')).toBeInTheDocument()
     expect(screen.getByText('lampu mati')).toBeInTheDocument()
 
+    // Shell pengelola menggantikan AppNav di /verifikasi.
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
+    expect(nav.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(
+      screen.queryByRole('button', { name: 'Akun' }),
+    ).not.toBeInTheDocument()
+
     // status enum ditampilkan sebagai label, bukan value mentah.
     // selector 'span' dipakai biar gak ketimpa menuitem (mock dropdown
     // selalu render isinya di DOM, produksi pakai portal).
