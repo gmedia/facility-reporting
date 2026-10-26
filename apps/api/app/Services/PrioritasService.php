@@ -5,16 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Data\PrioritasData;
+use App\Enums\PrioritasKategori;
 use InvalidArgumentException;
 
 final class PrioritasService
 {
-    public const KATEGORI_TINGGI = 'tinggi';
-
-    public const KATEGORI_SEDANG = 'sedang';
-
-    public const KATEGORI_RENDAH = 'rendah';
-
     /**
      * Hitung skor SMART dari empat nilai kriteria.
      */
@@ -50,16 +45,16 @@ final class PrioritasService
         }
     }
 
-    private function kategori(float $skor): string
+    private function kategori(float $skor): PrioritasKategori
     {
         if ($skor >= (float) config('prioritas.kategori.tinggi')) {
-            return self::KATEGORI_TINGGI;
+            return PrioritasKategori::Tinggi;
         }
 
         if ($skor >= (float) config('prioritas.kategori.sedang')) {
-            return self::KATEGORI_SEDANG;
+            return PrioritasKategori::Sedang;
         }
 
-        return self::KATEGORI_RENDAH;
+        return PrioritasKategori::Rendah;
     }
 }
