@@ -1,5 +1,11 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
-import { Toaster } from '@/components/ui/sonner'
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useRouterState,
+} from '@tanstack/react-router'
+import { AdminShell } from '@/features/admin/admin-shell'
+import { AntrianTabs } from '@/features/admin/antrian-tabs'
 
 export const Route = createFileRoute('/_protected/admin')({
   beforeLoad: ({ context }) => {
@@ -13,27 +19,16 @@ export const Route = createFileRoute('/_protected/admin')({
 })
 
 function AdminLayout() {
+  const { user } = Route.useRouteContext()
+  // Tab Semua/Menunggu/Terverifikasi cuma relevan di dashboard (/admin),
+  // jadi di halaman lain (akun, pengaturan, statistik) jangan ditampilin.
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
   return (
-    <div className="bg-muted/40 min-h-screen">
-      <header className="bg-background border-b">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Facility Reporting</span>
-            <span className="text-muted-foreground text-sm">/ Admin</span>
-          </div>
-          <nav className="flex items-center gap-4 text-sm">
-            <a href="/" className="text-muted-foreground hover:text-foreground">
-              Beranda
-            </a>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        <Outlet />
-      </main>
-
-      <Toaster position="top-right" />
-    </div>
+    <AdminShell user={user} header={pathname === '/admin' && <AntrianTabs />}>
+      <Outlet />
+    </AdminShell>
   )
 }

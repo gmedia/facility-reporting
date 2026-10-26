@@ -80,6 +80,7 @@ beforeEach(() => {
   mockGet({
     '/auth/me': () => ok({ data: superAdmin }),
     '/admin/users': () => ok({ data: [superAdmin] }),
+    '/reports': () => ok({ data: [] }),
   })
 })
 
@@ -116,10 +117,12 @@ describe('guard /admin', () => {
 
 describe('dashboard CRUD admin', () => {
   it('menampilkan daftar akun admin', async () => {
-    renderAt('/admin')
+    renderAt('/admin/akun')
 
-    expect(await screen.findByText('Super Admin')).toBeInTheDocument()
-    expect(screen.getByText('superadmin@facility.test')).toBeInTheDocument()
+    expect(
+      await screen.findByText('superadmin@facility.test'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Daftar akun')).toBeInTheDocument()
     expect(api.GET).toHaveBeenCalledWith('/admin/users')
   })
 
@@ -128,13 +131,13 @@ describe('dashboard CRUD admin', () => {
       '/auth/me': () => ok({ data: superAdmin }),
       '/admin/users': () => fail(403, 'Forbidden'),
     })
-    renderAt('/admin')
+    renderAt('/admin/akun')
 
     expect(await screen.findByText('Akses ditolak')).toBeInTheDocument()
   })
 
   it('menambahkan akun admin baru', async () => {
-    renderAt('/admin')
+    renderAt('/admin/akun')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Tambah akun' }))
     const dialog = await screen.findByRole('dialog')
@@ -162,7 +165,7 @@ describe('dashboard CRUD admin', () => {
   })
 
   it('menghapus akun admin setelah konfirmasi', async () => {
-    renderAt('/admin')
+    renderAt('/admin/akun')
 
     fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Ya, hapus' }))

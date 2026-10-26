@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { AdminShell } from '@/features/admin/admin-shell'
 import { LaporanList } from '@/features/laporan/laporan-list'
 
 // Role yang boleh melihat laporan SEMUA mahasiswa.
@@ -24,9 +25,19 @@ export const Route = createFileRoute('/_protected/verifikasi')({
 })
 
 function LaporanPage() {
+  const { user } = Route.useRouteContext()
+
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <LaporanList />
-    </main>
+    <AdminShell user={user}>
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Verifikasi</h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            Daftar laporan dari semua mahasiswa.
+          </p>
+        </div>
+        <LaporanList />
+      </div>
+    </AdminShell>
   )
 }

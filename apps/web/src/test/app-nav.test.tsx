@@ -152,7 +152,7 @@ describe('AppNav — menu per role', () => {
 
     expect(nav.getByRole('link', { name: 'Kelola Akun' })).toHaveAttribute(
       'href',
-      '/admin',
+      '/admin/akun',
     )
     expect(
       nav.queryByRole('link', { name: 'Lapor Kerusakan' }),

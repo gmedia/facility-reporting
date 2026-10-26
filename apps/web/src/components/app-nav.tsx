@@ -37,7 +37,7 @@ import { logoutMutationOptions, type User } from '@/features/auth/auth-query'
 //   super_admin  → /admin/pengaturan, /admin/statistik (dijangkau via sidebar)
 // ============================================================
 type MenuItem = {
-  to: '/dashboard' | '/lapor' | '/admin' | '/verifikasi'
+  to: '/dashboard' | '/lapor' | '/admin' | '/admin/akun' | '/verifikasi'
   label: string
 }
 
@@ -45,7 +45,7 @@ const MENU_PER_ROLE: Record<string, MenuItem[]> = {
   super_admin: [
     { to: '/dashboard', label: 'Beranda' },
     { to: '/verifikasi', label: 'Verifikasi' },
-    { to: '/admin', label: 'Kelola Akun' },
+    { to: '/admin/akun', label: 'Kelola Akun' },
   ],
   admin: [
     { to: '/dashboard', label: 'Beranda' },

@@ -32,11 +32,7 @@ export function DashboardActions({ role }: { role: string }) {
       )}
 
       {role === 'super_admin' && (
-        <Link
-          to="/admin"
-          search={{ filter: 'semua' }}
-          className={TOMBOL_SEKUNDER}
-        >
+        <Link to="/admin/akun" className={TOMBOL_SEKUNDER}>
           <Users aria-hidden="true" className="size-4" />
           Kelola Akun
         </Link>

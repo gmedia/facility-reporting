@@ -1,4 +1,9 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useRouterState,
+} from '@tanstack/react-router'
 import { Toaster } from '@/components/ui/sonner'
 import { AppNav } from '@/components/app-nav'
 import { queryClient } from '@/app/query-client'
@@ -12,15 +17,23 @@ async function requireUser(): Promise<User> {
   }
 }
 
+// Route yang bingkainya sendiri (AdminShell: sidebar hijau + header bar):
+// /verifikasi sama /admin*. AppNav NGGAK dirender di sini biar nggak dobel —
+// AppNav cuma buat /dashboard & /lapor. Guard tetap di masing-masing route.
+function isAdminAppPath(pathname: string): boolean {
+  return pathname === '/verifikasi' || pathname.startsWith('/admin')
+}
+
 function ProtectedLayout() {
   const { user } = Route.useRouteContext()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
 
   return (
     <div className="bg-muted/40 min-h-screen">
-      <AppNav user={user} />
+      {!isAdminAppPath(pathname) && <AppNav user={user} />}
       <Outlet />
-      {/* Toaster global. Anas juga punya satu di _protected/admin/route.tsx —
-          kabarin dia supaya dilepas, biar nggak dobel. */}
       <Toaster position="top-right" />
     </div>
   )
