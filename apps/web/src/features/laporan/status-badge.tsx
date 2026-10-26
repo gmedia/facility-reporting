@@ -1,9 +1,9 @@
 import { STATUS_LABEL, STATUS_TONE, type LaporanStatus } from './laporan-query'
 
 // schema.d.ts ngetik `LaporanResource['status']` sebagai `string`, padahal
-// backend cuma mau 5 nilai `LaporanStatus`. Karena itu semua akses ke
-// STATUS_LABEL/STATUS_TONE harus lewat helper ini — dan tetap ditampilkan
-// apa adanya kalau nilainya di luar enum, biar gak lenyap diam-diam.
+// backend cuma mau 5 nilai `LaporanStatus`. Helper ini memetakan label/tone
+// dan tetap menampilkan nilai asli kalau statusnya di luar enum, biar gak
+// lenyap diam-diam.
 //
 // Sengaja TIDAK diekspor: cukup dipakai di dalam file ini. Kalau diekspor,
 // eslint react-refresh/only-export-components bakal nyomot file ini
@@ -17,13 +17,9 @@ function statusInfo(status: string): { label: string; tone: string } {
   }
 }
 
-// Dipakai halaman riwayat mahasiswa (/laporan/saya).
-//
-// CATATAN BUAT ANAS: laporan-list.tsx (milikmu) masih punya salinan helper
-// + komponen Badge sendiri di dalam file-nya. File itu sengaja TIDAK aku
-// sentuh di PR ini biar gak bentrok sama kerjaan "polish /verifikasi" kamu.
-// Kalau mau nyatu, tinggal ganti pakai <StatusBadge> dari sini —
-// palet warnanya sama persis (STATUS_TONE).
+// Dipakai bareng halaman riwayat mahasiswa (/laporan/saya) dan antrean
+// verifikasi (/verifikasi). Palet warnanya tetap dari STATUS_TONE, jadi
+// label status konsisten di kedua halaman.
 export function StatusBadge({ status }: { status: string }) {
   const { label, tone } = statusInfo(status)
   return (
