@@ -23,6 +23,12 @@ class StoreLaporanRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
+     * `foto` wajib sejak 26 Okt 2026: form di frontend sudah menolak
+     * pengiriman tanpa foto, dan aturan ini menutup bypass lewat client
+     * lain. Kolom `laporans.foto` tetap nullable di database karena ada
+     * laporan yang dibuat sebelum aturan ini berlaku dan memang tidak
+     * memiliki foto.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -31,7 +37,7 @@ class StoreLaporanRequest extends FormRequest
             'kategori' => ['required', 'string', Rule::enum(LaporanKategori::class)],
             'lokasi' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
-            'foto' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

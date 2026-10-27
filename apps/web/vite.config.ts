@@ -19,6 +19,11 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8000',
       '/sanctum': 'http://localhost:8000',
+      // Foto laporan disimpan Laravel di disk `public` dan dikembalikan
+      // sebagai path relatif ("laporan/abc.jpg"). Frontend memintanya ke
+      // /storage/... pada origin-nya sendiri, jadi tanpa proxy ini semua
+      // <img> foto laporan bakal 404 di dev.
+      '/storage': 'http://localhost:8000',
     },
   },
   test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] },

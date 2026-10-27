@@ -1,20 +1,7 @@
-import type { Laporan } from '@/features/laporan/laporan-query'
-
-export type Statistik = {
-  total: number
-  menunggu: number
-  diproses: number
-  selesai: number
-}
-
-export function hitungStatistik(laporan: Laporan[]): Statistik {
-  return {
-    total: laporan.length,
-    menunggu: laporan.filter((l) => l.status === 'menunggu_verifikasi').length,
-    diproses: laporan.filter((l) => l.status === 'diproses').length,
-    selesai: laporan.filter((l) => l.status === 'selesai').length,
-  }
-}
+// Statistik + hitungStatistik() pindah ke
+// features/laporan/ringkasan-laporan.tsx — sekarang dipakai dua halaman
+// (Beranda dan Riwayat), jadi rumusnya tidak boleh tinggal di fitur
+// dashboard saja.
 
 const tanggalFormat = new Intl.DateTimeFormat('id-ID', {
   day: 'numeric',

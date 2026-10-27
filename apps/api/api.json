@@ -575,10 +575,7 @@
                         "maxLength": 2000
                     },
                     "foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "format": "binary",
                         "contentMediaType": "application/octet-stream",
                         "description": "Maximum file size: 2048 kilobytes."
@@ -587,7 +584,8 @@
                 "required": [
                     "kategori",
                     "lokasi",
-                    "deskripsi"
+                    "deskripsi",
+                    "foto"
                 ],
                 "title": "StoreLaporanRequest"
             },

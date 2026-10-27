@@ -133,6 +133,20 @@ async function isiForm(user: UserEvent) {
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
   )
+  pilihFoto()
+}
+
+// Foto sekarang wajib, jadi tiap test yang mau submit harus nempelkin file.
+// `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
+// sama dengan yang dilakukan library upload pada umumnya.
+function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
+  const input = screen.getByLabelText('Foto')
+  const file = new File(['isi-foto'], nama, { type: tipe })
+  Object.defineProperty(input, 'files', {
+    value: [file],
+    configurable: true,
+  })
+  fireEvent.change(input)
 }
 
 beforeEach(() => {
@@ -156,7 +170,7 @@ describe('halaman /lapor', () => {
     expect(screen.getByLabelText('Kategori')).toBeInTheDocument()
     expect(screen.getByLabelText('Lokasi')).toBeInTheDocument()
     expect(screen.getByLabelText('Deskripsi')).toBeInTheDocument()
-    expect(screen.getByLabelText('Foto (opsional)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Foto')).toBeInTheDocument()
   })
 
   it('menampilkan error validasi kalau form kosong', async () => {
@@ -169,6 +183,10 @@ describe('halaman /lapor', () => {
     expect(await screen.findByText('Lokasi wajib diisi')).toBeInTheDocument()
     expect(
       await screen.findByText('Deskripsi minimal 10 karakter'),
+    ).toBeInTheDocument()
+    // Kontrak baru: foto tidak lagi opsional.
+    expect(
+      await screen.findByText('Foto wajib dilampirkan'),
     ).toBeInTheDocument()
   })
 

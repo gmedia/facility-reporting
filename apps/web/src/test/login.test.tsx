@@ -104,6 +104,13 @@ describe('halaman login', () => {
     expect(
       await screen.findByRole('heading', { name: 'Halo, User Biasa' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
+
+    // Halaman user sekarang dibungkus UserShell (sidebar), bukan AppNav
+    // (topbar). Yang dibuktikan tetap sama: sesudah guard lolos, bingkai
+    // navigasi halaman user berhasil ke-render sampai tuntas.
+    expect(
+      screen.getByRole('complementary', { name: 'Navigasi utama' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Keluar' })).toBeInTheDocument()
   })
 })
