@@ -47,7 +47,16 @@ const formSchema = z.object({
     .min(10, 'Deskripsi minimal 10 karakter')
     .max(2000, 'Deskripsi maksimal 2000 karakter'),
   // validasi ukuran/tipe file ditangani manual di onSubmit
-  foto: z.custom<FileList>().optional(),
+  //
+  // Fotonya WAJIB (permintaan 26 Okt). Bentuknya tetap `.optional()` +
+  // `.refine`, bukan `z.custom` polos, karena `z.input` harus mengizinkan
+  // `undefined` supaya defaultValues dan field yang belum tersentuh tetap
+  // lolos tipe. Yang menolak adalah refinement-nya, dan dia jalan juga
+  // waktu nilainya undefined — jadi pesan "wajib" tetap muncul.
+  foto: z
+    .custom<FileList>()
+    .optional()
+    .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
 })
 
 // Beda tipenya, dan ini penting:
@@ -192,16 +201,17 @@ export function LaporanForm() {
         name="foto"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-foto">Foto (opsional)</FieldLabel>
+            <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
             <Input
               id="laporan-foto"
               type="file"
               accept={FOTO_ACCEPT}
+              required
               onChange={(event) => field.onChange(event.target.files)}
               onBlur={field.onBlur}
             />
             <p className="text-muted-foreground text-xs">
-              JPG, PNG, atau WebP. Maksimal 2 MB.
+              Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
             </p>
             <FieldError
               errors={fieldState.error ? [fieldState.error] : undefined}
@@ -210,7 +220,15 @@ export function LaporanForm() {
         )}
       />
 
-      <Button type="submit" disabled={busy}>
+      {/* Tombol aksi utama diganti hijau tua, bukan warna --primary bawaan
+          tema (hitam netral): di /lapor semua aksi penting berada di satu
+          tempat dan harus kelihatan sebagai bagian dari identitas, bukan
+          elemen asing. */}
+      <Button
+        type="submit"
+        disabled={busy}
+        className="h-10 rounded-2xl bg-[#0d3f31] text-sm font-semibold hover:bg-[#0a3127]"
+      >
         {busy ? 'Mengirim...' : 'Kirim Laporan'}
       </Button>
     </form>

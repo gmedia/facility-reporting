@@ -92,19 +92,24 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks())
 
-// Inti dari issue #37: "AppNav yang menampilkan menu beda per role".
+// Inti dari issue #37: "menu yang menampilkan menu beda per role".
+//
+// Sejak halaman user pindah ke sidebar (UserShell), menu per role tersebar
+// di dua tempat — UserShell untuk mahasiswa, DashboardShell untuk
+// pengelola — dan keduanya diuji di file ini.
 //
 // Yang dites cuma menu-item yang routenya SUDAH ADA. /prioritas,
-// /laporan/saya, /admin/statistik dll. belum dibuat, jadi belum
-// dimasukin ke MENU_PER_ROLE — lihat komentar di app-nav.tsx.
+// /admin/statistik dll. belum dibuat, jadi belum dimasukkan.
 describe('Navigasi per role', () => {
-  it('role user: lihat Beranda dan Lapor Kerusakan', async () => {
+  it('role user: sidebar punya Beranda, Lapor Kerusakan, dan Riwayat Laporan', async () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
 
-    // Scope ke header nav — tombol aksi di dashboard juga berlabel
-    // "Lapor Kerusakan", jadi jangan query seluruh halaman.
-    const nav = within(await screen.findByRole('banner'))
+    // Scope ke sidebar — tombol aksi di hero juga berlabel
+    // "Laporkan Kerusakan", jadi jangan query seluruh halaman.
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi utama' }),
+    )
 
     expect(nav.getByRole('link', { name: 'Beranda' })).toHaveAttribute(
       'href',
@@ -116,14 +121,18 @@ describe('Navigasi per role', () => {
       'href',
       '/lapor',
     )
+    expect(nav.getByRole('link', { name: 'Riwayat Laporan' })).toHaveAttribute(
+      'href',
+      '/laporan/saya',
+    )
 
     // Issue #42: /verifikasi khusus pengelola, user biasa gak boleh lihat.
     expect(
       nav.queryByRole('link', { name: 'Verifikasi' }),
     ).not.toBeInTheDocument()
-
-    // Pemicu dropdown akun selalu ada, apa pun rolenya.
-    expect(nav.getByRole('button', { name: 'Akun' })).toBeInTheDocument()
+    expect(
+      nav.queryByRole('link', { name: 'Akun Admin' }),
+    ).not.toBeInTheDocument()
   })
 
   it('role admin: dashboard memakai sidebar tanpa menu Lapor Kerusakan', async () => {
@@ -179,30 +188,23 @@ describe('Navigasi per role', () => {
     )
   })
 
-  // Regression: DropdownMenuLabel (Base UI Menu.GroupLabel) harus di dalam
-  // Menu.Group. Kalau tidak, Base UI lempar "MenuGroupContext is missing"
-  // dan seluruh halaman crash saat dropdown dibuka. Konten menu di-mount
-  // lazy, jadi tanpa test ini bugnya lolos dari CI.
-  it('dropdown akun bisa dibuka tanpa crash', async () => {
+  // Dropdown akun di topbar ikut hilang bersama AppNav, jadi logout pindah
+  // jadi tombol biasa di kaki sidebar. Tanpa portal Base UI, mount-nya jauh
+  // lebih sederhana — tapi tetap diuji biar tombolnya gak cuma hiasan.
+  it('sidebar user: tombol Keluar tampil tanpa crash', async () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Akun' }))
-
-    // Pakai role menuitem, bukan teks: dashboard juga punya tombol "Keluar".
     expect(
-      await screen.findByRole('menuitem', { name: 'Keluar' }),
+      await screen.findByRole('button', { name: 'Keluar' }),
     ).toBeInTheDocument()
   })
 
-  // Regression: Base UI Menu.Item cuma punya `onClick`. Kalau pakai
-  // `onSelect` (event DOM), handler-nya gak pernah kepicu.
-  it('item Keluar di dropdown akun benar-benar ngejalanin logout', async () => {
+  it('sidebar user: tombol Keluar benar-benar ngejalanin logout', async () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Akun' }))
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Keluar' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }))
 
     await waitFor(() => expect(api.POST).toHaveBeenCalled())
   })

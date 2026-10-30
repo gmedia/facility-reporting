@@ -76,16 +76,17 @@ vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
 // di jsdom. Komponennya di-swap jadi HTML sederhana di test ini — produksi
 // tetap DropdownMenu. Konsekuensinya isi menu selalu ada di DOM, jadi test
 // tidak perlu buka popup dulu.
-// Perlu diekspor SEMUA: modul ini di-mock utuh, jadi <AppNav> yang juga
-// ngederender <DropdownMenuLabel>/<DropdownMenuSeparator> ikut kena.
+// Perlu diekspor SEMUA: modul ini di-mock utuh, jadi <verifikasi-page>
+// yang juga ngederender <DropdownMenuLabel>/<DropdownMenuSeparator> ikut
+// kena.
 vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children?: ReactNode }) => <>{children}</>,
   DropdownMenuLabel: ({ children }: { children?: ReactNode }) => (
     <div className="px-2 py-1.5">{children}</div>
   ),
   DropdownMenuSeparator: () => <hr />,
-  // AppNav juga render modul ini, jadi semua export yang dipakai AppNav
-  // harus ada di mock — kalau kurang, AppNav crash.
+  // verifikasi-page juga render modul ini, jadi semua export yang
+  // dipakainya harus ada di mock — kalau kurang, halaman crash.
   DropdownMenuGroup: ({ children }: { children?: ReactNode }) => (
     <div role="group">{children}</div>
   ),
@@ -172,7 +173,7 @@ describe('halaman /verifikasi', () => {
     expect(screen.getByText('Bangunan')).toBeInTheDocument()
     expect(screen.getByText('lampu mati')).toBeInTheDocument()
 
-    // Shell pengelola menggantikan AppNav di /verifikasi.
+    // Shell pengelola menaungi halaman /verifikasi.
     const nav = within(
       await screen.findByRole('complementary', { name: 'Navigasi admin' }),
     )

@@ -7,6 +7,8 @@ use App\Enums\UserRole;
 use App\Models\Laporan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\patchJson;
 
@@ -14,6 +16,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withHeader('Origin', 'http://localhost:5173');
+    Storage::fake('public');
 });
 
 it('lets an admin change a report status', function (): void {
@@ -104,13 +107,20 @@ it('returns 404 for a report that does not exist', function (): void {
 it('cannot be reached through mass assignment on create', function (): void {
     $user = User::factory()->create(['role' => UserRole::User->value]);
 
+    // Multipart, bukan postJson: foto kini wajib dan tidak bisa dikirim
+    // sebagai JSON. Payload-nya sengaja tetap mengirim `status` — itu yang
+    // sedang diuji, foto cuma syarat supaya request-nya lolos validasi.
     $this->actingAs($user)
-        ->postJson('/api/v1/reports', [
+        ->post('/api/v1/reports', [
             'kategori' => 'elektronik',
             'lokasi' => 'Lab 3 Lt.2',
             'deskripsi' => 'Proyektor mati total sejak pagi.',
+            'foto' => UploadedFile::fake()->createWithContent(
+                'foto.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg=='),
+            ),
             'status' => LaporanStatus::Selesai->value,
-        ])
+        ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('data.status', LaporanStatus::MenungguVerifikasi->value);
 });

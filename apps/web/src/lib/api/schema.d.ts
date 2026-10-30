@@ -194,7 +194,7 @@ export interface components {
        * Format: binary
        * @description Maximum file size: 2048 kilobytes.
        */
-      foto?: string | null
+      foto: string
     }
     /** StoreUserRequest */
     StoreUserRequest: {
