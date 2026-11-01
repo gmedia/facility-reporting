@@ -46,6 +46,46 @@ export interface paths {
     patch: operations['laporan.updateStatus']
     trace?: never
   }
+  '/reports/{laporan}/bukti': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Upload foto bukti laporan
+     * @description Upload foto bukti untuk laporan. Hanya admin dan super_admin.
+     */
+    patch: operations['laporan.updateBukti']
+    trace?: never
+  }
+  '/reports/{laporan}/history': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Riwayat status laporan
+     * @description Ambil riwayat perubahan status suatu laporan. Hanya admin dan super_admin.
+     */
+    get: operations['laporan.history']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/auth/login': {
     parameters: {
       query?: never
@@ -226,6 +266,28 @@ export interface components {
       email?: string
       password?: string
     }
+    /** UpdateLaporanBuktiRequest */
+    UpdateLaporanBuktiRequest: {
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti: string
+    }
+    /** LaporanStatusHistoryResource */
+    LaporanStatusHistoryResource: {
+      id: number
+      laporan_id: number
+      status_from?: string | null
+      status_to: string
+      alasan?: string | null
+      changed_by: number
+      changed_by_name?: string | null
+      /** Format: date-time */
+      created_at: string | null
+      /** Format: date-time */
+      updated_at: string | null
+    }
     /** UserResource */
     UserResource: {
       id: number
@@ -378,6 +440,67 @@ export interface operations {
       403: components['responses']['AuthorizationException']
       404: components['responses']['ModelNotFoundException']
       422: components['responses']['ValidationException']
+    }
+  }
+  'laporan.updateBukti': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['UpdateLaporanBuktiRequest']
+      }
+    }
+    responses: {
+      /** @description `LaporanResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      403: components['responses']['AuthorizationException']
+      404: components['responses']['ModelNotFoundException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'laporan.history': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Array of `LaporanStatusHistoryResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanStatusHistoryResource'][]
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      403: components['responses']['AuthorizationException']
+      404: components['responses']['ModelNotFoundException']
     }
   }
   'auth.login': {

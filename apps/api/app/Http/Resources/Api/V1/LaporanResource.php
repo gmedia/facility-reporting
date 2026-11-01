@@ -30,7 +30,7 @@ final class LaporanResource extends JsonResource
             'foto' => $this->resource->foto,
             'status' => $this->resource->status->value,
             'skor_prioritas' => $skor,
-            'prioritas_kategori' => $skor !== null ? $this->kategoriDariSkor($skor) : null,
+            'prioritas_kategori' => $skor !== null ? $this->kategoriDariSkor((float) $skor) : null,
             'nilai_kerusakan' => $this->resource->nilai_kerusakan,
             'nilai_risiko' => $this->resource->nilai_risiko,
             'nilai_dampak' => $this->resource->nilai_dampak,

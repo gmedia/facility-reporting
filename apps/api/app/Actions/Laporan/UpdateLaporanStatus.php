@@ -56,7 +56,7 @@ final class UpdateLaporanStatus
             'status_from' => $statusFrom,
             'status_to' => $data->status->value,
             'alasan' => $data->alasan,
-            'changed_by' => auth()->id(),
+            'changed_by' => auth()->user()?->id,
         ]);
 
         return $laporan;

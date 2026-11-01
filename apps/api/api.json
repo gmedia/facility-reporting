@@ -153,6 +153,122 @@
                 }
             }
         },
+        "/reports/{laporan}/bukti": {
+            "patch": {
+                "operationId": "laporan.updateBukti",
+                "description": "Upload foto bukti untuk laporan. Hanya admin dan super_admin.",
+                "summary": "Upload foto bukti laporan",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLaporanBuktiRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LaporanResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LaporanResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/reports/{laporan}/history": {
+            "get": {
+                "operationId": "laporan.history",
+                "description": "Ambil riwayat perubahan status suatu laporan. Hanya admin dan super_admin.",
+                "summary": "Riwayat status laporan",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LaporanStatusHistoryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LaporanStatusHistoryResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -719,6 +835,79 @@
                     }
                 },
                 "title": "UpdateUserRequest"
+            },
+            "UpdateLaporanBuktiRequest": {
+                "type": "object",
+                "properties": {
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "image/*",
+                        "description": "Maximum file size: 2048 kilobytes."
+                    }
+                },
+                "required": [
+                    "foto_bukti"
+                ],
+                "title": "UpdateLaporanBuktiRequest"
+            },
+            "LaporanStatusHistoryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "laporan_id": {
+                        "type": "integer"
+                    },
+                    "status_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status_to": {
+                        "type": "string"
+                    },
+                    "alasan": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "changed_by": {
+                        "type": "integer"
+                    },
+                    "changed_by_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "laporan_id",
+                    "status_to",
+                    "changed_by",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LaporanStatusHistoryResource"
             },
             "UserResource": {
                 "type": "object",

@@ -113,7 +113,7 @@ it('returns 404 for a report that does not exist', function (): void {
 it('cannot be reached through mass assignment on create', function (): void {
     $user = User::factory()->create(['role' => UserRole::User->value]);
 
-    // Multipart, bukan postJson: foto kini wajib dan tidak bisa dikirim
+    // Multipost, bukan postJson: foto kini wajib dan tidak bisa dikirim
     // sebagai JSON. Payload-nya sengaja tetap mengirim `status` — itu yang
     // sedang diuji, foto cuma syarat supaya request-nya lolos validasi.
     $this->actingAs($user)
@@ -129,4 +129,60 @@ it('cannot be reached through mass assignment on create', function (): void {
         ], ['Accept' => 'application/json'])
         ->assertCreated()
         ->assertJsonPath('data.status', LaporanStatus::MenungguVerifikasi->value);
+});
+
+it('lets an admin upload foto bukti', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::Admin->value]);
+    $laporan = Laporan::factory()->create();
+
+    $this->actingAs($admin)
+        ->patch('/api/v1/reports/'.$laporan->id.'/bukti', [
+            'foto_bukti' => UploadedFile::fake()->image('bukti.jpg'),
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.foto_bukti', $laporan->fresh()->foto_bukti);
+
+    $this->assertDatabaseHas('laporans', [
+        'id' => $laporan->id,
+        'foto_bukti' => $laporan->fresh()->foto_bukti,
+    ]);
+});
+
+it('lets an admin see riwayat status perubahan', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::Admin->value]);
+    $laporan = Laporan::factory()->create(['status' => LaporanStatus::MenungguVerifikasi->value]);
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/reports/{$laporan->id}/status", [
+            'status' => LaporanStatus::Valid->value,
+            'nilai_kerusakan' => 5,
+            'nilai_risiko' => 4,
+            'nilai_dampak' => 3,
+            'nilai_frekuensi' => 2,
+        ])
+        ->assertOk();
+
+    $this->actingAs($admin)
+        ->get("/api/v1/reports/{$laporan->id}/history")
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.status_to', LaporanStatus::Valid->value);
+});
+
+it('forbids a regular user from uploading bukti', function (): void {
+    $user = User::factory()->create(['role' => UserRole::User->value]);
+    $laporan = Laporan::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)
+        ->patch('/api/v1/reports/'.$laporan->id.'/bukti', [
+            'foto_bukti' => UploadedFile::fake()->image('bukti.jpg'),
+        ])
+        ->assertForbidden();
+});
+
+it('rejects unauthenticated bukti upload', function (): void {
+    $laporan = Laporan::factory()->create();
+
+    $this->patchJson('/api/v1/reports/'.$laporan->id.'/bukti', [])
+        ->assertUnauthorized();
 });
