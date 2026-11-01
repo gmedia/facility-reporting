@@ -491,6 +491,48 @@
                     "status": {
                         "type": "string"
                     },
+                    "skor_prioritas": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "prioritas_kategori": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "nilai_kerusakan": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_risiko": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_dampak": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_frekuensi": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "foto_bukti": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "created_at": {
                         "type": [
                             "string",
@@ -514,6 +556,13 @@
                     "deskripsi",
                     "foto",
                     "status",
+                    "skor_prioritas",
+                    "prioritas_kategori",
+                    "nilai_kerusakan",
+                    "nilai_risiko",
+                    "nilai_dampak",
+                    "nilai_frekuensi",
+                    "foto_bukti",
                     "created_at",
                     "updated_at"
                 ],
@@ -618,6 +667,33 @@
                 "properties": {
                     "status": {
                         "$ref": "#/components/schemas/LaporanStatus"
+                    },
+                    "nilai_kerusakan": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_risiko": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_dampak": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_frekuensi": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "alasan": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "required": [

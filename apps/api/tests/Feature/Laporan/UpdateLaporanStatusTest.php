@@ -43,9 +43,15 @@ it('lets a super admin change a report status', function (): void {
     $this->actingAs($superAdmin)
         ->patchJson("/api/v1/reports/{$laporan->id}/status", [
             'status' => LaporanStatus::Ditolak->value,
+            'alasan' => 'Tidak layak ditindaklanjuti',
         ])
         ->assertOk()
         ->assertJsonPath('data.status', LaporanStatus::Ditolak->value);
+
+    $this->assertDatabaseHas('laporans', [
+        'id' => $laporan->id,
+        'status' => LaporanStatus::Ditolak->value,
+    ]);
 });
 
 it('forbids a regular user from changing any status', function (): void {

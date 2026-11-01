@@ -165,6 +165,13 @@ export interface components {
       deskripsi: string
       foto: string | null
       status: string
+      skor_prioritas: string | null
+      prioritas_kategori: string | null
+      nilai_kerusakan: number | null
+      nilai_risiko: number | null
+      nilai_dampak: number | null
+      nilai_frekuensi: number | null
+      foto_bukti: string | null
       /** Format: date-time */
       created_at: string | null
       /** Format: date-time */
@@ -206,6 +213,11 @@ export interface components {
     /** UpdateLaporanStatusRequest */
     UpdateLaporanStatusRequest: {
       status: components['schemas']['LaporanStatus']
+      nilai_kerusakan?: number
+      nilai_risiko?: number
+      nilai_dampak?: number
+      nilai_frekuensi?: number
+      alasan?: string | null
     }
     /** UpdateUserRequest */
     UpdateUserRequest: {
