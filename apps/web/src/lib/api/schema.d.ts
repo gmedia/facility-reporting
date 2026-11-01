@@ -59,10 +59,7 @@ export interface paths {
     delete?: never
     options?: never
     head?: never
-    /**
-     * Upload foto bukti laporan
-     * @description Upload foto bukti untuk laporan. Hanya admin dan super_admin.
-     */
+    /** Upload foto bukti untuk laporan */
     patch: operations['laporan.updateBukti']
     trace?: never
   }
@@ -73,10 +70,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /**
-     * Riwayat status laporan
-     * @description Ambil riwayat perubahan status suatu laporan. Hanya admin dan super_admin.
-     */
+    /** Ambil riwayat perubahan status suatu laporan */
     get: operations['laporan.history']
     put?: never
     post?: never
@@ -223,6 +217,20 @@ export interface components {
      */
     LaporanStatus:
       'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
+    /** LaporanStatusHistoryResource */
+    LaporanStatusHistoryResource: {
+      id: number
+      laporan_id: number
+      status_from: string | null
+      status_to: string
+      alasan: string | null
+      changed_by: number
+      changed_by_name: string
+      /** Format: date-time */
+      created_at: string | null
+      /** Format: date-time */
+      updated_at: string | null
+    }
     /** LoginRequest */
     LoginRequest: {
       identifier: string
@@ -250,6 +258,14 @@ export interface components {
       email: string
       password: string
     }
+    /** UpdateLaporanBuktiRequest */
+    UpdateLaporanBuktiRequest: {
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti: string
+    }
     /** UpdateLaporanStatusRequest */
     UpdateLaporanStatusRequest: {
       status: components['schemas']['LaporanStatus']
@@ -265,28 +281,6 @@ export interface components {
       /** Format: email */
       email?: string
       password?: string
-    }
-    /** UpdateLaporanBuktiRequest */
-    UpdateLaporanBuktiRequest: {
-      /**
-       * Format: binary
-       * @description Maximum file size: 2048 kilobytes.
-       */
-      foto_bukti: string
-    }
-    /** LaporanStatusHistoryResource */
-    LaporanStatusHistoryResource: {
-      id: number
-      laporan_id: number
-      status_from?: string | null
-      status_to: string
-      alasan?: string | null
-      changed_by: number
-      changed_by_name?: string | null
-      /** Format: date-time */
-      created_at: string | null
-      /** Format: date-time */
-      updated_at: string | null
     }
     /** UserResource */
     UserResource: {
@@ -499,7 +493,6 @@ export interface operations {
         }
       }
       401: components['responses']['AuthenticationException']
-      403: components['responses']['AuthorizationException']
       404: components['responses']['ModelNotFoundException']
     }
   }

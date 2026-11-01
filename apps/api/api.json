@@ -156,8 +156,7 @@
         "/reports/{laporan}/bukti": {
             "patch": {
                 "operationId": "laporan.updateBukti",
-                "description": "Upload foto bukti untuk laporan. Hanya admin dan super_admin.",
-                "summary": "Upload foto bukti laporan",
+                "summary": "Upload foto bukti untuk laporan",
                 "tags": [
                     "Laporan"
                 ],
@@ -219,8 +218,7 @@
         "/reports/{laporan}/history": {
             "get": {
                 "operationId": "laporan.history",
-                "description": "Ambil riwayat perubahan status suatu laporan. Hanya admin dan super_admin.",
-                "summary": "Riwayat status laporan",
+                "summary": "Ambil riwayat perubahan status suatu laporan",
                 "tags": [
                     "Laporan"
                 ],
@@ -262,9 +260,6 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
             }
@@ -695,6 +690,64 @@
                 ],
                 "title": "LaporanStatus"
             },
+            "LaporanStatusHistoryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "laporan_id": {
+                        "type": "integer"
+                    },
+                    "status_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status_to": {
+                        "type": "string"
+                    },
+                    "alasan": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "changed_by": {
+                        "type": "integer"
+                    },
+                    "changed_by_name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "laporan_id",
+                    "status_from",
+                    "status_to",
+                    "alasan",
+                    "changed_by",
+                    "changed_by_name",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LaporanStatusHistoryResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -778,6 +831,21 @@
                 ],
                 "title": "StoreUserRequest"
             },
+            "UpdateLaporanBuktiRequest": {
+                "type": "object",
+                "properties": {
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
+                    }
+                },
+                "required": [
+                    "foto_bukti"
+                ],
+                "title": "UpdateLaporanBuktiRequest"
+            },
             "UpdateLaporanStatusRequest": {
                 "type": "object",
                 "properties": {
@@ -835,79 +903,6 @@
                     }
                 },
                 "title": "UpdateUserRequest"
-            },
-            "UpdateLaporanBuktiRequest": {
-                "type": "object",
-                "properties": {
-                    "foto_bukti": {
-                        "type": "string",
-                        "format": "binary",
-                        "contentMediaType": "image/*",
-                        "description": "Maximum file size: 2048 kilobytes."
-                    }
-                },
-                "required": [
-                    "foto_bukti"
-                ],
-                "title": "UpdateLaporanBuktiRequest"
-            },
-            "LaporanStatusHistoryResource": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "laporan_id": {
-                        "type": "integer"
-                    },
-                    "status_from": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "status_to": {
-                        "type": "string"
-                    },
-                    "alasan": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "changed_by": {
-                        "type": "integer"
-                    },
-                    "changed_by_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "id",
-                    "laporan_id",
-                    "status_to",
-                    "changed_by",
-                    "created_at",
-                    "updated_at"
-                ],
-                "title": "LaporanStatusHistoryResource"
             },
             "UserResource": {
                 "type": "object",
