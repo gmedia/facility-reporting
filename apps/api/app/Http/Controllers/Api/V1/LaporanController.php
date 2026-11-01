@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Laporan\ListLaporan;
+use App\Actions\Laporan\ListLaporanStatusHistory;
 use App\Actions\Laporan\StoreLaporan;
+use App\Actions\Laporan\UpdateLaporanBukti;
 use App\Actions\Laporan\UpdateLaporanStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreLaporanRequest;
+use App\Http\Requests\Api\V1\UpdateLaporanBuktiRequest;
 use App\Http\Requests\Api\V1\UpdateLaporanStatusRequest;
 use App\Http\Resources\Api\V1\LaporanResource;
+use App\Http\Resources\Api\V1\LaporanStatusHistoryResource;
 use App\Models\Laporan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,5 +60,26 @@ final class LaporanController extends Controller
         UpdateLaporanStatus $action,
     ): LaporanResource {
         return new LaporanResource($action($request->toDTO(), $laporan));
+    }
+
+    /**
+     * Upload foto bukti untuk laporan.
+     */
+    public function updateBukti(
+        UpdateLaporanBuktiRequest $request,
+        Laporan $laporan,
+        UpdateLaporanBukti $action,
+    ): LaporanResource {
+        return new LaporanResource($action($request->toDTO(), $laporan));
+    }
+
+    /**
+     * Ambil riwayat perubahan status suatu laporan.
+     */
+    public function history(
+        Laporan $laporan,
+        ListLaporanStatusHistory $action,
+    ): AnonymousResourceCollection {
+        return LaporanStatusHistoryResource::collection($action($laporan));
     }
 }

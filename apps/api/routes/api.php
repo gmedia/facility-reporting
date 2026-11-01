@@ -23,6 +23,8 @@ Route::prefix('v1')->group(function (): void {
 
         Route::middleware('admin')->group(function (): void {
             Route::patch('reports/{laporan}/status', [LaporanController::class, 'updateStatus']);
+            Route::patch('reports/{laporan}/bukti', [LaporanController::class, 'updateBukti']);
+            Route::get('reports/{laporan}/history', [LaporanController::class, 'history']);
         });
 
         Route::middleware('super_admin')->group(function (): void {

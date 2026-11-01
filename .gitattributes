@@ -3,3 +3,5 @@
 *.ts text eol=lf
 *.tsx text eol=lf
 *.lock text eol=lf
+apps/api/api.json text eol=lf
+apps/web/src/lib/api/schema.d.ts text eol=lf
