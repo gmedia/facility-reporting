@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
@@ -20,11 +21,11 @@ return [
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 
     'middleware' => [
-        'authenticate_session' => \Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
+        'authenticate_session' => AuthenticateSession::class,
         'encrypt_cookies' => EncryptCookies::class,
-        'validate_csrf_token' => \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        'validate_csrf_token' => ValidateCsrfToken::class,
     ],
 
     // Use our custom middleware that doesn't force same_site => 'lax'
-    'stateful_middleware' => \App\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    'stateful_middleware' => EnsureFrontendRequestsAreStateful::class,
 ];

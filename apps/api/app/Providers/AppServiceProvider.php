@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,12 +28,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Remove Sanctum's middleware from middleware priority so it doesn't force same_site => 'lax'
         $this->app->booted(function () {
-            $kernel = $this->app->make(\Illuminate\Contracts\Http\Kernel::class);
+            $kernel = $this->app->make(Kernel::class);
             $reflection = new \ReflectionClass($kernel);
             $property = $reflection->getProperty('middlewarePriority');
             $property->setAccessible(true);
             $middlewarePriority = $property->getValue($kernel);
-            $key = array_search(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, $middlewarePriority, true);
+            $key = array_search(EnsureFrontendRequestsAreStateful::class, $middlewarePriority, true);
             if ($key !== false) {
                 unset($middlewarePriority[$key]);
                 $property->setValue($kernel, array_values($middlewarePriority));

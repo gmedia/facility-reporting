@@ -2,11 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Routing\Pipeline;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful as SanctumEnsureFrontendRequestsAreStateful;
-use Laravel\Sanctum\Sanctum;
 
 class EnsureFrontendRequestsAreStateful extends SanctumEnsureFrontendRequestsAreStateful
 {
