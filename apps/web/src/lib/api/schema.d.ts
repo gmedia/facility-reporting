@@ -198,9 +198,12 @@ export interface components {
       lokasi: string
       deskripsi: string
       foto: string | null
-      status: string
+      /** @enum {string} */
+      status:
+        'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
       skor_prioritas: string | null
-      prioritas_kategori: string | null
+      /** @enum {string|null} */
+      prioritas_kategori: 'rendah' | 'sedang' | 'tinggi' | null
       nilai_kerusakan: number | null
       nilai_risiko: number | null
       nilai_dampak: number | null
