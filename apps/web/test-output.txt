@@ -1,0 +1,856 @@
+$ vitest
+
+ RUN  v5.0.5 C:/projek/facility-reporting/apps/web
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > role admin: menampilkan tabel laporan dari GET /reports
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > menampilkan ringkasan, prioritas, dan grafik dari data real
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > klik kartu statistik menyaring tabel
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > role admin: bisa ubah status lewat PATCH
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > filter status menyaring tabel sesuai pilihan
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > filter tanpa hasil: empty state mengikuti filter aktif
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+stderr | src/test/laporan-list.test.tsx > halaman /verifikasi > data kosong: menampilkan pesan, bukan tabel kosong
+ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35) {
+  [stack]: [Getter/Setter],
+  [message]: 'parseSkor is not defined'
+}
+
+The above error occurred in the <VerifikasiPage> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundary.
+
+Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+Warning: ReferenceError: parseSkor is not defined
+    at VerifikasiPage (C:/projek/facility-reporting/apps/web/src/features/laporan/verifikasi-page.tsx:194:26)
+    at Object.react_stack_bottom_frame (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:28571:20)
+    at renderWithHooks (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:8030:22)
+    at updateFunctionComponent (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:10569:19)
+    at beginWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:12205:18)
+    at runWithFiberInDEV (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:1048:13)
+    at performUnitOfWork (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19176:22)
+    at workLoopSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:19004:41)
+    at renderRootSync (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18985:11)
+    at performWorkOnRoot (C:\projek\facility-reporting\node_modules\.pnpm\react-dom@19.3.1_react@19.3.1\node_modules\react-dom\cjs\react-dom-client.development.js:18094:35)
+
+ Γ¥» src/test/laporan-list.test.tsx (10 tests | 7 failed) 7421ms
+   Γ¥» halaman /verifikasi (10)
+     ├ù role admin: menampilkan tabel laporan dari GET /reports 1121ms
+     ├ù menampilkan ringkasan, prioritas, dan grafik dari data real 1030ms
+     ├ù klik kartu statistik menyaring tabel 1014ms
+     ├ù role admin: bisa ubah status lewat PATCH 1017ms
+     ├ù filter status menyaring tabel sesuai pilihan 1014ms
+     ├ù filter tanpa hasil: empty state mengikuti filter aktif 1007ms
+     ├ù data kosong: menampilkan pesan, bukan tabel kosong 1016ms
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > role admin: menampilkan tabel laporan dari GET /reports
+TestingLibraryElementError: Unable to find an element with the text: gedung h. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:172:25
+    170|     renderAt('/verifikasi')
+    171|
+    172|     expect(await screen.findByText('gedung h')).toBeInTheDocument()
+       |                         ^
+    173|     expect(screen.getByText('Bangunan')).toBeInTheDocument()
+    174|     expect(screen.getByText('lampu mati')).toBeInTheDocument()
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > menampilkan ringkasan, prioritas, dan grafik dari data real
+TestingLibraryElementError: Unable to find an element with the text: Antrian verifikasi. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:202:25
+    200|     renderAt('/verifikasi')
+    201|
+    202|     expect(await screen.findByText('Antrian verifikasi')).toBeInTheDocΓÇª
+       |                         ^
+    203|     expect(
+    204|       screen.getByRole('region', { name: 'Ringkasan laporan' }),
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > klik kartu statistik menyaring tabel
+TestingLibraryElementError: Unable to find an element with the text: lampu mati. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:229:18
+    227|     renderAt('/verifikasi')
+    228|
+    229|     await screen.findByText('lampu mati')
+       |                  ^
+    230|     const ringkasan = within(
+    231|       screen.getByRole('region', { name: 'Ringkasan laporan' }),
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > role admin: bisa ubah status lewat PATCH
+TestingLibraryElementError: Unable to find an element with the text: gedung h. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:246:18
+    244|   it('role admin: bisa ubah status lewat PATCH', async () => {
+    245|     renderAt('/verifikasi')
+    246|     await screen.findByText('gedung h')
+       |                  ^
+    247|
+    248|     fireEvent.click(screen.getByRole('menuitem', { name: 'Selesai' }))
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > filter status menyaring tabel sesuai pilihan
+TestingLibraryElementError: Unable to find an element with the text: lampu mati. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:289:18
+    287|     renderAt('/verifikasi')
+    288|
+    289|     await screen.findByText('lampu mati')
+       |                  ^
+    290|     const filterGroup = screen.getByRole('group', { name: 'Filter statΓÇª
+    291|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > filter tanpa hasil: empty state mengikuti filter aktif
+TestingLibraryElementError: Unable to find an element with the text: lampu mati. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:312:18
+    310|     renderAt('/verifikasi')
+    311|
+    312|     await screen.findByText('lampu mati')
+       |                  ^
+    313|     const filterGroup = screen.getByRole('group', { name: 'Filter statΓÇª
+    314|
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/7]ΓÄ»
+
+ FAIL  src/test/laporan-list.test.tsx > halaman /verifikasi > data kosong: menampilkan pesan, bukan tabel kosong
+TestingLibraryElementError: Unable to find an element with the text: Belum ada laporan masuk.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      style="padding: 0.5rem; max-width: 100%;"
+    >
+      <div
+        style="display: flex; align-items: center; gap: 0.5rem;"
+      >
+        <strong
+          style="font-size: 1rem;"
+        >
+          Something went wrong!
+        </strong>
+        <button
+          style="appearance: none; font-size: 0.6em; border: 1px solid; padding: 0.1rem 0.2rem; font-weight: bold; border-radius: 0.25rem;"
+        >
+          Hide Error
+        </button>
+      </div>
+      <div
+        style="height: 0.25rem;"
+      />
+      <div>
+        <pre
+          style="font-size: 0.7em; border: 1px solid red; border-radius: 0.25rem; padding: 0.3rem; color: red; overflow: auto;"
+        >
+          <code>
+            parseSkor is not defined
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</body>
+ Γ¥» waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ Γ¥» ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ Γ¥» src/test/laporan-list.test.tsx:356:20
+    354|
+    355|     expect(
+    356|       await screen.findByText('Belum ada laporan masuk.'),
+       |                    ^
+    357|     ).toBeInTheDocument()
+    358|     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/7]ΓÄ»
+
+
+ Test Files  1 failed | 8 passed (9)
+      Tests  7 failed | 47 passed (54)
+   Start at  04:08:54
+   Duration  22.63s (import 44%, environment 26%, tests 14%, setup 13%, transform 3%)
+
+[ELIFECYCLE] Test failed. See above for more details.

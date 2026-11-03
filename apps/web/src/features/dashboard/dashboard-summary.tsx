@@ -10,12 +10,12 @@ const BULAN = new Intl.DateTimeFormat('id-ID', {
 })
 
 const CHIP =
-  'rounded-[10px] bg-[#e0f1e8] px-3.5 py-1 text-sm font-medium text-[#2f8059]'
+  'rounded-[10px] bg-[#e6f2ec] px-3.5 py-1 text-sm font-medium text-[#15803d]'
 
-const KARTU = 'rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6'
+const KARTU = 'rounded-[26px] border-[1.5px] border-black/5 bg-white p-6'
 
 const KARTU_STAT =
-  'flex flex-col items-center gap-2 rounded-[26px] bg-[#faf3e5] px-4 py-6 text-center'
+  'flex flex-col items-center gap-2 rounded-[26px] bg-[#eef1f0] px-4 py-6 text-center'
 
 type StatStatus = Extract<
   LaporanStatus,
@@ -64,7 +64,7 @@ export function RingkasanCards({
       {STATS.map(({ status, label, key, Icon }) => {
         const content = (
           <>
-            <span className="flex size-[62px] items-center justify-center rounded-full bg-white text-[#3b9b6b]">
+            <span className="flex size-[62px] items-center justify-center rounded-full bg-white text-[#0d3f31]">
               <Icon aria-hidden="true" className="size-6" />
             </span>
             <p className="text-3xl font-bold">{ringkasan[key]}</p>
@@ -90,7 +90,7 @@ export function RingkasanCards({
               KARTU_STAT,
               'transition hover:-translate-y-0.5 hover:shadow-sm',
               activeStatus === status &&
-                'ring-2 ring-[#3b9b6b]/35 ring-offset-2 ring-offset-white',
+                'ring-2 ring-[#0d3f31]/35 ring-offset-2 ring-offset-white',
             )}
           >
             {content}
@@ -155,7 +155,7 @@ export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
           >
             <span
               className={cn(
-                'text-xs font-semibold text-[#2f8059] transition-opacity',
+                'text-xs font-semibold text-[#0d3f31] transition-opacity',
                 bar.sorot ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
               )}
             >
@@ -167,8 +167,8 @@ export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
               className={cn(
                 'w-full max-w-10 rounded-xl transition-colors sm:max-w-9',
                 bar.sorot
-                  ? 'bg-[#3b9b6b]'
-                  : 'bg-[#ede2c4] group-hover:bg-[#dfc787]',
+                  ? 'bg-[#0d3f31]'
+                  : 'bg-[#e5e9e8] group-hover:bg-[#c9d3d0]',
               )}
               style={{ height: `${(bar.jumlah / maxHarian) * 9}rem` }}
             />
@@ -193,7 +193,7 @@ function DonutChart({ percent }: { percent: number }) {
           cy="80"
           r="60"
           fill="none"
-          stroke="#f1ead6"
+          stroke="#eef1f0"
           strokeWidth="14"
         />
         <circle
@@ -201,7 +201,7 @@ function DonutChart({ percent }: { percent: number }) {
           cy="80"
           r="60"
           fill="none"
-          stroke="#d9b854"
+          stroke="#0d3f31"
           strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={circumference}

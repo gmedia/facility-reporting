@@ -2,9 +2,9 @@ import { Link } from '@tanstack/react-router'
 import { Plus, ShieldCheck, Users } from 'lucide-react'
 
 const TOMBOL_UTAMA =
-  'inline-flex h-11 items-center gap-2 rounded-2xl bg-[#3b9b6b] px-5 text-sm font-medium text-white transition-colors hover:bg-[#2f8059]'
+  'inline-flex h-11 items-center gap-2 rounded-2xl bg-[#0d3f31] px-5 text-sm font-medium text-white transition-colors hover:bg-[#0a3127]'
 const TOMBOL_SEKUNDER =
-  'inline-flex h-11 items-center gap-2 rounded-2xl border-[1.5px] border-[#dfc787] bg-white px-5 text-sm font-medium text-neutral-700 transition-colors hover:bg-[#faf3e5]'
+  'inline-flex h-11 items-center gap-2 rounded-2xl border border-black/10 bg-white px-5 text-sm font-medium text-[#0d3f31] transition-colors hover:bg-[#0d3f31]/6'
 
 // Tombol akses cepat beda per role:
 // user        → Lapor Kerusakan

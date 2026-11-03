@@ -29,8 +29,8 @@ export function DashboardTabs() {
           className={cn(
             'flex items-center border-b-[3px] text-[15px] whitespace-nowrap transition-colors',
             filter === item.value
-              ? 'border-[#dfc787] font-bold text-neutral-800'
-              : 'border-transparent font-medium text-[#8a8f87] hover:text-neutral-700',
+              ? 'border-[#0d3f31] font-bold text-neutral-800'
+              : 'border-transparent font-medium text-neutral-500 hover:text-neutral-700',
           )}
         >
           {item.label}

@@ -50,6 +50,23 @@ export const FOTO_ACCEPT = FOTO_MIME_IZIN.join(',')
 // ============================================================
 export type LaporanStatus = components['schemas']['LaporanStatus']
 
+// ============================================================
+// Fungsi helper SMART: parse skor 4 input (1-5) jadi nilai prioritas 0-100
+// ============================================================
+export function parseSkor(dampak: number, frekuensi: number): number {
+  // Rumus sederhana: (dampak + frekuensi) * 10, max 100
+  return Math.min(100, (dampak + frekuensi) * 10)
+}
+
+// ============================================================
+// Label prioritas berdasarkan skor
+// ============================================================
+export function prioritasLabel(skor: number): string {
+  if (skor >= 75) return 'Tinggi'
+  if (skor >= 25) return 'Sedang'
+  return 'Rendah'
+}
+
 export const STATUS_LABEL: Record<LaporanStatus, string> = {
   menunggu_verifikasi: 'Menunggu Verifikasi',
   valid: 'Valid',
@@ -93,15 +110,19 @@ export function useUpdateLaporanStatus() {
     mutationFn: async ({
       id,
       status,
+      nilai,
+      alasan,
     }: {
       id: number
       status: LaporanStatus
+      nilai?: object | undefined
+      alasan?: string | null
     }) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
 
       const { data, error, response } = await api.PATCH(
         '/reports/{laporan}/status',
-        { params: { path: { laporan: id } }, body: { status } },
+        { params: { path: { laporan: id } }, body: { status, nilai, alasan } },
       )
 
       if (error || !data) {
@@ -113,6 +134,42 @@ export function useUpdateLaporanStatus() {
     onSuccess: () => {
       // Tabelnya list-based, jadi invalidasi per-kunci 'laporan' cukup
       // buat nimpa list sekaligus (queryFn-nya pakai prefix yang sama).
+      void queryClient.invalidateQueries({ queryKey: ['laporan'] })
+    },
+  })
+}
+
+// ============================================================
+// Aksi admin: upload bukti saat status selesai lewat PATCH /reports/{laporan}/bukti
+// ============================================================
+export function useUpdateLaporanBukti() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      bukti,
+    }: {
+      id: number
+      bukti: File
+    }) => {
+      await initializeCsrf() // wajib — lupa = 419 Page Expired
+
+      const form = new FormData()
+      form.append('bukti', bukti)
+
+      const { data, error, response } = await api.PATCH(
+        '/reports/{laporan}/bukti',
+        { params: { path: { laporan: id } }, body: form as unknown as components['schemas']['UpdateLaporanBuktiRequest'] },
+      )
+
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal mengupload bukti laporan.')
+      }
+
+      return data.data
+    },
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['laporan'] })
     },
   })

@@ -60,8 +60,10 @@ function DashboardIntro({ user }: { user: User }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Halo, {user.name}</h1>
-        <p className="mt-1 text-xs font-medium tracking-widest text-neutral-400 uppercase">
+        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+          Halo, {user.name}
+        </h1>
+        <p className="mt-1 text-xs font-medium tracking-widest text-neutral-500 uppercase">
           {identitas(user)} · Semua gedung
         </p>
       </div>
@@ -88,10 +90,10 @@ function DashboardContent({
       <RingkasanCards ringkasan={ringkasan} />
 
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <section className="min-w-0 rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6">
+        <section className="min-w-0 rounded-[26px] border-[1.5px] border-black/5 bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Antrian verifikasi</h2>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            <span className="rounded-full bg-[#e6f2ec] px-3 py-1 text-xs font-medium text-[#15803d]">
               Total {ringkasan.total}
             </span>
           </div>
@@ -99,10 +101,10 @@ function DashboardContent({
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[30rem] text-sm">
               <thead>
-                <tr className="text-left text-neutral-400">
-                  <th className="pb-2 font-medium">ID</th>
-                  <th className="pb-2 font-medium">Laporan</th>
-                  <th className="pb-2 text-right font-medium">Status</th>
+                <tr className="text-left text-neutral-500">
+                  <th className="pb-2 font-medium border-b border-black/5">ID</th>
+                  <th className="pb-2 font-medium border-b border-black/5">Laporan</th>
+                  <th className="pb-2 text-right font-medium border-b border-black/5">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,18 +112,21 @@ function DashboardContent({
                   <tr>
                     <td
                       colSpan={3}
-                      className="py-6 text-center text-neutral-400"
+                      className="py-6 text-center text-neutral-500"
                     >
                       {emptyText(filter)}
                     </td>
                   </tr>
                 ) : (
                   antrian.map((item) => (
-                    <tr key={item.id} className="border-t border-neutral-100">
+                    <tr
+                      key={item.id}
+                      className="border-b border-black/5 last:border-0 hover:bg-[#0d3f31]/4"
+                    >
                       <td className="py-3 pr-4 text-neutral-500">{item.id}</td>
                       <td className="py-3 pr-4">
                         <p className="font-medium">{item.deskripsi}</p>
-                        <p className="mt-0.5 text-xs text-neutral-400">
+                        <p className="mt-0.5 text-xs text-neutral-500">
                           {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
                           {formatTanggal(item.created_at)}
                         </p>
