@@ -210,7 +210,6 @@ const riwayatDiproses = {
   changed_by: 2,
   changed_by_name: 'Admin Demo',
   created_at: '2026-10-27T14:30:00Z',
-  }
   updated_at: '2026-10-27T14:30:00Z',
 }
 
