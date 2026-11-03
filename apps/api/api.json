@@ -603,10 +603,7 @@
                         "type": "string"
                     },
                     "skor_prioritas": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "prioritas_kategori": {
                         "type": [
@@ -615,34 +612,19 @@
                         ]
                     },
                     "nilai_kerusakan": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "nilai_risiko": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "nilai_dampak": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "nilai_frekuensi": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "foto_bukti": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": [
@@ -694,45 +676,31 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "laporan_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "status_from": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "status_to": {
                         "type": "string"
                     },
                     "alasan": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "changed_by": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "changed_by_name": {
                         "type": "string"
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
+                        "type": "string"
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
+                        "type": "string"
                     }
                 },
                 "required": [
