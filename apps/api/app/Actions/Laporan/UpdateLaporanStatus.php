@@ -28,7 +28,7 @@ final class UpdateLaporanStatus
         $statusFrom = optional($laporan->status)?->value;
 
         // Aturan: foto bukti wajib sebelum status diubah ke Selesai
-        if ($data->status === LaporanStatus::Selesai && !$laporan->foto_bukti) {
+        if ($data->status === LaporanStatus::Selesai && ! $laporan->foto_bukti) {
             throw ValidationException::withMessages([
                 'foto_bukti' => 'Foto bukti wajib diupload sebelum status bisa diubah menjadi selesai.',
             ]);
