@@ -9,6 +9,8 @@ use App\Enums\LaporanStatus;
 use App\Models\Laporan;
 use App\Models\LaporanStatusHistory;
 use App\Services\PrioritasService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 final class UpdateLaporanStatus
 {
@@ -25,6 +27,15 @@ final class UpdateLaporanStatus
     public function __invoke(UpdateLaporanStatusData $data, Laporan $laporan): Laporan
     {
         $statusFrom = optional($laporan->status)?->value;
+
+        // Aturan: foto bukti wajib sebelum status diubah ke Selesai
+        if ($data->status === LaporanStatus::Selesai && !$laporan->foto_bukti) {
+            throw new \Illuminate\Validation\ValidationException(
+                \Illuminate\Validation\Validators::make([], [
+                    'foto_bukti' => ['Foto bukti wajib diupload sebelum status bisa diubah menjadi selesai.'],
+                ])
+            );
+        }
 
         $laporan->status = $data->status;
 
