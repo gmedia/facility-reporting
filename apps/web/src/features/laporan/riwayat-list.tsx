@@ -39,7 +39,11 @@ function tanggal(iso: string | null): string {
 // laporan user ilang diam-diam kalau backend ganti kebijakan scoping.
 export function RiwayatList() {
   const list = useLaporanList()
-  const [bulanDipilih, setBulanDipilih] = useState<string | null>(null)
+  // Dua dimensi saringan yang berdiri sendiri: tahun lewat pemilih di
+  // baris judul, bulan lewat chip. Pisah kendali = daftar chip cukup 13
+  // item pendek alih-alih 13 item bertahun yang pecah jadi dua baris.
+  const [tahunDipilih, setTahunDipilih] = useState<string | null>(null)
+  const [bulanDipilih, setBulanDipilih] = useState<number | null>(null)
 
   if (list.isPending) return <RiwayatSkeleton />
 
@@ -72,20 +76,19 @@ export function RiwayatList() {
 
   const statistik = hitungStatistik(laporans)
 
-  // Semua bulan ditawarkan, bukan cuma yang datanya sudah ada —
-  // permintaan 27 Okt: pengguna harus bisa membuka bulan kosong dan tahu
-  // betul bahwa "tidak ada laporan", bukan hanya bulan-bulan yang kebetulan
-  // sudah terisi.
-  const tersedia = semuaBulan(laporans)
+  // Tahun selalu ditawarkan lebih dari satu: 5 tahun terakhir plus setiap
+  // tahun yang benar-benar muncul di data. Sengaja TIDAK diturunkan dari
+  // data saja — kalau datanya cuma 2026, pilihannya bakal terkunci di 2026
+  // (permintaan 3 Nov). Tahun tanpa data cukup dijawab "Tidak ada
+  // laporan", sama seperti perilaku bulan kosong (permintaan 27 Okt).
+  const tahunTersedia = semuaTahun(laporans)
 
   // Ringkasan dan grafik selalu membaca SEMUA laporan; yang disaring cuma
   // daftar di bawahnya. Kalau ikut tersaring, angka total berubah sendiri
   // tiap kali chip ditekan dan tidak ada yang bisa dipercaya.
-  const tampil = bulanDipilih
-    ? laporans.filter(
-        (laporan) => kunciBulan(laporan.created_at) === bulanDipilih,
-      )
-    : laporans
+  const tampil = laporans.filter((laporan) =>
+    cocokSaringan(laporan, tahunDipilih, bulanDipilih),
+  )
 
   // Urutan: baris atas TOTAL (kiri) + grafik (kanan), lalu empat kartu
   // status, baru daftar per bulan — permintaan 27 Okt.
@@ -111,9 +114,11 @@ export function RiwayatList() {
 
       <DaftarPerBulan
         laporans={tampil}
-        tersedia={tersedia}
+        tahunTersedia={tahunTersedia}
+        tahunDipilih={tahunDipilih}
         bulanDipilih={bulanDipilih}
-        onPilih={(kunci) => setBulanDipilih(kunci)}
+        onPilihTahun={setTahunDipilih}
+        onPilihBulan={setBulanDipilih}
       />
     </div>
   )
@@ -129,14 +134,18 @@ export function RiwayatList() {
 // ============================================================
 function DaftarPerBulan({
   laporans,
-  tersedia,
+  tahunTersedia,
+  tahunDipilih,
   bulanDipilih,
-  onPilih,
+  onPilihTahun,
+  onPilihBulan,
 }: {
   laporans: Laporan[]
-  tersedia: string[]
-  bulanDipilih: string | null
-  onPilih: (kunci: string | null) => void
+  tahunTersedia: string[]
+  tahunDipilih: string | null
+  bulanDipilih: number | null
+  onPilihTahun: (tahun: string | null) => void
+  onPilihBulan: (bulan: number | null) => void
 }) {
   const kelompok = kelompokPerBulan(laporans)
 
@@ -147,27 +156,59 @@ function DaftarPerBulan({
           Daftar Laporan
         </h2>
 
-        <div
-          role="group"
-          aria-label="Saring per bulan"
-          className="flex flex-wrap gap-2"
-        >
-          <ChipPilih
-            aktif={bulanDipilih === null}
-            onClick={() => onPilih(null)}
+        {/* Pemilih tahun: kendali terpisah dari chip bulan. <select> biasa
+            (bukan Base UI Select) sengaja — ini filter inline, bukan field
+            form: kontrolnya harus kecil, bisa diuji dengan fireEvent.change,
+            dan tetap jadi control asli untuk pembaca layar. */}
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="daftar-laporan-tahun"
+            className="text-xs font-medium text-neutral-500"
           >
-            Semua
-          </ChipPilih>
-          {tersedia.map((kunci) => (
-            <ChipPilih
-              key={kunci}
-              aktif={bulanDipilih === kunci}
-              onClick={() => onPilih(kunci)}
-            >
-              {labelBulanSingkat(kunci)}
-            </ChipPilih>
-          ))}
+            Tahun
+          </label>
+          <select
+            id="daftar-laporan-tahun"
+            value={tahunDipilih ?? ''}
+            onChange={(event) => onPilihTahun(event.target.value || null)}
+            className="h-8 rounded-lg border border-black/10 bg-white pr-2 pl-2.5 text-sm text-neutral-700 transition-colors outline-none focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15"
+          >
+            <option value="">Semua tahun</option>
+            {tahunTersedia.map((tahun) => (
+              <option key={tahun} value={tahun}>
+                {tahun}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
+
+      {/* Chip bulan tanpa tahun — tahunnya sudah ada di kendali di atas,
+          jadi mengulang "2026" di 12 chip cuma bikin daftar ini pecah jadi
+          dua baris. Bulan kosong tetap ditawarkan penuh (permintaan 27 Okt). */}
+      <div
+        role="group"
+        aria-label="Saring per bulan"
+        className="flex flex-wrap gap-2"
+      >
+        <ChipPilih
+          aktif={bulanDipilih === null}
+          onClick={() => onPilihBulan(null)}
+        >
+          Semua
+        </ChipPilih>
+        {BULAN_SINGKAT.map((nama, indeks) => {
+          const bulan = indeks + 1
+          return (
+            <ChipPilih
+              key={nama}
+              aktif={bulanDipilih === bulan}
+              onClick={() => onPilihBulan(bulan)}
+            >
+              {nama}
+            </ChipPilih>
+          )
+        })}
       </div>
 
       {/* Bulan sengaja bisa dipilih walaupun kosong, dan kalau kosong
@@ -179,9 +220,9 @@ function DaftarPerBulan({
             Tidak ada laporan
           </p>
           <p className="mt-1 text-sm text-neutral-500">
-            {bulanDipilih
-              ? `Belum ada laporan yang dikirim pada ${labelBulan(bulanDipilih)}.`
-              : 'Belum ada laporan yang dikirim.'}
+            {tahunDipilih === null && bulanDipilih === null
+              ? 'Belum ada laporan yang dikirim.'
+              : `Belum ada laporan yang dikirim pada ${labelSaringan(tahunDipilih, bulanDipilih)}.`}
           </p>
         </div>
       ) : (
@@ -243,27 +284,68 @@ function kunciBulan(iso: string | null): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-// Semua kunci "YYYY-MM" yang layak ditawarkan sebagai pilihan: 12 bulan
-// untuk tahun berjalan, plus 12 bulan untuk setiap tahun yang benar-benar
-// muncul di data. Kuncinya dibangun, bukan diturunkan dari data — kalau
-// diturunkan dari data, bulan kosong tidak akan pernah muncul di daftar
-// pilihan dan permintaan 27 Okt itu mustahil dipenuhi.
-function semuaBulan(laporans: Laporan[]): string[] {
-  const tahun = new Set<string>([String(new Date().getFullYear())])
+// Jumlah tahun yang selalu ditawarkan di pemilih tahun, dihitung mundur
+// dari tahun berjalan. Tahun dari data ikut disertakan walau di luar
+// rentang ini — lihat semuaTahun.
+const JUMLAH_TAHUN = 5
+
+// Semua tahun yang layak ditawarkan: 5 tahun terakhir + setiap tahun yang
+// benar-benar muncul di data, urut terbaru dulu. Sengaja bukan sekadar
+// tahun dari data — kalau datanya cuma 2026, pilihannya harus tetap
+// menawarkan tahun lain supaya pemilih tahunnya benar-benar berfungsi
+// (permintaan 3 Nov). Tahun tanpa data dijawab "Tidak ada laporan".
+function semuaTahun(laporans: Laporan[]): string[] {
+  const daftar = new Set<string>()
+  const tahunBerjalan = new Date().getFullYear()
+  for (let i = 0; i < JUMLAH_TAHUN; i++) daftar.add(String(tahunBerjalan - i))
+
   for (const laporan of laporans) {
     const kunci = kunciBulan(laporan.created_at)
-    if (kunci !== 'tanpa-tanggal') tahun.add(kunci.slice(0, 4))
+    if (kunci !== 'tanpa-tanggal') daftar.add(kunci.slice(0, 4))
   }
 
-  return [...tahun]
-    .sort((a, b) => Number(b) - Number(a)) // tahun terbaru dulu
-    .flatMap((tahunTerpilih) =>
-      Array.from(
-        { length: 12 },
-        (_, i) => `${tahunTerpilih}-${String(i + 1).padStart(2, '0')}`,
-      ),
-    )
+  return [...daftar].sort((a, b) => Number(b) - Number(a)) // terbaru dulu
 }
+
+// Kombinasi saringan tahun + bulan, bebas dipilih sendiri-sendiri.
+// Laporan tanpa tanggal cuma lolos kalau kedua saringan kosong — mustahil
+// menyebutnya milik bulan tertentu.
+function cocokSaringan(
+  laporan: Laporan,
+  tahun: string | null,
+  bulan: number | null,
+): boolean {
+  const kunci = kunciBulan(laporan.created_at)
+  if (kunci === 'tanpa-tanggal') return tahun === null && bulan === null
+  if (tahun !== null && kunci.slice(0, 4) !== tahun) return false
+  if (bulan !== null && Number(kunci.slice(5, 7)) !== bulan) return false
+  return true
+}
+
+// Rentang yang sedang disaring, untuk pesan daftar kosong. Menyesuaikan
+// kombinasi yang aktif supaya pengguna tahu persis periodenya.
+function labelSaringan(tahun: string | null, bulan: number | null): string {
+  if (tahun && bulan) return `${namaBulan(bulan)} ${tahun}`
+  if (bulan) return namaBulan(bulan)
+  return tahun ?? ''
+}
+
+// Nama bulan panjang tanpa tahun ("Januari"). Dipakai saat saringan
+// tahunnya kosong, jadi tahunnya memang tidak boleh ikut tertulis.
+// Tanggalnya sembarang — tahunnya tidak ditampilkan, jadi tidak perlu
+// akurat.
+function namaBulan(bulan: number): string {
+  return new Date(2000, bulan - 1, 1).toLocaleDateString('id-ID', {
+    month: 'long',
+  })
+}
+
+// Label chip pemilih bulan: "Jan"… "Des", TANPA tahun. Tahunnya sudah
+// jadi kendali terpisah di baris judul, jadi mengulangnya di 12 chip cuma
+// bikin daftar ini pecah jadi dua baris (permintaan 3 Nov).
+const BULAN_SINGKAT = Array.from({ length: 12 }, (_, i) =>
+  new Date(2000, i, 1).toLocaleDateString('id-ID', { month: 'short' }),
+)
 
 // laporans sudah diurutkan terbaru di pemanggilnya, dan Map mempertahankan
 // urutan sisipan — jadi kelompoknya ikut terbaru dulu, item di dalamnya
@@ -289,24 +371,6 @@ function labelBulan(kunci: string): string {
     month: 'long',
     year: 'numeric',
   })
-}
-
-const formatBulanSingkat = new Intl.DateTimeFormat('id-ID', {
-  month: 'short',
-  year: 'numeric',
-})
-
-// Versi pendek untuk chip pemilih bulan ("Okt 2026"). Sengaja berbeda
-// dari labelBulan() ("Oktober 2026") yang dipakai judul kelompok di
-// bawahnya — kalau keduanya identik, getByText('Oktober 2026') bakal
-// nemu dua elemen dan test-nya jatuh.
-function labelBulanSingkat(kunci: string): string {
-  if (kunci === 'tanpa-tanggal') return 'Tanpa tanggal'
-  const bagian = kunci.split('-')
-  const tahun = Number(bagian[0])
-  const bulan = Number(bagian[1])
-  if (!tahun || !bulan) return 'Tanpa tanggal'
-  return formatBulanSingkat.format(new Date(tahun, bulan - 1, 1))
 }
 
 // ============================================================

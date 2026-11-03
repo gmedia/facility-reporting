@@ -117,6 +117,20 @@ const laporanDitolak = {
   updated_at: '2026-10-19T09:00:00Z',
 }
 
+// Laporan tahun lalu — dipakai tes pemilih tahun: data yang benar-benar
+// ada di tahun selain 2026 harus ikut tersedia di daftar opsi tahun.
+const laporanTahunLalu = {
+  id: 20,
+  user_id: 3,
+  kategori: 'mekanik',
+  lokasi: 'gedung lama',
+  deskripsi: 'cat tengkorak dinding ruang tunggu',
+  foto: null,
+  status: 'selesai',
+  created_at: '2025-03-12T09:00:00Z',
+  updated_at: '2025-03-12T09:00:00Z',
+}
+
 function ok(body: unknown) {
   return { data: body, response: new Response(null, { status: 200 }) } as never
 }
@@ -333,10 +347,11 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
     expect(screen.getByText('September 2026')).toBeInTheDocument()
 
+    // Chip nama pendek tanpa tahun ("Okt", bukan "Okt 2026").
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Saring per bulan' })).getByRole(
         'button',
-        { name: 'Okt 2026' },
+        { name: 'Okt' },
       ),
     )
 
@@ -353,6 +368,37 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('September 2026')).toBeInTheDocument()
   })
 
+  it('memilih tahun menyaring daftar, dan "Semua tahun" mengembalikannya', async () => {
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({
+        data: [laporanBaru, laporanTahunLalu],
+      }),
+    )
+
+    renderAt('/laporan/saya')
+    await screen.findByText(/perpustakaan lantai 2/)
+
+    // Kedua tahun tampil di awal.
+    expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
+    expect(screen.getByText('Maret 2025')).toBeInTheDocument()
+
+    // Pemilih tahun di baris judul ("Semua tahun" + opsi 2026, 2025).
+    const tahun = document.getElementById(
+      'daftar-laporan-tahun',
+    ) as HTMLSelectElement
+    expect(tahun).toBeInTheDocument()
+
+    fireEvent.change(tahun, { target: { value: '2025' } })
+
+    expect(screen.getByText('Maret 2025')).toBeInTheDocument()
+    expect(screen.queryByText('Oktober 2026')).not.toBeInTheDocument()
+
+    // Kembali ke "Semua tahun" memunculkan semua lagi.
+    fireEvent.change(tahun, { target: { value: '' } })
+    expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
+    expect(screen.getByText('Maret 2025')).toBeInTheDocument()
+  })
+
   it('bulan tanpa laporan tetap bisa dipilih dan menjawab "tidak ada laporan"', async () => {
     renderAt('/laporan/saya')
     await screen.findByText(/perpustakaan lantai 2/)
@@ -365,17 +411,44 @@ describe('halaman /laporan/saya', () => {
 
     expect(pilih().getAllByRole('button')).toHaveLength(13) // Semua + 12 bulan
 
-    fireEvent.click(pilih().getByRole('button', { name: 'Jan 2026' }))
+    fireEvent.click(pilih().getByRole('button', { name: 'Jan' }))
 
     expect(screen.getByText('Tidak ada laporan')).toBeInTheDocument()
     expect(
-      screen.getByText('Belum ada laporan yang dikirim pada Januari 2026.'),
+      screen.getByText('Belum ada laporan yang dikirim pada Januari.'),
     ).toBeInTheDocument()
     // Tidak ada judul kelompok yang tersisa — daftarnya memang kosong.
     expect(screen.queryByText('Oktober 2026')).not.toBeInTheDocument()
 
     fireEvent.click(pilih().getByRole('button', { name: 'Semua' }))
     expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
+  })
+
+  it('bulan kosong pada tahun yang dipilih tetap menjawab "tidak ada laporan"', async () => {
+    // Hanya ada data Maret 2025; Januari 2025 harus bisa dipilih dan
+    // menjawab kosong dengan tegas, bukan daftar yang tiba-tampa hilang.
+    vi.mocked(api.GET).mockResolvedValue(ok({ data: [laporanTahunLalu] }))
+
+    renderAt('/laporan/saya')
+    await screen.findByText('Maret 2025')
+
+    const tahun = document.getElementById(
+      'daftar-laporan-tahun',
+    ) as HTMLSelectElement
+    fireEvent.change(tahun, { target: { value: '2025' } })
+
+    const pilih = () =>
+      within(screen.getByRole('group', { name: 'Saring per bulan' }))
+    fireEvent.click(pilih().getByRole('button', { name: 'Jan' }))
+
+    expect(screen.getByText('Tidak ada laporan')).toBeInTheDocument()
+    expect(
+      screen.getByText('Belum ada laporan yang dikirim pada Januari 2025.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Maret 2025')).not.toBeInTheDocument()
+
+    fireEvent.click(pilih().getByRole('button', { name: 'Semua' }))
+    expect(screen.getByText('Maret 2025')).toBeInTheDocument()
   })
 
   it('kartu laporan menyediakan slot foto, termasuk di dalam detail', async () => {
