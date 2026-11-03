@@ -199,13 +199,13 @@ export interface components {
       deskripsi: string
       foto: string | null
       status: string
-      skor_prioritas: string | null
+      skor_prioritas: string
       prioritas_kategori: string | null
-      nilai_kerusakan: number | null
-      nilai_risiko: number | null
-      nilai_dampak: number | null
-      nilai_frekuensi: number | null
-      foto_bukti: string | null
+      nilai_kerusakan: string
+      nilai_risiko: string
+      nilai_dampak: string
+      nilai_frekuensi: string
+      foto_bukti: string
       /** Format: date-time */
       created_at: string | null
       /** Format: date-time */
@@ -219,17 +219,15 @@ export interface components {
       'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
     /** LaporanStatusHistoryResource */
     LaporanStatusHistoryResource: {
-      id: number
-      laporan_id: number
-      status_from: string | null
+      id: string
+      laporan_id: string
+      status_from: string
       status_to: string
-      alasan: string | null
-      changed_by: number
+      alasan: string
+      changed_by: string
       changed_by_name: string
-      /** Format: date-time */
-      created_at: string | null
-      /** Format: date-time */
-      updated_at: string | null
+      created_at: string
+      updated_at: string
     }
     /** LoginRequest */
     LoginRequest: {
