@@ -38,6 +38,10 @@ class StoreLaporanRequest extends FormRequest
             'lokasi' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
             'foto' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'nilai_kerusakan' => ['sometimes', 'integer', 'between:1,5'],
+            'nilai_risiko' => ['sometimes', 'integer', 'between:1,5'],
+            'nilai_dampak' => ['sometimes', 'integer', 'between:1,5'],
+            'nilai_frekuensi' => ['sometimes', 'integer', 'between:1,5'],
         ];
     }
 
@@ -54,6 +58,10 @@ class StoreLaporanRequest extends FormRequest
             lokasi: $this->validated('lokasi'),
             deskripsi: $this->validated('deskripsi'),
             foto: $foto,
+            nilai_kerusakan: $this->validated('nilai_kerusakan'),
+            nilai_risiko: $this->validated('nilai_risiko'),
+            nilai_dampak: $this->validated('nilai_dampak'),
+            nilai_frekuensi: $this->validated('nilai_frekuensi'),
         );
     }
 }

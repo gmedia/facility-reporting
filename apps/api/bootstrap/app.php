@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsSuperAdmin;
+use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->statefulApi();
+        // Disable Sanctum's default stateful middleware that forces same_site => 'lax'
+        // Use our custom middleware that respects config('session.same_site')
+        $middleware->remove(\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class);
+        $middleware->append(EnsureFrontendRequestsAreStateful::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'super_admin' => EnsureUserIsSuperAdmin::class,
