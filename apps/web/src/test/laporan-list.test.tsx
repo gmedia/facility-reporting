@@ -247,6 +247,12 @@ describe('halaman /verifikasi', () => {
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Selesai' }))
 
+    // Ubah status di dialog sebelum Simpan.
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'selesai' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
+
     await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(1))
 
     const [path, options] = vi.mocked(api.PATCH).mock.calls[0] as unknown as [

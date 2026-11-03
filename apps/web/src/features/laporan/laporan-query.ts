@@ -86,6 +86,8 @@ export function useLaporanList() {
 }
 
 // Aksi admin: ubah status lewat PATCH /reports/{laporan}/status.
+// Body boleh sertakan 4 nilai kriteria SMART + alasan (wajib saat status
+// = valid, sesuai kontrak Billy PR #75).
 export function useUpdateLaporanStatus() {
   const queryClient = useQueryClient()
 
@@ -93,15 +95,41 @@ export function useUpdateLaporanStatus() {
     mutationFn: async ({
       id,
       status,
+      nilai,
+      alasan,
     }: {
       id: number
       status: LaporanStatus
+      nilai?: {
+        kerusakan: number
+        risiko: number
+        dampak: number
+        frekuensi: number
+      }
+      alasan?: string | null
     }) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
 
+      const body: {
+        status: LaporanStatus
+        nilai_kerusakan?: number
+        nilai_risiko?: number
+        nilai_dampak?: number
+        nilai_frekuensi?: number
+        alasan?: string | null
+      } = { status }
+
+      if (nilai) {
+        body.nilai_kerusakan = nilai.kerusakan
+        body.nilai_risiko = nilai.risiko
+        body.nilai_dampak = nilai.dampak
+        body.nilai_frekuensi = nilai.frekuensi
+      }
+      if (alasan !== undefined) body.alasan = alasan
+
       const { data, error, response } = await api.PATCH(
         '/reports/{laporan}/status',
-        { params: { path: { laporan: id } }, body: { status } },
+        { params: { path: { laporan: id } }, body },
       )
 
       if (error || !data) {
@@ -116,6 +144,89 @@ export function useUpdateLaporanStatus() {
       void queryClient.invalidateQueries({ queryKey: ['laporan'] })
     },
   })
+}
+
+// Ambil riwayat perubahan status lewat GET /reports/{laporan}/history.
+export function useLaporanStatusHistory(laporanId: number) {
+  return useQuery({
+    queryKey: ['laporan', 'history', laporanId],
+    queryFn: async () => {
+      const { data, error, response } = await api.GET(
+        '/reports/{laporan}/history',
+        { params: { path: { laporan: laporanId } } },
+      )
+
+      if (error || !data) {
+        throw apiError(
+          response.status,
+          error,
+          'Gagal memuat riwayat status laporan.',
+        )
+      }
+
+      return data.data
+    },
+    enabled: !!laporanId,
+  })
+}
+
+// Upload foto bukti lewat PATCH /reports/{laporan}/bukti (multipart).
+export function useUpdateLaporanBukti() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      file,
+    }: {
+      id: number
+      file: File
+    }) => {
+      await initializeCsrf() // wajib — lupa = 419 Page Expired
+
+      const form = new FormData()
+      form.append('foto_bukti', file)
+
+      const { data, error, response } = await api.PATCH(
+        '/reports/{laporan}/bukti',
+        {
+          params: { path: { laporan: id } },
+          body: form as unknown as components['schemas']['UpdateLaporanBuktiRequest'],
+        },
+      )
+
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal upload foto bukti.')
+      }
+
+      return data.data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['laporan'] })
+    },
+  })
+}
+
+// Skor prioritas dikirim backend sebagai string (contoh "3.80"). Helper ini
+// parsing aman buat ditampilkan / diurutkan di UI. Tidak ada rumus hitung
+// di frontend — skor otomatis dihitung backend saat status diubah ke valid.
+export function parseSkor(skor: string | null): number | null {
+  if (skor === null || skor === undefined || skor === '') return null
+  const parsed = Number(skor)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+// Kategori prioritas sudah dikirim backend (Tinggi / Sedang / Rendah).
+// Helper ini cuma buat fallback kalau nilai belum ada di response.
+export function prioritasLabel(
+  kategori: string | null,
+  skor: number | null,
+): string {
+  if (kategori) return kategori
+  if (skor === null) return '-'
+  if (skor >= 4.0) return 'Tinggi'
+  if (skor >= 2.5) return 'Sedang'
+  return 'Rendah'
 }
 
 export function useCreateLaporan() {
