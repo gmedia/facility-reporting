@@ -80,6 +80,7 @@ jobs:
           coverage: none
       - run: test -f pnpm-lock.yaml && test -f apps/api/composer.lock
       - run: pnpm install --frozen-lockfile
+      - run: cd apps/api && composer install --no-interaction --prefer-dist
       - run: cd apps/api && php artisan scramble:export --no-interaction
       - run: pnpm --dir apps/web types:generate && git diff --exit-code -- apps/web/src/lib/api/schema.d.ts
       - run: pnpm --dir apps/web check
