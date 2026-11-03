@@ -28,7 +28,7 @@ const inputSoft =
 
 // Tombol "Masuk" — gradient gelap (atas terang → bawah gelap) + shadow ke bawah
 const tombolSoft =
-  'h-11 w-full rounded-full bg-[#1e6a52] text-sm font-medium text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[#1a5f4a] hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] active:translate-y-px active:bg-[#16523f] active:shadow-[0_3px_8px_-3px_rgba(0,0,0,0.3)] disabled:pointer-events-none disabled:opacity-60'
+  'h-11 w-full rounded-full bg-[#0d3f31] text-sm font-medium text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[#1a5f4a] hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] active:translate-y-px active:bg-[#16523f] active:shadow-[0_3px_8px_-3px_rgba(0,0,0,0.3)] disabled:pointer-events-none disabled:opacity-60'
 export function LoginForm() {
   const router = useRouter()
   const [serverError, setServerError] = useState<string | null>(null)
