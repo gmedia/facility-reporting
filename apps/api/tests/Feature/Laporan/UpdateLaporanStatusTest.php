@@ -186,3 +186,43 @@ it('rejects unauthenticated bukti upload', function (): void {
     $this->patchJson('/api/v1/reports/'.$laporan->id.'/bukti', [])
         ->assertUnauthorized();
 });
+
+it('wajib mengupload foto bukti sebelum status diubah ke selesai', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::Admin->value]);
+    $laporan = Laporan::factory()->create(['status' => LaporanStatus::MenungguVerifikasi->value]);
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/reports/{$laporan->id}/status", [
+            'status' => LaporanStatus::Selesai->value,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['foto_bukti']);
+
+    $this->assertDatabaseHas('laporans', [
+        'id' => $laporan->id,
+        'status' => LaporanStatus::MenungguVerifikasi->value,
+    ]);
+});
+
+it('boleh mengubah status ke selesai setelah foto bukti diupload', function (): void {
+    $admin = User::factory()->create(['role' => UserRole::Admin->value]);
+    $laporan = Laporan::factory()->create(['status' => LaporanStatus::MenungguVerifikasi->value]);
+
+    $this->actingAs($admin)
+        ->patch('/api/v1/reports/'.$laporan->id.'/bukti', [
+            'foto_bukti' => UploadedFile::fake()->image('bukti.jpg'),
+        ])
+        ->assertOk();
+
+    $this->actingAs($admin)
+        ->patchJson("/api/v1/reports/{$laporan->id}/status", [
+            'status' => LaporanStatus::Selesai->value,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.status', LaporanStatus::Selesai->value);
+
+    $this->assertDatabaseHas('laporans', [
+        'id' => $laporan->id,
+        'status' => LaporanStatus::Selesai->value,
+    ]);
+});

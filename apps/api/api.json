@@ -600,7 +600,14 @@
                         ]
                     },
                     "status": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                            "menunggu_verifikasi",
+                            "valid",
+                            "ditolak",
+                            "diproses",
+                            "selesai"
+                        ]
                     },
                     "skor_prioritas": {
                         "type": [
@@ -612,6 +619,12 @@
                         "type": [
                             "string",
                             "null"
+                        ],
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi",
+                            null
                         ]
                     },
                     "nilai_kerusakan": {
