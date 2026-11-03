@@ -131,6 +131,89 @@ const laporanTahunLalu = {
   updated_at: '2025-03-12T09:00:00Z',
 }
 
+// Laporan dengan prioritas — dipakai tes badge prioritas.
+const laporanPrioritasTinggi = {
+  id: 30,
+  user_id: 3,
+  kategori: 'elektronik',
+  lokasi: 'gedung baru lantai 1',
+  deskripsi: 'proyeger ruang rapat nyala mati',
+  foto: null,
+  status: 'menunggu_verifikasi',
+  prioritas_kategori: 'tinggi',
+  skor_prioritas: '4.50',
+  created_at: '2026-10-28T09:00:00Z',
+  updated_at: '2026-10-28T09:00:00Z',
+}
+
+const laporanPrioritasSedang = {
+  id: 31,
+  user_id: 3,
+  kategori: 'furnitur',
+  lokasi: 'kantin',
+  deskripsi: 'meja kantin legak',
+  foto: null,
+  status: 'menunggu_verifikasi',
+  prioritas_kategori: 'sedang',
+  skor_prioritas: '3.20',
+  created_at: '2026-10-28T10:00:00Z',
+  updated_at: '2026-10-28T10:00:00Z',
+}
+
+const laporanPrioritasRendah = {
+  id: 32,
+  user_id: 3,
+  kategori: 'bangunan',
+  lokasi: 'toilet depan',
+  deskripsi: 'kran bocor kecil',
+  foto: null,
+  status: 'menunggu_verifikasi',
+  prioritas_kategori: 'rendah',
+  skor_prioritas: '2.10',
+  created_at: '2026-10-28T11:00:00Z',
+  updated_at: '2026-10-28T11:00:00Z',
+}
+
+const laporanTanpaPrioritas = {
+  id: 33,
+  user_id: 3,
+  kategori: 'lainnya',
+  lokasi: 'parkiran sepeda motor',
+  deskripsi: 'papan petunjuk pudar',
+  foto: null,
+  status: 'menunggu_verifikasi',
+  prioritas_kategori: null,
+  skor_prioritas: null,
+  created_at: '2026-10-28T12:00:00Z',
+  updated_at: '2026-10-28T12:00:00Z',
+}
+
+// Riwayat perubahan status — dipakai tes timeline.
+const riwayatValid = {
+  id: 100,
+  laporan_id: 10,
+  status_from: null,
+  status_to: 'valid',
+  alasan: 'Dokumen dan foto lengkap, verifikasi diterima.',
+  changed_by: 2,
+  changed_by_name: 'Admin Demo',
+  created_at: '2026-10-26T09:00:00Z',
+  updated_at: '2026-10-26T09:00:00Z',
+}
+
+const riwayatDiproses = {
+  id: 101,
+  laporan_id: 10,
+  status_from: 'valid',
+  status_to: 'diproses',
+  alasan: 'Teknisi ditugaskan, perbaikan dimulai.',
+  changed_by: 2,
+  changed_by_name: 'Admin Demo',
+  created_at: '2026-10-27T14:30:00Z',
+  updated_at: '2026-10-27T14:30:00Z',
+}
+}
+
 function ok(body: unknown) {
   return { data: body, response: new Response(null, { status: 200 }) } as never
 }
@@ -158,9 +241,19 @@ function renderAt(path: string) {
 beforeEach(() => {
   vi.clearAllMocks()
   currentUser = mahasiswa
-  vi.mocked(api.GET).mockResolvedValue(
-    ok({ data: [laporanBaru, laporanDitolak, laporanLama] }),
-  )
+  vi.mocked(api.GET).mockImplementation(async (url: string) => {
+    if (url === '/reports') {
+      return ok({ data: [laporanBaru, laporanDitolak, laporanLama] })
+    }
+    if (
+      typeof url === 'string' &&
+      url.startsWith('/reports/') &&
+      url.endsWith('/history')
+    ) {
+      return ok({ data: [] })
+    }
+    return ok({ data: [] })
+  })
 })
 
 afterEach(() => vi.clearAllMocks())
@@ -311,7 +404,9 @@ describe('halaman /laporan/saya', () => {
 
     // Angka besar ada di kartu TOTAL (sebelah kiri); grafik cuma
     // menampilkan ringkasan kecil + angka di deskripsi aksesibelnya.
-    const grafik = screen.getByRole('img', { name: /Grafik laporan per bulan/ })
+    const grafik = screen.getByRole('img', {
+      name: /Grafik laporan per bulan/,
+    })
     expect(screen.getByText('3 laporan terkirim')).toBeInTheDocument()
     expect(grafik.getAttribute('aria-label')).toContain(
       '3 laporan terkirim sepanjang waktu',
@@ -508,9 +603,9 @@ describe('halaman /laporan/saya', () => {
     expect(screen.queryByText('Kategori')).not.toBeInTheDocument()
     // Setelah ditutup semua tombol kembali berlabel "Detail", jadi ambil
     // yang pertama — masih kartu yang sama.
-    expect(
-      screen.getAllByRole('button', { name: 'Detail' })[0],
-    ).toHaveAttribute('aria-expanded', 'false')
+    const [tombolDetail] = screen.getAllByRole('button', { name: 'Detail' })
+    if (!tombolDetail) throw new Error('tombol Detail tidak ditemukan')
+    expect(tombolDetail).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('admin di-redirect ke /dashboard', async () => {
@@ -521,5 +616,87 @@ describe('halaman /laporan/saya', () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
     )
+  })
+
+  it('menampilkan badge prioritas Tinggi pada kartu', async () => {
+    vi.mocked(api.GET).mockResolvedValue(ok({ data: [laporanPrioritasTinggi] }))
+    renderAt('/laporan/saya')
+    await screen.findByText('proyeger ruang rapat nyala mati')
+    expect(screen.getByText('Tinggi')).toBeInTheDocument()
+  })
+
+  it('menampilkan badge prioritas Sedang pada kartu', async () => {
+    vi.mocked(api.GET).mockResolvedValue(ok({ data: [laporanPrioritasSedang] }))
+    renderAt('/laporan/saya')
+    await screen.findByText('meja kantin legak')
+    expect(screen.getByText('Sedang')).toBeInTheDocument()
+  })
+
+  it('menampilkan badge prioritas Rendah pada kartu', async () => {
+    vi.mocked(api.GET).mockResolvedValue(ok({ data: [laporanPrioritasRendah] }))
+    renderAt('/laporan/saya')
+    await screen.findByText('kran bocor kecil')
+    expect(screen.getByText('Rendah')).toBeInTheDocument()
+  })
+
+  it('tidak menampilkan badge prioritas kalau prioritas_kategori null', async () => {
+    vi.mocked(api.GET).mockResolvedValue(ok({ data: [laporanTanpaPrioritas] }))
+    renderAt('/laporan/saya')
+    await screen.findByText('papan petunjuk pudar')
+    expect(screen.queryByText('Tinggi')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sedang')).not.toBeInTheDocument()
+    expect(screen.queryByText('Rendah')).not.toBeInTheDocument()
+  })
+
+  it('memuat timeline status saat detail dibuka', async () => {
+    vi.mocked(api.GET).mockImplementation(async (url: string) => {
+      if (url === '/reports') return ok({ data: [laporanBaru] })
+      if (typeof url === 'string' && url.endsWith('/history'))
+        return ok({ data: [riwayatValid, riwayatDiproses] })
+      return ok({ data: [] })
+    })
+    renderAt('/laporan/saya')
+    await screen.findByText(/perpustakaan lantai 2/)
+    const [tombolDetail] = screen.getAllByRole('button', { name: 'Detail' })
+    if (!tombolDetail) throw new Error('tombol Detail tidak ditemukan')
+    fireEvent.click(tombolDetail)
+    await screen.findByText('Riwayat Status')
+    await waitFor(() => screen.getAllByText(/Admin Demo/), { timeout: 5000 })
+    expect(screen.getByText(/26 Oktober 2026/)).toBeInTheDocument()
+    // entri kedua: valid -> diproses
+    expect(screen.getByText(/27 Oktober 2026/)).toBeInTheDocument()
+    expect(
+      screen.getByText('Teknisi ditugaskan, perbaikan dimulai.'),
+    ).toBeInTheDocument()
+  })
+
+  it('timeline kosong menjawab "Belum ada riwayat perubahan status."', async () => {
+    vi.mocked(api.GET).mockImplementation(async (url: string) => {
+      if (url === '/reports') return ok({ data: [laporanBaru] })
+      if (typeof url === 'string' && url.endsWith('/history'))
+        return ok({ data: [] })
+      return ok({ data: [] })
+    })
+    renderAt('/laporan/saya')
+    await screen.findByText(/perpustakaan lantai 2/)
+    const [tombolDetail] = screen.getAllByRole('button', { name: 'Detail' })
+    if (!tombolDetail) throw new Error('tombol Detail tidak ditemukan')
+    fireEvent.click(tombolDetail)
+    await screen.findByText('Belum ada riwayat perubahan status.')
+  })
+
+  it('timeline gagal tidak merusak panel detail', async () => {
+    vi.mocked(api.GET).mockImplementation(async (url: string) => {
+      if (url === '/reports') return ok({ data: [laporanBaru] })
+      if (typeof url === 'string' && url.endsWith('/history'))
+        return Promise.reject(new Error('down'))
+      return ok({ data: [] })
+    })
+    renderAt('/laporan/saya')
+    await screen.findByText(/perpustakaan lantai 2/)
+    const [tombolDetail] = screen.getAllByRole('button', { name: 'Detail' })
+    if (!tombolDetail) throw new Error('tombol Detail tidak ditemukan')
+    fireEvent.click(tombolDetail)
+    await screen.findByText('Riwayat status tidak tersedia saat ini.')
   })
 })

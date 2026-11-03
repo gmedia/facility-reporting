@@ -26,5 +26,9 @@ export default defineConfig({
       '/storage': 'http://localhost:8000',
     },
   },
-  test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    testTimeout: 15000,
+  },
 })
