@@ -16,15 +16,21 @@ export default defineConfig({
   ],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
+    host: '127.0.0.1',
+    port: 5173,
     proxy: {
-      '/api': 'http://localhost:8000',
-      '/sanctum': 'http://localhost:8000',
+      '/api': 'http://127.0.0.1:8000',
+      '/sanctum': 'http://127.0.0.1:8000',
       // Foto laporan disimpan Laravel di disk `public` dan dikembalikan
       // sebagai path relatif ("laporan/abc.jpg"). Frontend memintanya ke
       // /storage/... pada origin-nya sendiri, jadi tanpa proxy ini semua
       // <img> foto laporan bakal 404 di dev.
-      '/storage': 'http://localhost:8000',
+      '/storage': 'http://127.0.0.1:8000',
     },
   },
-  test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    testTimeout: 15000,
+  },
 })

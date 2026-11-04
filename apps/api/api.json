@@ -90,6 +90,55 @@
                 }
             }
         },
+        "/reports/{laporan}/history": {
+            "get": {
+                "operationId": "laporan.history",
+                "summary": "Ambil riwayat perubahan status suatu laporan",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LaporanStatusHistoryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LaporanStatusHistoryResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/reports/{laporan}/status": {
             "patch": {
                 "operationId": "laporan.updateStatus",
@@ -211,55 +260,6 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
-                    }
-                }
-            }
-        },
-        "/reports/{laporan}/history": {
-            "get": {
-                "operationId": "laporan.history",
-                "summary": "Ambil riwayat perubahan status suatu laporan",
-                "tags": [
-                    "Laporan"
-                ],
-                "parameters": [
-                    {
-                        "name": "laporan",
-                        "in": "path",
-                        "required": true,
-                        "description": "The laporan ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Array of `LaporanStatusHistoryResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/LaporanStatusHistoryResource"
-                                            }
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -810,6 +810,26 @@
                         "format": "binary",
                         "contentMediaType": "application/octet-stream",
                         "description": "Maximum file size: 2048 kilobytes."
+                    },
+                    "nilai_kerusakan": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_risiko": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_dampak": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_frekuensi": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
                     }
                 },
                 "required": [

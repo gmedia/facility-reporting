@@ -25,10 +25,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Disable default SameSite=lax on cookies so config('session.same_site') = '' works
+        $this->app->make('cookie')->setDefaultPathAndDomain('/', null, false, null);
+
         RateLimiter::for('login', function (Request $request): Limit {
             $identifier = $request->input('identifier');
+            $identifier = is_string($identifier) ? $identifier : '';
 
-            $key = is_string($identifier) && $identifier !== ''
+            $key = $identifier !== ''
                 ? 'login:'.strtolower(trim($identifier))
                 : 'login:ip:'.$request->ip();
 

@@ -15,6 +15,8 @@ import {
 import { GrafikTahunan } from './grafik-tahunan'
 import { KartuStatus, KartuTotal, hitungStatistik } from './ringkasan-laporan'
 import { StatusBadge } from './status-badge'
+import { PrioritasBadge } from './prioritas-badge'
+import { TimelineStatus } from './timeline-status'
 
 function kategoriLabel(kategori: string): string {
   return KATEGORI_LABEL[kategori as LaporanKategori] ?? kategori
@@ -417,6 +419,9 @@ function KartuLaporan({ laporan }: { laporan: Laporan }) {
             </div>
             <div className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
               <StatusBadge status={laporan.status} />
+              {laporan.prioritas_kategori && (
+                <PrioritasBadge kategori={laporan.prioritas_kategori} />
+              )}
               <span className="text-muted-foreground text-xs">
                 {tanggal(laporan.created_at)}
               </span>
@@ -492,12 +497,32 @@ function Detail({ laporan }: { laporan: Laporan }) {
             </dd>
           </div>
 
+          {laporan.prioritas_kategori && (
+            <div className="sm:col-span-2">
+              <dt className="text-[11px] font-semibold tracking-[0.08em] text-neutral-400 uppercase">
+                Prioritas
+              </dt>
+              <dd className="mt-1">
+                <PrioritasBadge kategori={laporan.prioritas_kategori} />
+              </dd>
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <dt className="text-[11px] font-semibold tracking-[0.08em] text-neutral-400 uppercase">
               Deskripsi
             </dt>
             <dd className="mt-0.5 text-sm leading-relaxed break-words text-neutral-800">
               {laporan.deskripsi}
+            </dd>
+          </div>
+
+          <div className="sm:col-span-2">
+            <dt className="text-[11px] font-semibold tracking-[0.08em] text-neutral-400 uppercase">
+              Riwayat Status
+            </dt>
+            <dd className="mt-1">
+              <TimelineStatus laporanId={laporan.id} />
             </dd>
           </div>
         </dl>

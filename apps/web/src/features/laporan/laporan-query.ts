@@ -69,6 +69,50 @@ export const STATUS_TONE: Record<LaporanStatus, string> = {
   selesai: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
 }
 
+// ============================================================
+// Prioritas laporan (M2)
+//
+// Nilai di-hitung backend dari skor (LaporanResource): ≥4.00 → tinggi,
+// ≥3.00 → sedang, selain itu → rendah. Field `null` kalau belum pernah
+// diproses — badge prioritas tidak boleh dipaksa tampil.
+// ============================================================
+export type PrioritasKategori = 'tinggi' | 'sedang' | 'rendah'
+
+export const PRIORITAS_LABEL: Record<PrioritasKategori, string> = {
+  tinggi: 'Tinggi',
+  sedang: 'Sedang',
+  rendah: 'Rendah',
+}
+
+export const PRIORITAS_VALUES = Object.keys(
+  PRIORITAS_LABEL,
+) as PrioritasKategori[]
+
+export const PRIORITAS_TONE: Record<PrioritasKategori, string> = {
+  tinggi: 'bg-red-100 text-red-800 ring-red-200',
+  sedang: 'bg-amber-100 text-amber-800 ring-amber-200',
+  rendah: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+}
+
+// Riwayat perubahan status satu laporan — dipanggil hanya saat panel
+// detail dibuka, bukan saat halaman dimuat.
+export function useLaporanHistory(id: number) {
+  return useQuery({
+    queryKey: ['laporan', 'history', id],
+    queryFn: async () => {
+      const { data, error, response } = await api.GET(
+        '/reports/{laporan}/history',
+        { params: { path: { laporan: id } } },
+      )
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal memuat riwayat status.')
+      }
+      return data.data
+    },
+    enabled: id > 0, // nilai default setelah `new Query(...)` — aman
+  })
+}
+
 // Daftar laporan. Backend sudah menyeleksi per role:
 //   user → cuma laporannya sendiri, admin/super_admin → semua.
 // Jadi gak perlu difilter lagi di sisi klien.

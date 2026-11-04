@@ -25,6 +25,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/reports/{laporan}/history': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil riwayat perubahan status suatu laporan */
+    get: operations['laporan.history']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reports/{laporan}/status': {
     parameters: {
       query?: never
@@ -61,23 +78,6 @@ export interface paths {
     head?: never
     /** Upload foto bukti untuk laporan */
     patch: operations['laporan.updateBukti']
-    trace?: never
-  }
-  '/reports/{laporan}/history': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Ambil riwayat perubahan status suatu laporan */
-    get: operations['laporan.history']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
     trace?: never
   }
   '/auth/login': {
@@ -253,6 +253,10 @@ export interface components {
        * @description Maximum file size: 2048 kilobytes.
        */
       foto: string
+      nilai_kerusakan?: number
+      nilai_risiko?: number
+      nilai_dampak?: number
+      nilai_frekuensi?: number
     }
     /** StoreUserRequest */
     StoreUserRequest: {
@@ -406,6 +410,33 @@ export interface operations {
       422: components['responses']['ValidationException']
     }
   }
+  'laporan.history': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Array of `LaporanStatusHistoryResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanStatusHistoryResource'][]
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
+    }
+  }
   'laporan.updateStatus': {
     parameters: {
       query?: never
@@ -470,33 +501,6 @@ export interface operations {
       403: components['responses']['AuthorizationException']
       404: components['responses']['ModelNotFoundException']
       422: components['responses']['ValidationException']
-    }
-  }
-  'laporan.history': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description The laporan ID */
-        laporan: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Array of `LaporanStatusHistoryResource` */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            data: components['schemas']['LaporanStatusHistoryResource'][]
-          }
-        }
-      }
-      401: components['responses']['AuthenticationException']
-      404: components['responses']['ModelNotFoundException']
     }
   }
   'auth.login': {
