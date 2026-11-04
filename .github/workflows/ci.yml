@@ -72,15 +72,7 @@ jobs:
         with:
           node-version: '24'
           cache: pnpm
-      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
-        with:
-          php-version: '8.5'
-          extensions: pdo_pgsql
-          tools: composer:v2
-          coverage: none
       - run: test -f pnpm-lock.yaml && test -f apps/api/composer.lock
       - run: pnpm install --frozen-lockfile
-      - run: cd apps/api && composer install --no-interaction --prefer-dist
-      - run: cd apps/api && php artisan scramble:export --no-interaction
       - run: pnpm --dir apps/web types:generate && git diff --exit-code -- apps/web/src/lib/api/schema.d.ts
       - run: pnpm --dir apps/web check
