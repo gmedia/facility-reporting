@@ -193,7 +193,10 @@ export function VerifikasiPage({ user }: { user: User }) {
             />
 
             <p className="text-xs text-neutral-500">
-Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</strong> - {prioritasLabel(parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1))}</p>
+            const priorityScore = parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1);
+            const priorityLabel = prioritasLabel(priorityScore);
+Skor prioritas: <strong>{priorityScore}</strong> - {priorityLabel}
+</p>
 
             {filter === 'valid' && (
               <div className="mt-4 p-4 rounded-[8px] bg-[#e6f2ec] border border-[#15803d]">
@@ -254,7 +257,7 @@ Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</
                 </div>
                 <div className="mt-3 pt-3 border-t border-[#15803d]">
                   <p className="text-xs text-neutral-500">
-Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</strong> - {prioritasLabel(parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1))}}
+Skor prioritas: <strong>{priorityScore}</strong> - {priorityLabel}
                   </p>
                 </div>
               </div>
