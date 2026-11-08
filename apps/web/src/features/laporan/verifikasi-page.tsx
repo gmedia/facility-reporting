@@ -29,10 +29,15 @@ import {
   errorMessage,
   useLaporanList,
   useUpdateLaporanStatus,
+  useUpdateLaporanBukti,
+  parseSkor,
+  prioritasLabel,
   type Laporan,
   type LaporanKategori,
   type LaporanStatus,
 } from '@/features/laporan/laporan-query'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
 type StatusFilter = 'semua' | LaporanStatus
@@ -66,6 +71,7 @@ function kategoriLabel(kategori: string): string {
 export function VerifikasiPage({ user }: { user: User }) {
   const list = useLaporanList()
   const update = useUpdateLaporanStatus()
+  const uploadBukti = useUpdateLaporanBukti()
   const [filter, setFilter] = useState<StatusFilter>('semua')
 
   const laporan = list.data ?? []
@@ -91,9 +97,12 @@ export function VerifikasiPage({ user }: { user: User }) {
       ? ringkasan.antrian
       : ringkasan.antrian.filter((item) => item.status === filter)
 
+  const [alansa, setAlansa] = useState('')
+  const [nilai, setNilai] = useState<object | undefined>(undefined)
+
   const ubahStatus = async (id: number, status: LaporanStatus) => {
     try {
-      await update.mutateAsync({ id, status })
+      await update.mutateAsync({ id, status, nilai, alansa })
       toast.success(`Status diubah ke ${STATUS_LABEL[status]}`)
     } catch (error) {
       toast.error(errorMessage(error))
@@ -111,7 +120,7 @@ export function VerifikasiPage({ user }: { user: User }) {
           onSelect={setFilter}
         />
       }
-    >
+      >
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -121,6 +130,50 @@ export function VerifikasiPage({ user }: { user: User }) {
             <p className="mt-1 text-sm text-[#8a8f87]">
               Antrian laporan, semua gedung
             </p>
+            <div className="mt-4 flex gap-2">
+              <Textarea
+                id="laporan-alasan"
+                rows={2}
+                placeholder="Alasan perubahan status (opsional)"
+                value={alansa}
+                onChange={(e) => setAlansa(e.target.value)}
+                className="rounded-[8px] border border-neutral-300 px-3 py-2 text-sm transition-colors focus:outline-none focus:border-[#15803d]"
+              />
+            </div>
+            {filter === 'selesai' && (
+              <div className="mt-4 p-4 rounded-[8px] bg-[#e6f2ec] border border-[#15803d]">
+                <h3 className="font-semibold text-[#15803d] mb-3">Bukti Foto</h3>
+                <p className="text-sm text-neutral-600 mb-2">
+                  Unggah foto bukti untuk laporan yang sedang diverifikasi
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/jpeg, image/png, image/webp"
+                    className="rounded-[8px] border border-neutral-300 px-3 py-2 text-sm cursor-pointer hover:border-[#15803d] transition-colors"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+      if (file && uploadBukti.isPending) return
+      if (file) {
+        const firstId = antrian.length > 0 ? antrian[0].id : 0
+        uploadBukti.mutateAsync({ id: firstId, bukti: file })
+      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-4 py-1.5 text-sm hover:bg-[#e6f2ec]"
+                    disabled={uploadBukti.isPending}
+                  >
+                    {uploadBukti.isPending ? 'Mengupload...' : 'Unggah'}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-neutral-500">
+                  Format: JPG, PNG, WebP | Maksimal 2 MB
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -138,6 +191,9 @@ export function VerifikasiPage({ user }: { user: User }) {
               activeStatus={filter === 'semua' ? undefined : filter}
               onSelect={setFilter}
             />
+
+            <p className="text-xs text-neutral-500">
+Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</strong> - {prioritasLabel(parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1))}</p>
 
             <div className="grid items-start gap-6 xl:grid-cols-[1.55fr_1fr]">
               <section className={cn(CARD, 'min-w-0')}>
@@ -199,8 +255,8 @@ export function VerifikasiPage({ user }: { user: User }) {
                                 <StatusMenu
                                   laporan={laporanItem}
                                   disabled={update.isPending}
-                                  onChange={(status) =>
-                                    void ubahStatus(laporanItem.id, status)
+                                  onChange={(status, alansa, nilai) =>
+                                    void ubahStatus(laporanItem.id, status, nilai, alansa)
                                   }
                                 />
                               </td>
@@ -293,7 +349,7 @@ function StatusMenu({
 }: {
   laporan: Laporan
   disabled: boolean
-  onChange: (status: LaporanStatus) => void
+  onChange: (status: LaporanStatus, alansa: string, nilai: object | undefined) => void
 }) {
   const status = laporan.status as LaporanStatus
   const label = STATUS_LABEL[status] ?? laporan.status
@@ -322,7 +378,7 @@ function StatusMenu({
           <DropdownMenuItem
             key={s}
             disabled={disabled || s === status}
-            onClick={() => onChange(s)}
+            onClick={() => onChange(s, laporan.alansa ?? '', laporan.nilai ?? {})}
           >
             {STATUS_LABEL[s]}
           </DropdownMenuItem>
