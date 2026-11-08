@@ -195,6 +195,71 @@ export function VerifikasiPage({ user }: { user: User }) {
             <p className="text-xs text-neutral-500">
 Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</strong> - {prioritasLabel(parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1))}</p>
 
+            {filter === 'valid' && (
+              <div className="mt-4 p-4 rounded-[8px] bg-[#e6f2ec] border border-[#15803d]">
+                <h3 className="font-semibold text-[#15803d] mb-3">Nilai SMART</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <label className="block text-neutral-600 mb-1">Kerusakan</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={nilai?.kerusakan ?? 1}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.min(5, Number(e.target.value))) || 1
+                        setNilai({ ...nilai, kerusakan: v })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-neutral-600 mb-1">Risiko</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={nilai?.risiko ?? 1}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.min(5, Number(e.target.value))) || 1
+                        setNilai({ ...nilai, risiko: v })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-neutral-600 mb-1">Dampak</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={nilai?.dampak ?? 1}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.min(5, Number(e.target.value))) || 1
+                        setNilai({ ...nilai, dampak: v })
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-neutral-600 mb-1">Frekuensi</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={nilai?.frekuensi ?? 1}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.min(5, Number(e.target.value))) || 1
+                        setNilai({ ...nilai, frekuensi: v })
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-[#15803d]">
+                  <p className="text-xs text-neutral-500">
+Skor prioritas: <strong>{parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1)}</strong> - {prioritasLabel(parseSkor(nilai?.dampak ?? 1, nilai?.frekuensi ?? 1))}}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid items-start gap-6 xl:grid-cols-[1.55fr_1fr]">
               <section className={cn(CARD, 'min-w-0')}>
                 <h2 className="text-lg font-semibold">Antrian verifikasi</h2>
