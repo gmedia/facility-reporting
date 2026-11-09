@@ -183,10 +183,21 @@ describe('halaman /akun', () => {
     expect(options.body).toBeInstanceOf(FormData)
     expect(options.body.get('foto')).toBeInstanceOf(File)
 
-    // Sukses → cache /auth/me ditimpa, pratinjau langsung jadi <img>.
+    // Sukses → cache /auth/me ditimpa: pratinjau halaman jadi <img>
+    // (di-scope ke kartu Foto Profil) dan kartu sidebar yang membaca
+    // cache yang sama ikut berganti dari inisial ke foto.
+    const kartuFoto = screen
+      .getByText('Foto Profil')
+      .closest('[data-slot="card"]')
+    expect(kartuFoto).not.toBeNull()
     expect(
-      await screen.findByAltText('Foto profil Mahasiswa Baru'),
+      await within(kartuFoto as HTMLElement).findByAltText(
+        'Foto profil Mahasiswa Baru',
+      ),
     ).toBeInTheDocument()
+    expect(
+      await screen.findAllByAltText('Foto profil Mahasiswa Baru'),
+    ).toHaveLength(2)
   })
 
   it('menolak foto lebih dari 2 MB tanpa memanggil API', async () => {

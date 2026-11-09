@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   Building2,
   History,
@@ -13,7 +13,10 @@ import {
 import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { SiteFooter } from '@/components/site-footer'
-import { logoutMutationOptions } from '@/features/auth/auth-query'
+import {
+  logoutMutationOptions,
+  meQueryOptions,
+} from '@/features/auth/auth-query'
 import type { User } from '@/features/auth/auth-query'
 import { cn } from '@/lib/utils'
 
@@ -54,6 +57,20 @@ function initialsOf(name: string): string {
     .toUpperCase()
 }
 
+// Duplikat dari features/akun/akun-query.ts — komponen shell tidak menarik
+// dependensi ke folder fitur, dan helper ini cuma beberapa baris (pola sama
+// dengan duplikasi fotoUrl di riwayat-list.tsx).
+function fotoUrl(foto: string): string {
+  if (/^(https?:|data:|blob:)/.test(foto)) return foto
+
+  const dasar = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
+  const origin = /^https?:\/\//.test(dasar)
+    ? dasar.replace(/\/api\/v\d+\/?$/, '')
+    : ''
+
+  return `${origin}/storage/${foto.replace(/^\/+/, '')}`
+}
+
 // Bingkai halaman user: sidebar hijau tua di kiri (desktop), drawer di
 // mobile, lalu area konten + footer. Guard role tetap di masing-masing
 // route; komponen ini murni tampilan.
@@ -67,6 +84,12 @@ export function UserShell({
   const router = useRouter()
   const logout = useMutation(logoutMutationOptions)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Cache ['me'] dibaca langsung (bukan cuma prop context route) supaya kartu
+  // akun ikut update seketika setelah foto diganti di /akun — context route
+  // baru segar saat navigasi berikutnya.
+  const { data: me } = useQuery(meQueryOptions)
+  const akun = me ?? user
 
   const onLogout = async () => {
     await logout.mutateAsync()
@@ -130,12 +153,20 @@ export function UserShell({
         <div className="mt-auto px-3 pt-6 pb-4">
           <div className="rounded-3xl bg-white/8 p-4 ring-1 ring-white/10">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#3b9b6b] text-sm font-semibold text-white">
-                {initialsOf(user.name)}
-              </span>
+              {akun.foto ? (
+                <img
+                  src={fotoUrl(akun.foto)}
+                  alt={`Foto profil ${akun.name}`}
+                  className="size-10 shrink-0 rounded-full object-cover ring-1 ring-white/20"
+                />
+              ) : (
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#3b9b6b] text-sm font-semibold text-white">
+                  {initialsOf(akun.name)}
+                </span>
+              )}
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-white">
-                  {user.name}
+                  {akun.name}
                 </span>
                 <span className="block text-xs text-white/60">Mahasiswa</span>
               </span>
