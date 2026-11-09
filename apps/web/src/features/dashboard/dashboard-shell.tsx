@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import {
   Building2,
   LayoutDashboard,
+  LogOut,
   Menu,
   ShieldCheck,
   Users,
@@ -56,16 +57,21 @@ function initialsOf(name: string): string {
     .toUpperCase()
 }
 
-// Bingkai sidebar hijau untuk halaman pengelola (dashboard, verifikasi,
-// akun admin). Guard role tetap di masing-masing route; komponen ini murni
-// tampilan.
+// Bingkai sidebar hijau tua untuk halaman pengelola (dashboard, verifikasi,
+// akun admin). Warna disamakan dengan layout user. Guard role tetap di
+// masing-masing route; komponen ini murni tampilan.
+//
+// `menunggu` = jumlah laporan yang menunggu verifikasi, ditampilkan
+// sebagai badge di menu Verifikasi.
 export function DashboardShell({
   user,
   header,
+  menunggu,
   children,
 }: {
   user: User
   header?: ReactNode
+  menunggu?: number
   children: ReactNode
 }) {
   const router = useRouter()
@@ -80,16 +86,16 @@ export function DashboardShell({
 
   const who =
     user.role === 'super_admin'
-      ? { title: 'Super admin', desc: 'Akses penuh ke semua pengaturan.' }
-      : { title: 'Admin', desc: 'Verifikasi laporan masuk.' }
+      ? { title: 'Super admin' }
+      : { title: 'Admin' }
 
   return (
-    <div className="min-h-dvh bg-[#3b9b6b] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+    <div className="min-h-dvh bg-[#0f3d2e] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
       {mobileOpen && (
         <button
           type="button"
           aria-label="Tutup menu"
-          className="fixed inset-0 z-30 bg-black/35 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -97,7 +103,7 @@ export function DashboardShell({
       <aside
         aria-label="Navigasi admin"
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-[270px] flex-col overflow-y-auto bg-[#3b9b6b] text-white shadow-xl lg:sticky lg:top-0 lg:z-0 lg:flex lg:h-dvh lg:w-auto lg:translate-x-0 lg:shadow-none',
+          'fixed inset-y-0 left-0 z-40 w-[270px] flex-col overflow-y-auto bg-[#0f3d2e] text-white shadow-xl lg:sticky lg:top-0 lg:z-0 lg:flex lg:h-dvh lg:w-auto lg:translate-x-0 lg:shadow-none',
           mobileOpen ? 'flex translate-x-0' : 'hidden -translate-x-full',
         )}
       >
@@ -111,7 +117,9 @@ export function DashboardShell({
         </button>
 
         <div className="flex items-center gap-3 px-5 pt-5 pb-6 text-[17px] leading-tight font-bold">
-          <Building2 aria-hidden="true" className="size-6 shrink-0" />
+          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/10">
+            <Building2 aria-hidden="true" className="size-6" />
+          </span>
           <span>
             Pelaporan
             <br />
@@ -124,31 +132,44 @@ export function DashboardShell({
             <NavLink
               key={item.to}
               {...item}
+              badge={item.to === '/verifikasi' ? menunggu : undefined}
               onNavigate={() => setMobileOpen(false)}
             />
           ))}
         </nav>
 
-        <div className="mx-3 mt-auto mb-2 rounded-[20px] bg-white/15 p-[18px]">
-          <p className="text-base font-semibold text-white">{who.title}</p>
-          <p className="mt-0.5 text-sm text-white/90">{who.desc}</p>
+        {/* Kartu profil + keluar */}
+        <div className="mx-3 mt-auto mb-3 rounded-[20px] bg-white/10 p-[18px]">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#1f6b4f] text-sm font-semibold text-white ring-1 ring-white/20">
+              {initialsOf(user.name)}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-white">
+                {user.name}
+              </p>
+              <p className="text-sm text-white/70">{who.title}</p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onLogout}
             disabled={logout.isPending}
-            className="mt-3.5 rounded-[10px] bg-[#f0e2b8] px-4 py-2 text-sm font-semibold text-[#5a4a1d] transition hover:brightness-95 disabled:opacity-60"
+            className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
           >
+            <LogOut aria-hidden="true" className="size-4" />
             {logout.isPending ? 'Keluar...' : 'Keluar'}
           </button>
         </div>
       </aside>
 
-      <div className="flex min-h-dvh min-w-0 flex-col bg-white">
-        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b-[1.5px] border-[#efe9d8] bg-white px-4 lg:px-10">
+      <div className="flex min-h-dvh min-w-0 flex-col bg-[#f6f7f4]">
+        <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b border-neutral-200/70 bg-[#f6f7f4] px-4 lg:px-10">
           <button
             type="button"
             aria-label="Buka menu"
-            className="grid size-9 shrink-0 place-items-center rounded-full text-neutral-700 transition-colors hover:bg-[#faf3e5] lg:hidden"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-neutral-700 transition-colors hover:bg-neutral-200/60 lg:hidden"
             onClick={() => setMobileOpen(true)}
           >
             <Menu aria-hidden="true" className="size-5" />
@@ -156,20 +177,6 @@ export function DashboardShell({
 
           <div className="flex min-w-0 flex-1 items-center self-stretch">
             {header}
-          </div>
-
-          <div className="flex shrink-0 items-center gap-3 py-2">
-            <span className="flex size-11 items-center justify-center rounded-full bg-[#3b9b6b] text-sm font-semibold text-white">
-              {initialsOf(user.name)}
-            </span>
-            <span className="hidden text-right sm:block">
-              <span className="block text-sm font-semibold text-neutral-800">
-                {user.name}
-              </span>
-              <span className="block text-xs text-neutral-400">
-                {who.title}
-              </span>
-            </span>
           </div>
         </header>
 
@@ -186,12 +193,14 @@ function NavLink({
   to,
   icon: Icon,
   end,
+  badge,
   onNavigate,
 }: {
   label: string
   to: NavTo
   icon: typeof LayoutDashboard
   end?: boolean
+  badge?: number
   onNavigate?: () => void
 }) {
   const pathname = useRouterState({
@@ -209,12 +218,17 @@ function NavLink({
       className={cn(
         'mx-3 flex items-center gap-3.5 rounded-xl px-4 py-3 text-[15px] transition-colors',
         active
-          ? 'bg-white/20 font-bold text-white'
-          : 'font-medium text-white/90 hover:bg-white/10 hover:text-white',
+          ? 'bg-[#1f4d3d] font-bold text-white'
+          : 'font-medium text-white/80 hover:bg-white/10 hover:text-white',
       )}
     >
       <Icon aria-hidden="true" className="size-5 shrink-0" />
       {label}
+      {badge ? (
+        <span className="ml-auto rounded-full bg-[#f0b45a] px-2 text-[11px] font-bold text-[#3a2600]">
+          {badge}
+        </span>
+      ) : null}
     </Link>
   )
 }

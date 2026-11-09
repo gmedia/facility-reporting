@@ -130,6 +130,9 @@ export function useLaporanList() {
 }
 
 // Aksi admin: ubah status lewat PATCH /reports/{laporan}/status.
+// - `alasan` wajib dari backend kalau status = ditolak.
+// - `foto` (bukti) wajib dari backend kalau status = selesai; di request
+//   multipart namanya `foto_bukti`.
 export function useUpdateLaporanStatus() {
   const queryClient = useQueryClient()
 
@@ -137,16 +140,53 @@ export function useUpdateLaporanStatus() {
     mutationFn: async ({
       id,
       status,
+      alasan,
+      foto,
     }: {
       id: number
       status: LaporanStatus
+      alasan?: string
+      foto?: File
     }) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
 
-      const { data, error, response } = await api.PATCH(
-        '/reports/{laporan}/status',
-        { params: { path: { laporan: id } }, body: { status } },
-      )
+      let result: {
+        data?: { data: Laporan }
+        error?: unknown
+        response: Response
+      }
+
+      if (foto) {
+        // Laravel tidak mem-parse multipart di request PATCH, jadi dikirim
+        // sebagai POST + `_method=PATCH` (method spoofing). Dicast karena
+        // schema.d.ts hanya mengenal PATCH untuk path ini.
+        const form = new FormData()
+        form.append('_method', 'PATCH')
+        form.append('status', status)
+        if (alasan) form.append('alasan', alasan)
+        form.append('foto_bukti', foto) // nama field di backend: foto_bukti
+
+        result = await (
+          api as unknown as {
+            POST: (url: string, init: unknown) => Promise<typeof result>
+          }
+        ).POST('/reports/{laporan}/status', {
+          params: { path: { laporan: id } },
+          body: form,
+        })
+      } else {
+        const body = {
+          status,
+          ...(alasan ? { alasan } : {}),
+        } as { status: LaporanStatus }
+
+        result = (await api.PATCH('/reports/{laporan}/status', {
+          params: { path: { laporan: id } },
+          body,
+        })) as typeof result
+      }
+
+      const { data, error, response } = result
 
       if (error || !data) {
         throw apiError(response.status, error, 'Gagal mengubah status laporan.')
