@@ -1,19 +1,25 @@
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
+
 // ============================================================
-// QNA di Beranda — SATU kartu, empat tanya-jawab dalam grid
-// dua kolom.
+// QNA di Beranda — SATU kartu ringkas yang BISA DILIPAT.
 //
 // Isinya sengaja dijawab dari halaman sistem sendiri, bukan dari
 // kebijakan yang belum ada di kode: tidak ada janji SLA ("2x24 jam"),
 // tidak ada kriteria penolakan karangan. Kalau suatu aturan sudah ada
 // di produk, tulis di sini; kalau belum, jangan duluan.
 //
-// Redesign 9 Nov (#102): versi lama memakai empat kartu terpisah
-// dengan latar selang-seling putih/hijau dan ikon watermark besar di
-// pojok. Karena ikonnya, paragrafnya dipaksa punya gutter kanan
-// (pr-16/pr-20) sehingga barisnya pendek-pendek dan halamannya ramai.
-// Sekarang: satu kartu — header di dalam kartu persis seperti
-// "Laporan terbaru" di atasnya — dan isinya murni teks tanpa ikon.
-// Tiap kolom ±430px ≈ 60-65 karakter per baris, ideal untuk dibaca.
+// Desain (#102): kartu penuh dengan empat jawaban terekspos bikin
+// halaman jadi panjang. Sekarang jawabannya dilipat — yang tampil cuma
+// empat baris pertanyaan, klik untuk membuka, dan hanya SATU jawaban
+// yang terbuka sekaligus supaya tingginya tetap terkendali. Chevron
+// ikut berputar. Grid dua kolom dipertahankan supaya lebar jawaban
+// tetap ±430px (60-65 karakter/baris), ideal untuk dibaca.
+//
+// Pola tombolnya mengikuti rekomendasi WAI-ARIA: <h3> membungkus
+// <button>, jadi navigasi heading untuk screen reader tetap utuh dan
+// state-nya dibaca lewat aria-expanded.
 // ============================================================
 
 type Tanya = {
@@ -45,6 +51,11 @@ const TANYA: Tanya[] = [
 ]
 
 export function DashboardFaq() {
+  // Index jawaban yang sedang terbuka; null = semua tertutup (default
+  // minim). Cuma satu pada satu waktu — FAQ bukan dokumen referensi,
+  // membandingkan dua jawaban sekaligus bukan kasus pemakaian.
+  const [terbuka, setTerbuka] = useState<number | null>(null)
+
   return (
     <section
       aria-label="Tanya jawab seputar sistem"
@@ -59,19 +70,57 @@ export function DashboardFaq() {
         </p>
       </header>
 
-      {/* sm:grid-cols-2 → dua kolom dua baris; tanpa ikon dan tanpa
-          gutter, jadi teksnya lebar penuh dan tidak putus-putus. */}
-      <div className="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-6">
-        {TANYA.map(({ tanya, jawab }) => (
-          <div key={tanya}>
-            <h3 className="text-sm leading-snug font-semibold text-neutral-900">
-              {tanya}
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">
-              {jawab}
-            </p>
-          </div>
-        ))}
+      {/* Divider antar sel dihitung per indeks supaya logikanya
+          kelihatan: mobile semua kecuali pertama dapat border-t;
+          desktop baris kedua juga, dan kolom kanan dapat border-l. */}
+      <div className="grid sm:grid-cols-2">
+        {TANYA.map(({ tanya, jawab }, i) => {
+          const aktif = terbuka === i
+          const idJawab = `faq-jawab-${i}`
+
+          return (
+            <div
+              key={tanya}
+              className={cn(
+                'border-black/5',
+                i >= 1 && 'border-t',
+                i === 1 && 'sm:border-t-0',
+                i % 2 === 1 && 'sm:border-l',
+              )}
+            >
+              <h3 className="text-sm leading-snug font-semibold text-neutral-900">
+                <button
+                  type="button"
+                  onClick={() => setTerbuka(aktif ? null : i)}
+                  aria-expanded={aktif}
+                  aria-controls={aktif ? idJawab : undefined}
+                  className={cn(
+                    'flex w-full cursor-pointer items-center justify-between gap-3 px-5 py-3.5 text-left transition-colors hover:bg-black/[0.02]',
+                    aktif && 'bg-black/[0.02]',
+                  )}
+                >
+                  <span>{tanya}</span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      'size-4 shrink-0 text-neutral-400 transition-transform duration-200',
+                      aktif && 'rotate-180 text-[#0d3f31]',
+                    )}
+                  />
+                </button>
+              </h3>
+
+              {aktif && (
+                <p
+                  id={idJawab}
+                  className="px-5 pb-4 text-sm leading-relaxed text-neutral-600"
+                >
+                  {jawab}
+                </p>
+              )}
+            </div>
+          )
+        })}
       </div>
     </section>
   )
