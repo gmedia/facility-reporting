@@ -662,13 +662,17 @@ function BuktiDialog({
   }, [onBatal, pending])
 
   // Pratinjau foto yang dipilih. URL objek dibersihkan saat file diganti
-  // atau dialog ditutup.
+  // atau dialog ditutup. setState di dalam effect disengakan dengan sengaja
+  // untuk sinkronisasi URL objek (blob:) dengan state React; pola ini aman
+  // karena file berasal dari pilihan user sendiri (self-XSS risiko rendah).
   useEffect(() => {
     if (!file) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreview(null)
       return
     }
     const url = URL.createObjectURL(file)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreview(url)
     return () => URL.revokeObjectURL(url)
   }, [file])
