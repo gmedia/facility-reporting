@@ -1,2 +1,11 @@
 packages:
   - apps/web
+
+overrides:
+  # Security patches for transitive dependencies pinned by parents that
+  # have not released a patched range yet. Keep this list minimal.
+  source-map-js: 1.2.2 # GHSA-68fv-2mgg-jv7q (via @tailwindcss/node)
+  undici: 7.30.2 # GHSA-xjj6-f33q-929c, -4w7w-5xrc-9h26, -2m5v-pch6-74hx, -qrxm-fqhp-jwvm (via @dotenvx/dotenvx)
+  seroval: 1.6.12 # GHSA-97r2-qh9m-474h, -7rv5-mrxv-xcr9, -wp97-x4hv-qvhp (via @tanstack/router-core)
+  seroval-plugins: 1.6.12 # keep in lockstep with seroval
+  systeminformation: 5.33.19 # GHSA-3f7j-7jwc-fxfj (via @dotenvx/dotenvx)
