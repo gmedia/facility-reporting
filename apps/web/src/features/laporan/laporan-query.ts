@@ -199,8 +199,15 @@ export function useCreateLaporan() {
 // Helper error. Sengaja diduplikat dari features/admin/users-query.ts
 // supaya nggak nyasar ke folder Anas. Debt kecil — kalau nanti mau
 // digabung, bikin lib/api/errors.ts dulu bareng tim.
+//
+// Di-export untuk features/akun/akun-query.ts (folder sendiri, bukan
+// Anas) supaya pesan error 401/422/500 seragam antar halaman user.
 // ============================================================
-function apiError(status: number, body: unknown, fallback: string): Error {
+export function apiError(
+  status: number,
+  body: unknown,
+  fallback: string,
+): Error {
   const error = new Error(messageFor(status, fallback))
   Object.assign(error, { status }, body ?? {})
   return error

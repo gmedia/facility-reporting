@@ -368,6 +368,97 @@
                 }
             }
         },
+        "/profile/foto": {
+            "post": {
+                "operationId": "profile.updateFoto",
+                "summary": "Upload foto profil milik user yang sedang login",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileFotoRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/password": {
+            "patch": {
+                "operationId": "profile.changePassword",
+                "summary": "Ganti password user yang sedang login",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Password berhasil diperbarui."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/status": {
             "get": {
                 "operationId": "v1.status",
@@ -564,6 +655,28 @@
     },
     "components": {
         "schemas": {
+            "ChangePasswordRequest": {
+                "type": "object",
+                "properties": {
+                    "current_password": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 8
+                    },
+                    "password_confirmation": {
+                        "type": "string",
+                        "minLength": 8
+                    }
+                },
+                "required": [
+                    "current_password",
+                    "password",
+                    "password_confirmation"
+                ],
+                "title": "ChangePasswordRequest"
+            },
             "LaporanKategori": {
                 "type": "string",
                 "enum": [
@@ -918,6 +1031,21 @@
                 ],
                 "title": "UpdateLaporanStatusRequest"
             },
+            "UpdateProfileFotoRequest": {
+                "type": "object",
+                "properties": {
+                    "foto": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
+                    }
+                },
+                "required": [
+                    "foto"
+                ],
+                "title": "UpdateProfileFotoRequest"
+            },
             "UpdateUserRequest": {
                 "type": "object",
                 "properties": {
@@ -960,6 +1088,12 @@
                     },
                     "role": {
                         "type": "string"
+                    },
+                    "foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -967,7 +1101,8 @@
                     "name",
                     "nim",
                     "email",
-                    "role"
+                    "role",
+                    "foto"
                 ],
                 "title": "UserResource"
             }

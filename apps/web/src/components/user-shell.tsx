@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   PlusCircle,
+  UserRound,
   X,
 } from 'lucide-react'
 import { Link, useRouter, useRouterState } from '@tanstack/react-router'
@@ -27,7 +28,7 @@ import { cn } from '@/lib/utils'
 // Halaman user butuh warna yang sama dengan panel kiri login (#0d3f31),
 // jadi digabung cuma bakal bikin salah satu pihak dikorbankan.
 // ============================================================
-type NavTo = '/dashboard' | '/lapor' | '/laporan/saya'
+type NavTo = '/dashboard' | '/lapor' | '/laporan/saya' | '/akun'
 
 interface NavItem {
   label: string
@@ -40,6 +41,7 @@ const NAV_USER: NavItem[] = [
   { label: 'Beranda', to: '/dashboard', icon: LayoutDashboard, end: true },
   { label: 'Lapor Kerusakan', to: '/lapor', icon: PlusCircle },
   { label: 'Riwayat Laporan', to: '/laporan/saya', icon: History },
+  { label: 'Akun', to: '/akun', icon: UserRound },
 ]
 
 function initialsOf(name: string): string {
@@ -113,7 +115,7 @@ export function UserShell({
 
         {/* gap-2 + py-3: jarak antar tombol dan tinggi tombolnya sengaja
             dinaikkan satu langkah — versi lama (gap-1/py-2.5) terasa
-            mepet, apalagi cuma ada 3 item. */}
+            mepet, apalagi daftar menunya masih pendek. */}
         <nav className="flex flex-col gap-2 px-3">
           {NAV_USER.map((item) => (
             <NavLink
