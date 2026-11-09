@@ -26,6 +26,14 @@ import {
   type LaporanKategori,
 } from './laporan-query'
 
+// Pilihan lokasi (permintaan 3 Nov 2026): user tidak lagi mengetik
+// lokasi bebas — nilainya diambil dari daftar ini lewat dropdown, supaya
+// data lokasi di backend konsisten dan gampang dikelompokkan. Backend
+// tetap menerima string apa pun, jadi nambah gedung cukup nambah baris.
+// Sengaja tidak di-export: file .tsx cuma boleh export komponen supaya
+// react-refresh tidak kasih warning baru.
+const LOKASI_VALUES = ['Gedung D', 'Gedung S'] as const
+
 const formSchema = z.object({
   // z.string() dulu, baru refine — biar pesannya manusiawi.
   // (z.enum dengan config kedua-nya berisiko beda antar versi zod.)
@@ -164,12 +172,21 @@ export function LaporanForm() {
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
             <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
-            <Input
-              id="laporan-lokasi"
-              placeholder="gedung / lantai / ruangan"
-              autoComplete="off"
-              {...field}
-            />
+            {/* Pola yang sama dengan kategori: Base UI Select. Pilihan
+                dikunci di LOKASI_VALUES — bukan Input bebas — supaya user
+                tinggal memilih. */}
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="laporan-lokasi" className="w-full">
+                <SelectValue placeholder="Pilih lokasi" />
+              </SelectTrigger>
+              <SelectContent>
+                {LOKASI_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FieldError
               errors={fieldState.error ? [fieldState.error] : undefined}
             />

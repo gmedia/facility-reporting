@@ -1,5 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronDownIcon, ImageIcon, InboxIcon } from 'lucide-react'
+import {
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  ImageIcon,
+  InboxIcon,
+} from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -41,9 +46,9 @@ function tanggal(iso: string | null): string {
 // laporan user ilang diam-diam kalau backend ganti kebijakan scoping.
 export function RiwayatList() {
   const list = useLaporanList()
-  // Dua dimensi saringan yang berdiri sendiri: tahun lewat pemilih di
-  // baris judul, bulan lewat chip. Pisah kendali = daftar chip cukup 13
-  // item pendek alih-alih 13 item bertahun yang pecah jadi dua baris.
+  // Dua dimensi saringan yang berdiri sendiri: tahun dan bulan. Keduanya
+  // kini tinggal di satu panel yang dibuka tombol "Saring" di baris
+  // judul daftar (permintaan 3 Nov) — tidak lagi tercecer.
   const [tahunDipilih, setTahunDipilih] = useState<string | null>(null)
   const [bulanDipilih, setBulanDipilih] = useState<number | null>(null)
 
@@ -127,12 +132,16 @@ export function RiwayatList() {
 }
 
 // ============================================================
-// DAFTAR PER BULAN + PEMILIH BULAN
+// DAFTAR PER BULAN + PANEL SARINGAN
 //
 // Satu <section> pembungkus dengan aria-label — bukan cuma rapi secara
 // visual, tapi juga jangkar untuk test: label kartu ringkasan ("Selesai",
 // "Ditolak") sama persis dengan teks badge di daftar ini, jadi tanpa
 // pemisah ruang getByText bakal nemu dua elemen.
+//
+// Pemilih tahun + chip bulan berada di dalam panel yang dibuka satu
+// tombol "Saring" (permintaan 3 Nov 2026), jadi test yang mau menyaring
+// harus membuka panelnya dulu.
 // ============================================================
 function DaftarPerBulan({
   laporans,
@@ -149,7 +158,13 @@ function DaftarPerBulan({
   onPilihTahun: (tahun: string | null) => void
   onPilihBulan: (bulan: number | null) => void
 }) {
+  // Panel saringan tertutup sampai tombolnya ditekan (permintaan 3 Nov
+  // 2026): pemilih tahun dan chip bulan yang dulu tercecer di dua baris
+  // kini tinggal di dalam satu panel yang dibuka satu tombol.
+  const [panelTerbuka, setPanelTerbuka] = useState(false)
+
   const kelompok = kelompokPerBulan(laporans)
+  const ringkas = labelSaringan(tahunDipilih, bulanDipilih) || 'Semua waktu'
 
   return (
     <section aria-label="Daftar laporan" className="flex flex-col gap-4">
@@ -158,59 +173,112 @@ function DaftarPerBulan({
           Daftar Laporan
         </h2>
 
-        {/* Pemilih tahun: kendali terpisah dari chip bulan. <select> biasa
-            (bukan Base UI Select) sengaja — ini filter inline, bukan field
-            form: kontrolnya harus kecil, bisa diuji dengan fireEvent.change,
-            dan tetap jadi control asli untuk pembaca layar. */}
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="daftar-laporan-tahun"
-            className="text-xs font-medium text-neutral-500"
+        {/* Satu tombol = satu panel untuk tahun DAN bulan. Teks tombolnya
+            selalu diawali "Saring: " supaya tidak pernah bentrok dengan
+            judul kelompok ("Maret 2025") di daftar. */}
+        <div className="relative">
+          <button
+            type="button"
+            aria-expanded={panelTerbuka}
+            aria-controls={panelTerbuka ? 'panel-saringan' : undefined}
+            onClick={() => setPanelTerbuka((buka) => !buka)}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium text-neutral-700 transition-colors outline-none hover:bg-[#eef4f1] focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15"
           >
-            Tahun
-          </label>
-          <select
-            id="daftar-laporan-tahun"
-            value={tahunDipilih ?? ''}
-            onChange={(event) => onPilihTahun(event.target.value || null)}
-            className="h-8 rounded-lg border border-black/10 bg-white pr-2 pl-2.5 text-sm text-neutral-700 transition-colors outline-none focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15"
-          >
-            <option value="">Semua tahun</option>
-            {tahunTersedia.map((tahun) => (
-              <option key={tahun} value={tahun}>
-                {tahun}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            <CalendarDaysIcon
+              aria-hidden="true"
+              className="size-4 text-neutral-400"
+            />
+            {`Saring: ${ringkas}`}
+            <ChevronDownIcon
+              aria-hidden="true"
+              className={cn(
+                'size-3.5 text-neutral-400 transition-transform',
+                panelTerbuka && 'rotate-180',
+              )}
+            />
+          </button>
 
-      {/* Chip bulan tanpa tahun — tahunnya sudah ada di kendali di atas,
-          jadi mengulang "2026" di 12 chip cuma bikin daftar ini pecah jadi
-          dua baris. Bulan kosong tetap ditawarkan penuh (permintaan 27 Okt). */}
-      <div
-        role="group"
-        aria-label="Saring per bulan"
-        className="flex flex-wrap gap-2"
-      >
-        <ChipPilih
-          aktif={bulanDipilih === null}
-          onClick={() => onPilihBulan(null)}
-        >
-          Semua
-        </ChipPilih>
-        {BULAN_SINGKAT.map((nama, indeks) => {
-          const bulan = indeks + 1
-          return (
-            <ChipPilih
-              key={nama}
-              aktif={bulanDipilih === bulan}
-              onClick={() => onPilihBulan(bulan)}
+          {/* Backdrop: klik di mana pun di luar panel menutupnya, jadi
+              panel tidak menutupi daftar selamanya. */}
+          {panelTerbuka && (
+            <button
+              type="button"
+              aria-label="Tutup panel saringan"
+              className="fixed inset-0 z-10 cursor-default"
+              onClick={() => setPanelTerbuka(false)}
+            />
+          )}
+
+          {panelTerbuka && (
+            <div
+              id="panel-saringan"
+              className="absolute top-full right-0 z-20 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-black/10 bg-white p-4 shadow-xl"
             >
-              {nama}
-            </ChipPilih>
-          )
-        })}
+              {/* <select> biasa (bukan Base UI Select) sengaja — ini filter
+                  inline, bukan field form: kontrolnya harus kecil, bisa
+                  diuji dengan fireEvent.change, dan tetap jadi control
+                  asli untuk pembaca layar. */}
+              <label
+                htmlFor="daftar-laporan-tahun"
+                className="text-xs font-medium text-neutral-500"
+              >
+                Tahun
+              </label>
+              <select
+                id="daftar-laporan-tahun"
+                value={tahunDipilih ?? ''}
+                onChange={(event) => onPilihTahun(event.target.value || null)}
+                className="mt-1.5 h-9 w-full rounded-lg border border-black/10 bg-white px-2.5 text-sm text-neutral-700 transition-colors outline-none focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15"
+              >
+                <option value="">Semua tahun</option>
+                {tahunTersedia.map((tahun) => (
+                  <option key={tahun} value={tahun}>
+                    {tahun}
+                  </option>
+                ))}
+              </select>
+
+              {/* Chip bulan tanpa tahun — tahunnya sudah ada di pemilih
+                  di atas, jadi mengulang "2026" di 12 chip cuma bikin
+                  panel ini pecah jadi dua baris. Bulan kosong tetap
+                  ditawarkan penuh (permintaan 27 Okt). */}
+              <div
+                role="group"
+                aria-label="Saring per bulan"
+                className="mt-3.5 flex flex-wrap gap-2"
+              >
+                <ChipPilih
+                  aktif={bulanDipilih === null}
+                  onClick={() => onPilihBulan(null)}
+                >
+                  Semua
+                </ChipPilih>
+                {BULAN_SINGKAT.map((nama, indeks) => {
+                  const bulan = indeks + 1
+                  return (
+                    <ChipPilih
+                      key={nama}
+                      aktif={bulanDipilih === bulan}
+                      onClick={() => onPilihBulan(bulan)}
+                    >
+                      {nama}
+                    </ChipPilih>
+                  )
+                })}
+              </div>
+
+              <div className="mt-4 flex justify-end border-t border-black/5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setPanelTerbuka(false)}
+                  className="inline-flex h-8 items-center rounded-xl px-3 text-xs font-semibold text-[#0d3f31] transition-colors hover:bg-[#0d3f31]/6"
+                >
+                  Selesai
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bulan sengaja bisa dipilih walaupun kosong, dan kalau kosong
@@ -378,11 +446,13 @@ function labelBulan(kunci: string): string {
 // ============================================================
 // KARTU + DETAIL
 //
-// Versi ringkas: kategori, lokasi, satu baris deskripsi, badge, tanggal.
-// Tombol "Detail" memanjangkan kartu (render bersyarat, bukan
-// `hidden`/`display:none`) sehingga isi detailnya benar-benar tidak ada di
-// DOM sampai diminta — kalau cuma disembunyikan lewat CSS, teksnya masih
-// kebaca oleh getByText dan ganda dengan baris ringkasnya.
+// Versi ringkas TANPA FOTO (permintaan 3 Nov 2026): kategori, lokasi,
+// satu baris deskripsi, badge, tanggal. Foto pindah ke panel detail —
+// di daftar, satu laporan jadi cukup satu baris pendek, bukan setinggi
+// kartu bergambar. Tombol "Detail" memanjangkan kartu (render bersyarat,
+// bukan `hidden`/`display:none`) sehingga isi detailnya benar-benar tidak
+// ada di DOM sampai diminta — kalau cuma disembunyikan lewat CSS, teksnya
+// masih kebaca oleh getByText dan ganda dengan baris ringkasnya.
 // ============================================================
 function KartuLaporan({ laporan }: { laporan: Laporan }) {
   const [terbuka, setTerbuka] = useState(false)
@@ -390,42 +460,31 @@ function KartuLaporan({ laporan }: { laporan: Laporan }) {
   return (
     <li>
       <Card className="gap-3 rounded-3xl px-5 py-4">
-        {/* Foto di kiri kartu ringkas — permintaan 27 Okt. Slotnya tetap
-            digambar walaupun `foto` null, supaya tempat fotonya kelihatan
-            dan tingginya kartu tidak "melompat" antar baris. */}
-        <div className="flex gap-4">
-          <FotoLaporan
-            foto={laporan.foto}
-            className="size-20 shrink-0 sm:size-24"
-          />
-
-          {/* Di ponsel kategori+deskripsi dan badge+tanggal ditumpuk
-              vertikal — versi berdampingan di layar sempit pecah: slot
-              foto sudah menyedot 80px, sisa lebarnya cuma ~250px, dan
-              badge "Menunggu Verifikasi" sendiri butuh ~180px, jadi
-              "Gedung B Lantai 3" terpotong tiga baris. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-x-4">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">
-                {kategoriLabel(laporan.kategori)}
-                <span className="text-muted-foreground font-normal">
-                  {' '}
-                  · {laporan.lokasi}
-                </span>
-              </p>
-              <p className="text-muted-foreground mt-1 line-clamp-1 text-sm">
-                {laporan.deskripsi}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
-              <StatusBadge status={laporan.status} />
-              {laporan.prioritas_kategori && (
-                <PrioritasBadge kategori={laporan.prioritas_kategori} />
-              )}
-              <span className="text-muted-foreground text-xs">
-                {tanggal(laporan.created_at)}
+        {/* Di ponsel kategori+deskripsi dan badge+tanggal ditumpuk
+            vertikal — versi berdampingan di layar sempit pecah: badge
+            "Menunggu Verifikasi" sendiri butuh ~180px, jadi sisa lebarnya
+            terlalu sempit dan barisnya pecah tiga. */}
+        <div className="flex min-w-0 flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-x-4">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">
+              {kategoriLabel(laporan.kategori)}
+              <span className="text-muted-foreground font-normal">
+                {' '}
+                · {laporan.lokasi}
               </span>
-            </div>
+            </p>
+            <p className="text-muted-foreground mt-1 line-clamp-1 text-sm">
+              {laporan.deskripsi}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
+            <StatusBadge status={laporan.status} />
+            {laporan.prioritas_kategori && (
+              <PrioritasBadge kategori={laporan.prioritas_kategori} />
+            )}
+            <span className="text-muted-foreground text-xs">
+              {tanggal(laporan.created_at)}
+            </span>
           </div>
         </div>
 
