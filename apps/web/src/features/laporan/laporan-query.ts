@@ -249,7 +249,7 @@ function apiError(status: number, body: unknown, fallback: string): Error {
 function messageFor(status: number, fallback: string): string {
   if (status === 401) return 'Sesi Anda sudah berakhir. Silakan login ulang.'
   if (status === 403) return 'Akses ditolak.'
-  if (status === 422) return 'Data yang dikirim tidak valid.'
+  if (status === 422) return fallback
   if (status === 429) return 'Terlalu banyak permintaan. Coba lagi nanti.'
   if (status >= 500) return 'Server sedang bermasalah. Coba lagi nanti.'
   return fallback

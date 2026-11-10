@@ -35,11 +35,7 @@ const CARD_CLASS =
 
 // Pilihan status yang bisa dipilih user di kartu "Laporan Antrian".
 type StatusPilihan =
-  | 'semua'
-  | 'menunggu_verifikasi'
-  | 'valid'
-  | 'diproses'
-  | 'selesai'
+  'semua' | 'menunggu_verifikasi' | 'valid' | 'diproses' | 'selesai'
 
 const STATUS_OPSI: ReadonlyArray<{ value: StatusPilihan; label: string }> = [
   { value: 'semua', label: 'Semua status' },
@@ -222,13 +218,7 @@ function FotoThumb({
 }
 
 // Foto ukuran besar. Ditutup lewat klik di luar foto, tombol X, atau Esc.
-function FotoLightbox({
-  src,
-  onTutup,
-}: {
-  src: string
-  onTutup: () => void
-}) {
+function FotoLightbox({ src, onTutup }: { src: string; onTutup: () => void }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onTutup()

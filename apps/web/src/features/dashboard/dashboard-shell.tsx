@@ -85,9 +85,7 @@ export function DashboardShell({
   }
 
   const who =
-    user.role === 'super_admin'
-      ? { title: 'Super admin' }
-      : { title: 'Admin' }
+    user.role === 'super_admin' ? { title: 'Super admin' } : { title: 'Admin' }
 
   return (
     <div className="min-h-dvh bg-[#0f3d2e] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">

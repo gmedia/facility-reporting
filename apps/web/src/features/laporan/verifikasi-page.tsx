@@ -67,7 +67,8 @@ const AKSI: Partial<
   ],
   valid: [{ label: 'Mulai proses', ke: 'diproses' }],
   diproses: [{ label: 'Tandai selesai', ke: 'selesai' }],
-  ditolak: [{ label: 'Buka kembali', ke: 'menunggu_verifikasi' }],
+  // `ditolak` dan `selesai` adalah status final (PR #92): tidak ada aksi
+  // perubahan status lagi, jadi tidak dimasukkan di sini.
 }
 
 const CARD = 'rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6'

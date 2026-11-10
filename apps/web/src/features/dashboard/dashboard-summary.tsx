@@ -14,7 +14,8 @@ const CHIP =
   'rounded-[10px] bg-emerald-50 px-3.5 py-1 text-sm font-medium text-emerald-800'
 
 // Kartu disamakan dengan dashboard user: putih, border tipis, shadow lembut.
-const KARTU = 'rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-sm'
+const KARTU =
+  'rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-sm'
 
 const KARTU_STAT =
   'flex flex-col items-center gap-2 rounded-[26px] border border-neutral-200/70 bg-white px-4 py-6 text-center shadow-sm'
