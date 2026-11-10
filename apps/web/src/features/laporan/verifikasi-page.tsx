@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ImageIcon, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -651,7 +651,6 @@ function BuktiDialog({
 }) {
   const [file, setFile] = useState<File | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -661,21 +660,18 @@ function BuktiDialog({
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
 
-  // Pratinjau foto yang dipilih. URL objek dibersihkan saat file diganti
-  // atau dialog ditutup. setState di dalam effect disengakan dengan sengaja
-  // untuk sinkronisasi URL objek (blob:) dengan state React; pola ini aman
-  // karena file berasal dari pilihan user sendiri (self-XSS risiko rendah).
+  // Pratinjau foto yang dipilih. URL objek (blob:) dihitung langsung dari
+  // file, lalu dibersihkan saat file diganti atau dialog ditutup.
+  const preview = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file],
+  )
+
   useEffect(() => {
-    if (!file) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPreview(null)
-      return
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
     }
-    const url = URL.createObjectURL(file)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
+  }, [preview])
 
   const onPilih = (event: React.ChangeEvent<HTMLInputElement>) => {
     const dipilih = event.target.files?.[0] ?? null
@@ -828,13 +824,7 @@ function FotoThumb({
 }
 
 // Foto ukuran besar. Ditutup lewat klik di luar foto, tombol X, atau Esc.
-function FotoLightbox({
-  src,
-  onTutup,
-}: {
-  src: string
-  onTutup: () => void
-}) {
+function FotoLightbox({ src, onTutup }: { src: string; onTutup: () => void }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onTutup()
