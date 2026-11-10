@@ -12,7 +12,7 @@
     "format:check": "prettier . --check",
     "typecheck": "tsc -b",
     "test": "vitest",
-    "test:run": "vitest run --pool=forks --no-file-parallelism",
+    "test:run": "vitest run",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:run && pnpm build",
     "types:generate": "openapi-typescript ../api/api.json -o src/lib/api/schema.d.ts && prettier src/lib/api/schema.d.ts --write",
     "preview": "vite preview"
