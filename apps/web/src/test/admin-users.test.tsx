@@ -36,6 +36,7 @@ const superAdmin: AdminUser = {
   email: 'superadmin@facility.test',
   role: 'super_admin',
   foto: null,
+  active: true,
 }
 
 function ok(body: unknown) {

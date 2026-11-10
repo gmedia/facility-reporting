@@ -208,7 +208,18 @@ export function apiError(
   body: unknown,
   fallback: string,
 ): Error {
-  const error = new Error(messageFor(status, fallback))
+  // 422: pakai pesan dari backend (mis. transisi status tidak sah) biar
+  // toast nggak cuma bilang "data tidak valid".
+  const pesanApi =
+    body && typeof body === 'object' && 'message' in body
+      ? (body as { message?: unknown }).message
+      : null
+
+  const error = new Error(
+    status === 422 && typeof pesanApi === 'string' && pesanApi.length > 0
+      ? pesanApi
+      : messageFor(status, fallback),
+  )
   Object.assign(error, { status }, body ?? {})
   return error
 }

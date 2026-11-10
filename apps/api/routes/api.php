@@ -35,6 +35,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::middleware('super_admin')->group(function (): void {
+            Route::put('admin/users/{user}/deactivate', [UserController::class, 'deactivate']);
             Route::apiResource('admin/users', UserController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
         });

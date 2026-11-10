@@ -1,7 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
-import type { ReactNode } from 'react'
+import { Children, isValidElement, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -55,9 +61,21 @@ vi.mock('@/components/ui/select', () => {
     onValueChange?: (value: string) => void
     children?: ReactNode
   }) {
+    // id-nya diambil dari <SelectTrigger> supaya <FieldLabel htmlFor>
+    // tetap nyambung ke <select> stub ini — sama seperti produksi, di
+    // mana id itu dipasang di trigger Base UI. Tanpa ini, Kategori dan
+    // Lokasi (dua-duanya pakai Select) bakal sama-sama kebaca tanpa
+    // label dan getByLabelText('Lokasi') jadi nihil.
+    let id: string | undefined
+    Children.forEach(children, (child) => {
+      if (isValidElement<{ id?: string }>(child) && child.props.id) {
+        id = child.props.id
+      }
+    })
+
     return (
       <select
-        aria-label="Kategori"
+        id={id}
         value={value ?? ''}
         onChange={(event) => onValueChange?.(event.target.value)}
       >
@@ -117,18 +135,19 @@ function renderAt(path: string) {
   return router
 }
 
-// Kategori diisi lewat fireEvent karena komponen Select-nya di-stub jadi
-// <select> native (lihat mock di atas). Lokasi & Deskripsi pakai user-event
-// supaya ngelakuin apa yang beneran dilakuin user: ngetik karakter per
-// karakter, bukan sekali set nilai.
+// Kategori & Lokasi diisi lewat fireEvent karena komponen Select-nya
+// di-stub jadi <select> native (lihat mock di atas). Deskripsi pakai
+// user-event supaya ngelakuin apa yang beneran dilakuin user: ngetik
+// karakter per karakter, bukan sekali set nilai.
 async function isiForm(user: UserEvent) {
   fireEvent.change(screen.getByLabelText('Kategori'), {
     target: { value: 'elektronik' },
   })
-  await user.type(
-    screen.getByLabelText('Lokasi'),
-    'Gedung B lantai 2 ruang 205',
-  )
+  // Lokasi sekarang dropdown (bukan ketikan bebas) — pilihannya cuma
+  // Gedung D dan Gedung S, lihat LOKASI_VALUES di laporan-form.
+  fireEvent.change(screen.getByLabelText('Lokasi'), {
+    target: { value: 'Gedung D' },
+  })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
@@ -168,9 +187,18 @@ describe('halaman /lapor', () => {
       await screen.findByText('Laporkan Kerusakan Fasilitas'),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Kategori')).toBeInTheDocument()
-    expect(screen.getByLabelText('Lokasi')).toBeInTheDocument()
     expect(screen.getByLabelText('Deskripsi')).toBeInTheDocument()
     expect(screen.getByLabelText('Foto')).toBeInTheDocument()
+
+    // Lokasi berupa dropdown, bukan ketikan bebas: pilihannya terkunci
+    // di LOKASI_VALUES (permintaan 3 Nov 2026).
+    const lokasi = screen.getByLabelText('Lokasi')
+    expect(lokasi).toBeInTheDocument()
+    expect(
+      within(lokasi)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Gedung D', 'Gedung S'])
   })
 
   it('menampilkan error validasi kalau form kosong', async () => {
@@ -208,7 +236,7 @@ describe('halaman /lapor', () => {
     expect(path).toBe('/reports')
     expect(options.body).toBeInstanceOf(FormData)
     expect(options.body.get('kategori')).toBe('elektronik')
-    expect(options.body.get('lokasi')).toBe('Gedung B lantai 2 ruang 205')
+    expect(options.body.get('lokasi')).toBe('Gedung D')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),

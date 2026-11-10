@@ -161,3 +161,88 @@ it('rejects duplicate email on store', function (): void {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
 });
+
+it('deactivates an admin account without deleting it', function (): void {
+    makeSuperAdmin();
+    $admin = makeAdmin();
+
+    $this->assertTrue($admin->fresh()->active);
+
+    $this->actingAs(makeSuperAdmin())
+        ->putJson("/api/v1/admin/users/{$admin->id}/deactivate")
+        ->assertOk()
+        ->assertJsonPath('data.id', $admin->id)
+        ->assertJsonPath('data.active', false);
+
+    $this->assertDatabaseHas('users', ['id' => $admin->id, 'active' => false]);
+});
+
+it('revokes all tokens when an admin is deactivated', function (): void {
+    makeSuperAdmin();
+    $admin = makeAdmin();
+    $admin->createToken('web');
+    $admin->createToken('mobile');
+
+    expect($admin->tokens()->count())->toBe(2);
+
+    $this->actingAs(makeSuperAdmin())
+        ->putJson("/api/v1/admin/users/{$admin->id}/deactivate")
+        ->assertOk();
+
+    expect($admin->tokens()->count())->toBe(0);
+});
+
+it('returns 404 when deactivating a non-admin target', function (): void {
+    makeSuperAdmin();
+    $regular = makeRegularUser();
+
+    $this->actingAs(makeSuperAdmin())
+        ->putJson("/api/v1/admin/users/{$regular->id}/deactivate")
+        ->assertNotFound();
+
+    $this->assertDatabaseHas('users', ['id' => $regular->id, 'active' => true]);
+});
+
+it('does not let a super admin deactivate another super admin', function (): void {
+    makeSuperAdmin();
+    $other = makeSuperAdmin();
+
+    $this->actingAs(makeSuperAdmin())
+        ->putJson("/api/v1/admin/users/{$other->id}/deactivate")
+        ->assertNotFound();
+
+    $this->assertTrue($other->fresh()->active);
+});
+
+it('rejects regular user from deactivating an admin', function (): void {
+    makeRegularUser();
+    $admin = makeAdmin();
+
+    $this->actingAs(makeRegularUser())
+        ->putJson("/api/v1/admin/users/{$admin->id}/deactivate")
+        ->assertForbidden();
+
+    $this->assertTrue($admin->fresh()->active);
+});
+
+it('rejects admin from deactivating another admin', function (): void {
+    $actor = makeAdmin();
+    $target = makeAdmin();
+
+    $this->actingAs($actor)
+        ->putJson("/api/v1/admin/users/{$target->id}/deactivate")
+        ->assertForbidden();
+
+    $this->assertTrue($target->fresh()->active);
+});
+
+it('exposes active flag on the user list', function (): void {
+    makeSuperAdmin();
+    $admin = makeAdmin();
+
+    $this->actingAs(makeSuperAdmin())
+        ->getJson('/api/v1/admin/users')
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $admin->id)
+        ->assertJsonPath('data.0.active', true);
+});

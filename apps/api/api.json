@@ -487,6 +487,53 @@
                 }
             }
         },
+        "/admin/users/{user}/deactivate": {
+            "put": {
+                "operationId": "user.deactivate",
+                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+                "summary": "Deactivate an admin account",
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "description": "The user ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/admin/users": {
             "get": {
                 "operationId": "users.index",
@@ -1094,6 +1141,9 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "active": {
+                        "type": "boolean"
                     }
                 },
                 "required": [
@@ -1102,7 +1152,8 @@
                     "nim",
                     "email",
                     "role",
-                    "foto"
+                    "foto",
+                    "active"
                 ],
                 "title": "UserResource"
             }

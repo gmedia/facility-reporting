@@ -14,7 +14,7 @@ final class UserResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: int, name: string, nim: string|null, email: string|null, role: string, foto: string|null}
+     * @return array{id: int, name: string, nim: string|null, email: string|null, role: string, foto: string|null, active: bool}
      */
     public function toArray(Request $request): array
     {
@@ -25,6 +25,7 @@ final class UserResource extends JsonResource
             'email' => $this->resource->email,
             'role' => $this->resource->role,
             'foto' => $this->resource->foto,
+            'active' => (bool) $this->resource->active,
         ];
     }
 }
