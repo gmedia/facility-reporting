@@ -144,6 +144,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/users/{user}/deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Deactivate an admin account
+     * @description Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan
+     *     dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     *     Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     *     dengan update/destroy di atas.
+     */
+    put: operations['user.deactivate']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/admin/users': {
     parameters: {
       query?: never
@@ -296,6 +319,7 @@ export interface components {
       nim: string | null
       email: string | null
       role: string
+      active: boolean
     }
   }
   responses: {
@@ -596,6 +620,33 @@ export interface operations {
           }
         }
       }
+    }
+  }
+  'user.deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
     }
   }
   'users.index': {
