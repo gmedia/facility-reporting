@@ -237,6 +237,14 @@ function renderAt(path: string) {
   return router
 }
 
+// Pemilih tahun dan chip bulan berada di dalam panel yang dibuka tombol
+// "Saring: ..." (permintaan 3 Nov 2026) — keduanya tidak ada di DOM
+// sebelum panel dibuka. Regex di awal string supaya tetap ketemu walau
+// teks tombolnya sudah berubah jadi "Saring: 2025" dst.
+function bukaPanelSaringan() {
+  fireEvent.click(screen.getByRole('button', { name: /^Saring:/ }))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   currentUser = mahasiswa
@@ -441,6 +449,20 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
     expect(screen.getByText('September 2026')).toBeInTheDocument()
 
+    // Pemilih tahun dan chip bulan kini berada di dalam satu panel yang
+    // dibuka tombol "Saring" (permintaan 3 Nov) — sebelum dibuka, chip
+    // dan pemilih tahunnya memang belum ada di DOM.
+    const tombolSaring = screen.getByRole('button', {
+      name: 'Saring: Semua waktu',
+    })
+    expect(tombolSaring).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      screen.queryByRole('group', { name: 'Saring per bulan' }),
+    ).not.toBeInTheDocument()
+
+    bukaPanelSaringan()
+    expect(tombolSaring).toHaveAttribute('aria-expanded', 'true')
+
     // Chip nama pendek tanpa tahun ("Okt", bukan "Okt 2026").
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Saring per bulan' })).getByRole(
@@ -476,7 +498,9 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('Oktober 2026')).toBeInTheDocument()
     expect(screen.getByText('Maret 2025')).toBeInTheDocument()
 
-    // Pemilih tahun di baris judul ("Semua tahun" + opsi 2026, 2025).
+    // Pemilih tahun di dalam panel "Saring" ("Semua tahun" + opsi 2026,
+    // 2025).
+    bukaPanelSaringan()
     const tahun = document.getElementById(
       'daftar-laporan-tahun',
     ) as HTMLSelectElement
@@ -500,6 +524,7 @@ describe('halaman /laporan/saya', () => {
     // Semua fixture jatuh di Oktober, jadi Januari pasti kosong. Daftar
     // pilihannya harus memuat 12 bulan — kalau cuma bulan berisi data,
     // bulan kosong seperti ini mustahil dipilih.
+    bukaPanelSaringan()
     const pilih = () =>
       within(screen.getByRole('group', { name: 'Saring per bulan' }))
 
@@ -526,6 +551,7 @@ describe('halaman /laporan/saya', () => {
     renderAt('/laporan/saya')
     await screen.findByText('Maret 2025')
 
+    bukaPanelSaringan()
     const tahun = document.getElementById(
       'daftar-laporan-tahun',
     ) as HTMLSelectElement
@@ -545,24 +571,25 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('Maret 2025')).toBeInTheDocument()
   })
 
-  it('kartu laporan menyediakan slot foto, termasuk di dalam detail', async () => {
+  it('kartu ringkas tanpa foto; slot foto baru tampil di detail', async () => {
     renderAt('/laporan/saya')
     await screen.findByText(/perpustakaan lantai 2/)
 
-    // Ketiga fixture `foto: null` → slot cadangan yang tampil, bukan
-    // ruang kosong. Ini juga yang bikin tempat fotonya kelihatan sebelum
-    // ada fotonya.
-    expect(screen.getAllByText('Belum ada foto')).toHaveLength(3)
+    // Kartu di daftar TIDAK lagi menampilkan foto (permintaan 3 Nov
+    // 2026) — supaya satu laporan cukup satu baris pendek dan tidak
+    // memakan banyak ruang. Fotonya pindah ke panel detail.
+    expect(screen.queryByText('Belum ada foto')).not.toBeInTheDocument()
+    expect(screen.queryByAltText('Foto laporan')).not.toBeInTheDocument()
 
     const [tombolPertama] = screen.getAllByRole('button', { name: 'Detail' })
     if (!tombolPertama) throw new Error('tombol Detail tidak ditemukan')
     fireEvent.click(tombolPertama)
 
     // Panel detail punya blok "Foto" (kiri) dan keterangan (kanan),
-    // sehingga slotnya jadi keempat.
+    // sehingga slot fotonya cuma ada di sini.
     expect(screen.getByText('Foto')).toBeInTheDocument()
     expect(screen.getByText('ID Laporan')).toBeInTheDocument()
-    expect(screen.getAllByText('Belum ada foto')).toHaveLength(4)
+    expect(screen.getAllByText('Belum ada foto')).toHaveLength(1)
   })
 
   it('daftar dikelompokkan per bulan', async () => {

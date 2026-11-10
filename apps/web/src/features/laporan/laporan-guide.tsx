@@ -15,8 +15,8 @@ const HIGHLIGHT = [
     isi: 'Yang paling sesuai dengan jenis kerusakannya.',
   },
   {
-    judul: 'Sebut lokasi',
-    isi: 'Gedung, lantai, sampai nomor ruang.',
+    judul: 'Pilih lokasi',
+    isi: 'Gedung D atau Gedung S, tinggal pilih.',
   },
   {
     judul: 'Ceritakan kondisi',
