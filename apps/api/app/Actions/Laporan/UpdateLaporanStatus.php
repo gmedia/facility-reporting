@@ -13,6 +13,19 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateLaporanStatus
 {
+    /**
+     * Peta transisi status yang sah. Status final tidak punya tujuan.
+     *
+     * @var array<string, list<LaporanStatus>>
+     */
+    private const TRANSISI = [
+        'menunggu_verifikasi' => [LaporanStatus::Valid, LaporanStatus::Ditolak],
+        'valid' => [LaporanStatus::Diproses],
+        'diproses' => [LaporanStatus::Selesai],
+        'ditolak' => [],
+        'selesai' => [],
+    ];
+
     public function __construct(
         private PrioritasService $prioritasService,
     ) {}
@@ -25,7 +38,14 @@ final class UpdateLaporanStatus
      */
     public function __invoke(UpdateLaporanStatusData $data, Laporan $laporan): Laporan
     {
-        $statusFrom = optional($laporan->status)?->value;
+        $statusFrom = $laporan->status;
+        $bolehBerpindah = self::TRANSISI[$statusFrom->value];
+
+        if (! in_array($data->status, $bolehBerpindah, true)) {
+            throw ValidationException::withMessages([
+                'status' => "Status tidak dapat diubah dari {$statusFrom->value} ke {$data->status->value}.",
+            ]);
+        }
 
         // Aturan: foto bukti wajib sebelum status diubah ke Selesai
         if ($data->status === LaporanStatus::Selesai && ! $laporan->foto_bukti) {
@@ -61,7 +81,7 @@ final class UpdateLaporanStatus
 
         LaporanStatusHistory::create([
             'laporan_id' => $laporan->id,
-            'status_from' => $statusFrom,
+            'status_from' => $statusFrom->value,
             'status_to' => $data->status->value,
             'alasan' => $data->alasan,
             'changed_by' => auth()->user()?->id,
