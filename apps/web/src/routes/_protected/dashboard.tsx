@@ -176,11 +176,26 @@ function DashboardSkeleton() {
           ))}
         </div>
       </div>
-      <div>
-        <Skeleton className="h-5 w-48" />
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 sm:gap-4">
-          {FAQ_SKELETON.map((key) => (
-            <Skeleton key={key} className="h-32 rounded-3xl" />
+      {/* FAQ: satu kartu ringkas — empat baris pertanyaan saja
+          (jawaban dilipat), meniru struktur DashboardFaq. */}
+      <div className="rounded-3xl border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,20,0.05)]">
+        <div className="border-b border-black/5 px-5 py-4">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="mt-2 h-3.5 w-64" />
+        </div>
+        <div className="grid sm:grid-cols-2">
+          {FAQ_SKELETON.map((key, i) => (
+            <div
+              key={key}
+              className={[
+                'px-5 py-3.5',
+                i >= 1 ? 'border-t border-black/5' : '',
+                i === 1 ? 'sm:border-t-0' : '',
+                i % 2 === 1 ? 'sm:border-l sm:border-black/5' : '',
+              ].join(' ')}
+            >
+              <Skeleton className="h-4 w-2/3" />
+            </div>
           ))}
         </div>
       </div>
