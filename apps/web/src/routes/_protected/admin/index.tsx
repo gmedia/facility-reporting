@@ -30,7 +30,17 @@ import {
   type AdminUser,
 } from '@/features/admin/users-query'
 
+type SearchSchema = { filter?: string }
+
 export const Route = createFileRoute('/_protected/admin/')({
+  // Halaman ini belum punya filter, tapi tombol "Kelola Akun" di dashboard
+  // mengirim ?filter=semua (lihat dashboard-actions.tsx). Parameter itu
+  // diterima lalu diabaikan: SearchSchema hanya mengenal 'filter' supaya link
+  // tetap type-safe, dan AdminUsersPage tidak membacanya sama sekali.
+  // Kalau nanti filter status aktif/nonaktif dibuat, pakai nilai ini di UI.
+  validateSearch: (search: Record<string, unknown>): SearchSchema => ({
+    filter: typeof search.filter === 'string' ? search.filter : undefined,
+  }),
   component: AdminUsersPage,
 })
 
