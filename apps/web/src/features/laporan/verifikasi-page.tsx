@@ -298,6 +298,8 @@ function StatusMenu({
   const status = laporan.status as LaporanStatus
   const label = STATUS_LABEL[status] ?? laporan.status
   const pill = STATUS_PILL[status] ?? 'bg-neutral-100 text-neutral-700'
+  // ditolak & selesai final — tombol status tidak boleh dibuka lagi.
+  const final = status === 'ditolak' || status === 'selesai'
 
   return (
     <DropdownMenu>
@@ -305,8 +307,12 @@ function StatusMenu({
         render={
           <button
             type="button"
-            disabled={disabled}
-            title="Klik untuk ubah status"
+            disabled={disabled || final}
+            title={
+              final
+                ? 'Status final tidak dapat diubah'
+                : 'Klik untuk ubah status'
+            }
             className={cn(
               'inline-flex items-center gap-1.5 rounded-[10px] px-4 py-1.5 text-sm font-medium whitespace-nowrap transition hover:brightness-95 disabled:opacity-60',
               pill,
