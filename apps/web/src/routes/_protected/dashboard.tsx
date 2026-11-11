@@ -12,10 +12,8 @@ import {
   type AntrianFilter,
 } from '@/features/dashboard/dashboard-utils'
 import { useLaporanList } from '@/features/laporan/laporan-query'
-import {
-  RingkasanLaporan,
-  hitungStatistik,
-} from '@/features/laporan/ringkasan-laporan'
+import { RingkasanLaporan } from '@/features/laporan/ringkasan-laporan'
+import { hitungStatistik } from '@/features/laporan/laporan-statistik'
 
 export const Route = createFileRoute('/_protected/dashboard')({
   // ?filter=menunggu | ?filter=terverifikasi — tab-nya ada di header

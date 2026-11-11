@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { CheckCircle2, Clock, FileText, Wrench, XCircle } from 'lucide-react'
-import type { Laporan } from './laporan-query'
+import type { Statistik } from './laporan-statistik'
+import { hitungStatistik } from './laporan-statistik'
 
 // ============================================================
 // RINGKASAN ANGKA LAPORAN — SATU KOMPONEN, DUA HALAMAN
@@ -22,30 +23,6 @@ import type { Laporan } from './laporan-query'
 // label huruf kecil + angka + catatan + ikon yang sama. Ini tetap satu
 // kartu Total, bukan dua kartu berbeda.
 // ============================================================
-
-export type Statistik = {
-  total: number
-  menunggu: number
-  diproses: number
-  selesai: number
-  ditolak: number
-}
-
-export function hitungStatistik(laporan: Laporan[]): Statistik {
-  return {
-    total: laporan.length,
-    menunggu: laporan.filter((l) => l.status === 'menunggu_verifikasi').length,
-    // `valid` ikut dihitung sebagai Diproses: sudah lolos verifikasi tapi
-    // belum tuntas, jadi dari sudut pandang pemilik laporan masih berjalan.
-    // Tanpa ini, jumlah empat kartu tidak akan pernah sama dengan `total`
-    // — dan memang harus selalu sama, karena `total` memakai `length`.
-    diproses: laporan.filter(
-      (l) => l.status === 'diproses' || l.status === 'valid',
-    ).length,
-    selesai: laporan.filter((l) => l.status === 'selesai').length,
-    ditolak: laporan.filter((l) => l.status === 'ditolak').length,
-  }
-}
 
 // `as const` (bukan Record<string, ...>) supaya pemakaiannya lewat
 // `tone: keyof typeof WARNA` ketat — repo ini nyalain

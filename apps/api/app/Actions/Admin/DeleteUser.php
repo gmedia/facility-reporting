@@ -15,7 +15,8 @@ final class DeleteUser
     {
         try {
             $user->delete();
-        } catch (QueryException $e) {
+        } // @phpstan-ignore-next-line QueryException dapat dilempar oleh query builder di balik model delete()
+        catch (QueryException $e) {
             throw new HttpResponseException(
                 (new JsonResponse([
                     'message' => 'Akun tidak dapat dihapus karena masih ada data yang terkait.',
