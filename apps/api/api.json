@@ -161,7 +161,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
                             }
@@ -1071,6 +1071,12 @@
                             "null"
                         ],
                         "maxLength": 255
+                    },
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
                     }
                 },
                 "required": [
