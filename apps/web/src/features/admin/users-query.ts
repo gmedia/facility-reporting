@@ -75,6 +75,27 @@ export function useDeleteAdminUser() {
   })
 }
 
+export function useDeactivateAdminUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await initializeCsrf()
+      const { data, error, response } = await api.PUT(
+        '/admin/users/{user}/deactivate',
+        {
+          params: { path: { user: id } },
+        },
+      )
+      if (error || !data)
+        throw apiError(response.status, error, 'Gagal menonaktifkan akun.')
+      return data.data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 function apiError(status: number, body: unknown, fallback: string): Error {
   let pesanApi: string | null = null
 

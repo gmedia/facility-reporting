@@ -172,14 +172,14 @@ describe('dashboard CRUD admin', () => {
     )
   })
 
-  it('menghapus akun admin setelah konfirmasi', async () => {
+  it('menonaktifkan akun admin setelah konfirmasi', async () => {
     renderAt('/admin')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Ya, hapus' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya, nonaktifkan' }))
 
     await waitFor(() =>
-      expect(api.DELETE).toHaveBeenCalledWith('/admin/users/{user}', {
+      expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/deactivate', {
         params: { path: { user: 1 } },
       }),
     )
