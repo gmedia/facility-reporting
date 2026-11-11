@@ -115,13 +115,7 @@ function AkunPengelola({ user }: { user: User }) {
   )
 }
 
-function AkunIsi({
-  user,
-  tampilJudul,
-}: {
-  user: User
-  tampilJudul: boolean
-}) {
+function AkunIsi({ user, tampilJudul }: { user: User; tampilJudul: boolean }) {
   return (
     <div className="flex flex-col gap-5">
       {tampilJudul && (

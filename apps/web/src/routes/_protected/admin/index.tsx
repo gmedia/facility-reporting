@@ -91,8 +91,7 @@ function AdminUsersPage() {
 
           {users.data.length === 0 ? (
             <p className="mt-6 py-6 text-center text-sm text-neutral-400">
-              Belum ada akun admin. Klik Tambah akun untuk membuat yang
-              pertama.
+              Belum ada akun admin. Klik Tambah akun untuk membuat yang pertama.
             </p>
           ) : (
             <div className="mt-4 overflow-x-auto">

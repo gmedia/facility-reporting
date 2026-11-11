@@ -159,9 +159,7 @@ export function VerifikasiPage({ user }: { user: User }) {
   const antrianUrut = ringkasan.antrian
     .filter((item) => filter === 'semua' || item.status === filter)
     .filter((item) => kategori === 'semua' || item.kategori === kategori)
-    .filter(
-      (item) => gedung === 'semua' || kunciGedung(item.lokasi) === gedung,
-    )
+    .filter((item) => gedung === 'semua' || kunciGedung(item.lokasi) === gedung)
     .filter(
       (item) =>
         !kata ||
@@ -266,9 +264,7 @@ export function VerifikasiPage({ user }: { user: User }) {
                 }
                 className={cn(
                   'h-10 rounded-xl border-[1.5px] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20',
-                  filter === 'semua'
-                    ? 'border-[#efe9d8]'
-                    : 'border-[#1f6b4f]',
+                  filter === 'semua' ? 'border-[#efe9d8]' : 'border-[#1f6b4f]',
                 )}
               >
                 {FILTERS.map((item) => (
