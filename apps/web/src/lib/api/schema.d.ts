@@ -344,6 +344,11 @@ export interface components {
       nilai_dampak?: number
       nilai_frekuensi?: number
       alasan?: string | null
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti?: string
     }
     /** UpdateProfileFotoRequest */
     UpdateProfileFotoRequest: {
@@ -522,7 +527,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['UpdateLaporanStatusRequest']
+        'multipart/form-data': components['schemas']['UpdateLaporanStatusRequest']
       }
     }
     responses: {
