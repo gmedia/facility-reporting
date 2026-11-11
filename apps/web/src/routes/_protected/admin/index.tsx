@@ -56,10 +56,11 @@ function AdminUsersPage() {
   }>({ user: null, type: null })
 
   function handleActivate() {
-    if (!pendingAction.user) return
-    activateMutation.mutate(pendingAction.user.id, {
+    const user = pendingAction.user
+    if (!user) return
+    activateMutation.mutate(user.id, {
       onSuccess: () => {
-        toast.success(`Akun ${pendingAction.user.name} diaktifkan`)
+        toast.success(`Akun ${user.name} diaktifkan`)
         setPendingAction({ user: null, type: null })
       },
       onError: (error) => toast.error(errorMessage(error)),
@@ -67,10 +68,11 @@ function AdminUsersPage() {
   }
 
   function handleDeactivate() {
-    if (!pendingAction.user) return
-    deactivateMutation.mutate(pendingAction.user.id, {
+    const user = pendingAction.user
+    if (!user) return
+    deactivateMutation.mutate(user.id, {
       onSuccess: () => {
-        toast.success(`Akun ${pendingAction.user.name} dinonaktifkan`)
+        toast.success(`Akun ${user.name} dinonaktifkan`)
         setPendingAction({ user: null, type: null })
       },
       onError: (error) => toast.error(errorMessage(error)),
@@ -149,12 +151,24 @@ function AdminUsersPage() {
                         {user.nim ?? '-'}
                       </TableCell>
                       <TableCell className="py-3">
-                        <Badge
-                          variant="secondary"
-                          className="rounded-full bg-emerald-50 px-2.5 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
-                        >
-                          {user.role}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-full bg-emerald-50 px-2.5 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+                          >
+                            {user.role}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-full px-2.5 text-xs font-medium ${
+                              user.active
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                                : 'bg-red-100 text-red-700 hover:bg-red-100'
+                            }`}
+                          >
+                            {user.active ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell className="py-3 pr-0 text-right">
                         <div className="flex justify-end gap-2">
@@ -173,8 +187,8 @@ function AdminUsersPage() {
                             variant="ghost"
                             className={`rounded-full text-xs ${
                               user.active
-                                ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700'
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
+                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800'
+                                : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
                             }`}
                             onClick={() =>
                               setPendingAction({
@@ -183,7 +197,7 @@ function AdminUsersPage() {
                               })
                             }
                           >
-                            {user.active ? 'Nonaktifkan' : 'Aktifkan'}
+                            {user.active ? 'Aktifkan' : 'Nonaktifkan'}
                           </Button>
                         </div>
                       </TableCell>
@@ -197,7 +211,12 @@ function AdminUsersPage() {
       )}
 
       {pendingAction.user && (
-        <Alert variant="destructive" className="rounded-[26px]">
+        <Alert
+          variant={
+            pendingAction.type === 'deactivate' ? 'destructive' : 'default'
+          }
+          className="rounded-[26px]"
+        >
           <AlertTitle>
             {pendingAction.type === 'activate'
               ? `Aktifkan akun ${pendingAction.user.name}?`
@@ -206,7 +225,7 @@ function AdminUsersPage() {
           <AlertDescription>
             {pendingAction.type === 'activate'
               ? 'Akun yang diaktifkan dapat login kembali.'
-              : 'Akun yang dinonaktifkan tidak dapat login.'}
+              : 'Akun ini tidak akan bisa login sampai diaktifkan kembali.'}
             <div className="mt-3 flex gap-2">
               <Button
                 type="button"
@@ -221,8 +240,16 @@ function AdminUsersPage() {
               <Button
                 type="button"
                 size="sm"
-                variant="destructive"
-                className="rounded-full"
+                variant={
+                  pendingAction.type === 'deactivate'
+                    ? 'destructive'
+                    : 'default'
+                }
+                className={`rounded-full ${
+                  pendingAction.type === 'activate'
+                    ? 'bg-[#1f6b4f] text-white hover:bg-[#0d3f31]'
+                    : ''
+                }`}
                 onClick={
                   pendingAction.type === 'activate'
                     ? handleActivate

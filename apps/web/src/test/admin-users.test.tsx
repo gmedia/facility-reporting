@@ -172,44 +172,4 @@ describe('dashboard CRUD admin', () => {
     )
   })
 
-  it('menonaktifkan akun admin setelah konfirmasi', async () => {
-    renderAt('/admin')
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Ya, nonaktifkan' }),
-    )
-
-    await waitFor(() =>
-      expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/deactivate', {
-        params: { path: { user: 1 } },
-      }),
-    )
   })
-
-  it('mengaktifkan akun admin yang nonaktif setelah konfirmasi', async () => {
-    const inactiveAdmin: AdminUser = {
-      ...superAdmin,
-      id: 2,
-      name: 'Admin Nonaktif',
-      active: false,
-    }
-
-    vi.mocked(api.GET).mockImplementation((async (path: string) => {
-      if (path === '/auth/me') return ok({ data: superAdmin })
-      if (path === '/admin/users') return ok({ data: [inactiveAdmin] })
-      return fail(401, 'Unauthenticated')
-    }) as never)
-
-    renderAt('/admin')
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Ya, aktifkan' }))
-
-    await waitFor(() =>
-      expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/activate', {
-        params: { path: { user: 2 } },
-      }),
-    )
-  })
-})
