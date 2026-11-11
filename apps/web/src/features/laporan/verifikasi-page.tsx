@@ -29,6 +29,7 @@ import {
   type Laporan,
   type LaporanKategori,
   type LaporanStatus,
+  type Pelapor,
 } from '@/features/laporan/laporan-query'
 import { cn } from '@/lib/utils'
 
@@ -143,18 +144,18 @@ export function VerifikasiPage({ user }: { user: User }) {
 
   const counts = list.data
     ? STATUS_VALUES.reduce(
-        (result, status) => {
-          result[status] = laporan.filter(
-            (item) => item.status === status,
-          ).length
-          return result
-        },
-        {} as Record<LaporanStatus, number>,
-      )
+      (result, status) => {
+        result[status] = laporan.filter(
+          (item) => item.status === status,
+        ).length
+        return result
+      },
+      {} as Record<LaporanStatus, number>,
+    )
     : undefined
 
   // Yang paling baru di atas. Kalau waktunya sama persis, ID yang lebih
-  // besar didahulukan.
+  // besar didahulukan. Pencarian juga mencakup nama dan NIM pelapor.
   const kata = cari.trim().toLowerCase()
   const antrianUrut = ringkasan.antrian
     .filter((item) => filter === 'semua' || item.status === filter)
@@ -163,7 +164,9 @@ export function VerifikasiPage({ user }: { user: User }) {
     .filter(
       (item) =>
         !kata ||
-        `${item.deskripsi} ${item.lokasi}`.toLowerCase().includes(kata),
+        `${item.deskripsi} ${item.lokasi} ${item.pelapor?.name ?? ''} ${item.pelapor?.nim ?? ''}`
+          .toLowerCase()
+          .includes(kata),
     )
     .sort((a, b) => {
       const selisih = waktu(b) - waktu(a)
@@ -289,7 +292,7 @@ export function VerifikasiPage({ user }: { user: User }) {
                   type="search"
                   value={cari}
                   onChange={(event) => setCari(event.target.value)}
-                  placeholder="Cari deskripsi atau lokasi…"
+                  placeholder="Cari deskripsi, lokasi, atau pelapor…"
                   className="h-10 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white pr-3 pl-10 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
                 />
               </label>
@@ -375,6 +378,11 @@ export function VerifikasiPage({ user }: { user: User }) {
                                 {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
                                 {formatTanggal(item.created_at)}
                               </span>
+                              {item.pelapor && (
+                                <span className="mt-0.5 block truncate text-xs text-[#5f655d]">
+                                  Pelapor: {item.pelapor.name}
+                                </span>
+                              )}
                             </span>
                             <StatusPill status={item.status} />
                           </button>
@@ -477,6 +485,64 @@ function FotoDetail({
   )
 }
 
+// Kartu pelapor di panel detail. Backend hanya mengirim `pelapor` untuk
+// admin, jadi kalau kosong tidak ditampilkan sama sekali.
+function PelaporInfo({ pelapor }: { pelapor: Pelapor | null | undefined }) {
+  const [gagal, setGagal] = useState(false)
+  if (!pelapor) return null
+
+  const inisial = pelapor.name.trim().charAt(0).toUpperCase() || '?'
+
+  return (
+    <section
+      aria-label="Data pelapor"
+      className="mt-5 overflow-hidden rounded-2xl border border-[#efe9d8] bg-[#faf7ee]"
+    >
+      <h3 className="border-b border-[#efe9d8] px-4 py-2.5 text-xs font-semibold tracking-wide text-[#8a8f87] uppercase">
+        Pelapor
+      </h3>
+
+      <div className="flex items-center gap-3.5 px-4 py-3.5">
+        {pelapor.foto && !gagal ? (
+          <img
+            src={fotoUrl(pelapor.foto)}
+            alt={`Foto ${pelapor.name}`}
+            onError={() => setGagal(true)}
+            className="size-12 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="grid size-12 shrink-0 place-items-center rounded-full bg-[#1f6b4f] text-lg font-semibold text-white"
+          >
+            {inisial}
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <p
+            title={pelapor.name}
+            className="truncate text-sm font-semibold text-[#1d2b26]"
+          >
+            {pelapor.name}
+          </p>
+          <p
+            title={pelapor.email}
+            className="truncate text-sm text-[#5f655d]"
+          >
+            {pelapor.email}
+          </p>
+          {pelapor.nim && (
+            <span className="mt-1.5 inline-flex rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-[#5f655d] ring-1 ring-[#efe9d8]">
+              NIM {pelapor.nim}
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // Panel keputusan: admin melihat detail lalu langsung memverifikasi
 // atau menolak tanpa pindah halaman.
 function DetailPanel({
@@ -524,6 +590,8 @@ function DetailPanel({
         <dt className="text-[#8a8f87]">Dilaporkan</dt>
         <dd>{formatTanggal(item.created_at)}</dd>
       </dl>
+
+      <PelaporInfo pelapor={item.pelapor} />
 
       {aksi.length > 0 && (
         <div className="mt-5 flex flex-wrap gap-2">

@@ -340,8 +340,16 @@ function LaporanTerbaru({
                   <p className="truncate font-medium">{item.deskripsi}</p>
                   <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
                 </div>
-                <p className="mt-0.5 truncate text-xs text-neutral-400">
+                <p className="mt-0.5 truncate text-xs text-neutral-500">
                   {kategoriLabel(item.kategori)} · {item.lokasi}
+                  {item.pelapor && (
+                    <>
+                      {' · oleh '}
+                      <span className="font-semibold text-[#0f3d2e]">
+                        {item.pelapor.name}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
