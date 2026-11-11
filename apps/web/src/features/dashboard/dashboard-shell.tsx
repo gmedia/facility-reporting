@@ -1,23 +1,27 @@
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   Building2,
   LayoutDashboard,
   LogOut,
   Menu,
   ShieldCheck,
+  UserRound,
   Users,
   X,
 } from 'lucide-react'
 import { Link, useRouter, useRouterState } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
-import { logoutMutationOptions } from '@/features/auth/auth-query'
+import {
+  logoutMutationOptions,
+  meQueryOptions,
+} from '@/features/auth/auth-query'
 import type { User } from '@/features/auth/auth-query'
 import { cn } from '@/lib/utils'
 
 // Rute yang boleh muncul di sidebar. Union eksplisit supaya Link dapat
 // tipe route yang benar dan menu tidak pernah mengarah ke halaman fiktif.
-type NavTo = '/dashboard' | '/verifikasi' | '/admin'
+type NavTo = '/dashboard' | '/verifikasi' | '/akun' | '/admin'
 
 interface NavItem {
   label: string
@@ -26,7 +30,7 @@ interface NavItem {
   end?: boolean
 }
 
-const adminNav: NavItem[] = [
+const menuUtama: NavItem[] = [
   {
     label: 'Dashboard',
     to: '/dashboard',
@@ -36,11 +40,18 @@ const adminNav: NavItem[] = [
   { label: 'Verifikasi', to: '/verifikasi', icon: ShieldCheck },
 ]
 
-// Akun Admin cuma untuk super_admin. Menu Prioritas/Statistik/Pengaturan
-// belum punya route di main, jadi sengaja tidak dipasang sebagai link mati.
+// Akun milik sendiri: ganti foto profil dan password. Selalu paling bawah.
+const akunSaya: NavItem = { label: 'Akun Saya', to: '/akun', icon: UserRound }
+
+const adminNav: NavItem[] = [...menuUtama, akunSaya]
+
+// Akun Admin (kelola akun admin lain) cuma untuk super_admin. Menu
+// Prioritas/Statistik/Pengaturan belum punya route di main, jadi sengaja
+// tidak dipasang sebagai link mati.
 const superAdminNav: NavItem[] = [
-  ...adminNav,
+  ...menuUtama,
   { label: 'Akun Admin', to: '/admin', icon: Users },
+  akunSaya,
 ]
 
 function navFor(role: string): NavItem[] {
@@ -57,9 +68,22 @@ function initialsOf(name: string): string {
     .toUpperCase()
 }
 
+// Duplikat dari features/akun/akun-query.ts — komponen shell tidak menarik
+// dependensi ke folder fitur (pola sama dengan user-shell.tsx).
+function fotoUrl(foto: string): string {
+  if (/^(https?:|data:|blob:)/.test(foto)) return foto
+
+  const dasar = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
+  const origin = /^https?:\/\//.test(dasar)
+    ? dasar.replace(/\/api\/v\d+\/?$/, '')
+    : ''
+
+  return `${origin}/storage/${foto.replace(/^\/+/, '')}`
+}
+
 // Bingkai sidebar hijau tua untuk halaman pengelola (dashboard, verifikasi,
-// akun admin). Warna disamakan dengan layout user. Guard role tetap di
-// masing-masing route; komponen ini murni tampilan.
+// akun, akun admin). Warna disamakan dengan layout user. Guard role tetap
+// di masing-masing route; komponen ini murni tampilan.
 //
 // `menunggu` = jumlah laporan yang menunggu verifikasi, ditampilkan
 // sebagai badge di menu Verifikasi.
@@ -78,6 +102,11 @@ export function DashboardShell({
   const logout = useMutation(logoutMutationOptions)
   const navItems = navFor(user.role)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Cache ['me'] dibaca langsung (bukan cuma prop route) supaya foto di
+  // kartu profil ikut berubah seketika setelah diganti di /akun.
+  const { data: me } = useQuery(meQueryOptions)
+  const akun = me ?? user
 
   const onLogout = async () => {
     await logout.mutateAsync()
@@ -139,12 +168,20 @@ export function DashboardShell({
         {/* Kartu profil + keluar */}
         <div className="mx-3 mt-auto mb-3 rounded-[20px] bg-white/10 p-[18px]">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#1f6b4f] text-sm font-semibold text-white ring-1 ring-white/20">
-              {initialsOf(user.name)}
-            </span>
+            {akun.foto ? (
+              <img
+                src={fotoUrl(akun.foto)}
+                alt={`Foto profil ${akun.name}`}
+                className="size-11 shrink-0 rounded-full object-cover ring-1 ring-white/20"
+              />
+            ) : (
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#1f6b4f] text-sm font-semibold text-white ring-1 ring-white/20">
+                {initialsOf(akun.name)}
+              </span>
+            )}
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-white">
-                {user.name}
+                {akun.name}
               </p>
               <p className="text-sm text-white/70">{who.title}</p>
             </div>

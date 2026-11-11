@@ -8,6 +8,7 @@ import type { User } from '@/features/auth/auth-query'
 import { formatTanggal } from '@/features/dashboard/dashboard-query'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
 import { LaporanHarianCard } from '@/features/dashboard/dashboard-summary'
+
 import {
   hitungRingkasan,
   laporanPerHari,
@@ -36,8 +37,9 @@ type StatusFilter = 'semua' | LaporanStatus
 // Urutan filter ngikutin alur verifikasi, bukan urutan enum backend.
 // "Terverifikasi" sengaja dipakai buat status `valid` biar bahasa UI-nya
 // sama dengan roadmap; badge status tetap pakai label asli `Valid`.
+// Label 'Status' dipakai sebagai teks awal dropdown (artinya: semua status).
 const FILTERS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
-  { value: 'semua', label: 'Semua' },
+  { value: 'semua', label: 'Status' },
   { value: 'menunggu_verifikasi', label: 'Menunggu' },
   { value: 'valid', label: 'Terverifikasi' },
   { value: 'diproses', label: 'Diproses' },
@@ -99,12 +101,24 @@ function fotoUrl(foto: string): string {
   return `${origin}/storage/${foto.replace(/^\/+/, '')}`
 }
 
+// Kunci pembanding gedung: huruf kecil dan tanpa spasi berlebih, supaya
+// "Gedung D" dan "gedung d" dianggap sama.
+function kunciGedung(lokasi: string): string {
+  return lokasi.trim().toLowerCase()
+}
+
+// Label tampil: huruf pertama tiap kata dibuat kapital ("gedung s" -> "Gedung S").
+function labelGedung(kunci: string): string {
+  return kunci.replace(/(^|\s)\S/g, (huruf) => huruf.toUpperCase())
+}
+
 export function VerifikasiPage({ user }: { user: User }) {
   const list = useLaporanList()
   const update = useUpdateLaporanStatus()
   const [filter, setFilter] = useState<StatusFilter>('semua')
   const [cari, setCari] = useState('')
   const [kategori, setKategori] = useState<'semua' | LaporanKategori>('semua')
+  const [gedung, setGedung] = useState<string>('semua')
   // id laporan yang sedang dilihat di panel detail.
   const [pilihId, setPilihId] = useState<number | null>(null)
   const [fotoBesar, setFotoBesar] = useState<string | null>(null)
@@ -116,6 +130,16 @@ export function VerifikasiPage({ user }: { user: User }) {
   const laporan = list.data ?? []
   const ringkasan = hitungRingkasan(laporan)
   const harian = laporanPerHari(laporan)
+
+  // Pilihan gedung diambil dari lokasi yang benar-benar ada di laporan.
+  const opsiGedung = useMemo(() => {
+    const kunci = new Set<string>()
+    for (const item of list.data ?? []) {
+      const k = kunciGedung(item.lokasi)
+      if (k) kunci.add(k)
+    }
+    return [...kunci].sort((a, b) => a.localeCompare(b, 'id'))
+  }, [list.data])
 
   const counts = list.data
     ? STATUS_VALUES.reduce(
@@ -136,6 +160,9 @@ export function VerifikasiPage({ user }: { user: User }) {
     .filter((item) => filter === 'semua' || item.status === filter)
     .filter((item) => kategori === 'semua' || item.kategori === kategori)
     .filter(
+      (item) => gedung === 'semua' || kunciGedung(item.lokasi) === gedung,
+    )
+    .filter(
       (item) =>
         !kata ||
         `${item.deskripsi} ${item.lokasi}`.toLowerCase().includes(kata),
@@ -153,6 +180,7 @@ export function VerifikasiPage({ user }: { user: User }) {
   const resetFilter = () => {
     setFilter('semua')
     setKategori('semua')
+    setGedung('semua')
     setCari('')
   }
 
@@ -213,7 +241,8 @@ export function VerifikasiPage({ user }: { user: User }) {
             Verifikasi
           </h1>
           <p className="truncate text-sm text-[#8a8f87]">
-            Antrian laporan · Semua gedung
+            Antrian laporan ·{' '}
+            {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
           </p>
         </div>
       }
@@ -228,14 +257,28 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
-            <FilterStats
-              filter={filter}
-              counts={counts}
-              total={laporan.length}
-              onSelect={setFilter}
-            />
-
             <div className="flex flex-wrap gap-3">
+              <select
+                aria-label="Status"
+                value={filter}
+                onChange={(event) =>
+                  setFilter(event.target.value as StatusFilter)
+                }
+                className={cn(
+                  'h-10 rounded-xl border-[1.5px] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20',
+                  filter === 'semua'
+                    ? 'border-[#efe9d8]'
+                    : 'border-[#1f6b4f]',
+                )}
+              >
+                {FILTERS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.value === 'semua'
+                      ? item.label
+                      : `${item.label} (${counts?.[item.value as LaporanStatus] ?? 0})`}
+                  </option>
+                ))}
+              </select>
               <label className="relative min-w-[14rem] flex-1">
                 <span className="sr-only">Cari laporan</span>
                 <Search
@@ -262,6 +305,19 @@ export function VerifikasiPage({ user }: { user: User }) {
                 {KATEGORI_VALUES.map((k) => (
                   <option key={k} value={k}>
                     {KATEGORI_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Gedung"
+                value={gedung}
+                onChange={(event) => setGedung(event.target.value)}
+                className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+              >
+                <option value="semua">Semua gedung</option>
+                {opsiGedung.map((k) => (
+                  <option key={k} value={k}>
+                    {labelGedung(k)}
                   </option>
                 ))}
               </select>
@@ -365,63 +421,6 @@ export function VerifikasiPage({ user }: { user: User }) {
         />
       )}
     </DashboardShell>
-  )
-}
-
-// Satu baris filter ringkas. Menggantikan tab di header sekaligus
-// 4 kartu statistik, jadi tiap angka cuma tampil sekali.
-function FilterStats({
-  filter,
-  counts,
-  total,
-  onSelect,
-}: {
-  filter: StatusFilter
-  counts?: Record<LaporanStatus, number>
-  total: number
-  onSelect: (filter: StatusFilter) => void
-}) {
-  return (
-    <div
-      role="group"
-      aria-label="Filter status"
-      className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6"
-    >
-      {FILTERS.map((item) => {
-        const active = filter === item.value
-        const jumlah =
-          item.value === 'semua'
-            ? total
-            : (counts?.[item.value as LaporanStatus] ?? 0)
-
-        return (
-          <button
-            key={item.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onSelect(item.value)}
-            className={cn(
-              'flex items-baseline gap-2.5 rounded-xl border-[1.5px] px-3.5 py-2.5 text-left transition-colors',
-              active
-                ? 'border-[#1f6b4f] bg-[#e0f1e8]'
-                : 'border-[#efe9d8] bg-white hover:bg-[#faf3e5]',
-            )}
-          >
-            <span className="text-2xl leading-none font-bold tabular-nums">
-              {jumlah}
-            </span>
-            <span
-              className={cn(
-                'text-[13px]',
-                active ? 'font-semibold text-neutral-800' : 'text-[#8a8f87]',
-              )}
-            >
-              {item.label}
-            </span>
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -864,11 +863,7 @@ function VerifikasiSkeleton() {
   return (
     <div className="flex flex-col gap-5">
       <p className="text-sm text-[#8a8f87]">Memuat laporan…</p>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
-        {[0, 1, 2, 3, 4, 5].map((key) => (
-          <Skeleton key={key} className="h-[52px] rounded-xl" />
-        ))}
-      </div>
+      <Skeleton className="h-10 rounded-xl" />
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <Skeleton className="h-96 rounded-[26px]" />
         <Skeleton className="h-96 rounded-[26px]" />

@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ImageIcon, X } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import {
+  ArrowRight,
+  Ban,
+  Clock,
+  ClipboardList,
+  ImageIcon,
+  ShieldCheck,
+  Wrench,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -8,16 +19,10 @@ import { DashboardActions } from '@/features/dashboard/dashboard-actions'
 import { formatTanggal } from '@/features/dashboard/dashboard-query'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
 import {
-  LaporanHarianCard,
-  PerluTindakanCards,
-  StatusBarCard,
-} from '@/features/dashboard/dashboard-summary'
-import {
-  filterAntrian,
   hitungRingkasan,
   identitas,
-  laporanPerHari,
   type AntrianFilter,
+  type RingkasanDashboard,
 } from '@/features/dashboard/dashboard-utils'
 import {
   KATEGORI_LABEL,
@@ -28,22 +33,14 @@ import {
 } from '@/features/laporan/laporan-query'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import { StatusBadge } from '@/features/laporan/status-badge'
+import { cn } from '@/lib/utils'
 
 // Gaya kartu disamakan dengan dashboard user: putih, border tipis, shadow lembut.
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-// Pilihan status yang bisa dipilih user di kartu "Laporan Antrian".
-type StatusPilihan =
-  'semua' | 'menunggu_verifikasi' | 'valid' | 'diproses' | 'selesai'
-
-const STATUS_OPSI: ReadonlyArray<{ value: StatusPilihan; label: string }> = [
-  { value: 'semua', label: 'Semua status' },
-  { value: 'menunggu_verifikasi', label: 'Menunggu' },
-  { value: 'valid', label: 'Terverifikasi' },
-  { value: 'diproses', label: 'Diproses' },
-  { value: 'selesai', label: 'Selesai' },
-]
+// Jumlah laporan yang ditampilkan di kartu "Laporan terbaru".
+const JUMLAH_TERBARU = 3
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
 // "laporan/abc.jpg"), bukan URL lengkap. Logikanya sama dengan fotoUrl di
@@ -60,31 +57,17 @@ function fotoUrl(foto: string): string {
   return `${origin}/storage/${foto.replace(/^\/+/, '')}`
 }
 
-// Waktu dibuat dalam milidetik, aman kalau `created_at` kosong atau
-// formatnya tidak valid (dianggap 0 supaya jatuh ke urutan paling bawah).
-function waktu(item: Laporan): number {
-  const t = item.created_at ? new Date(item.created_at).getTime() : 0
-  return Number.isNaN(t) ? 0 : t
+function kategoriLabel(kategori: string): string {
+  return KATEGORI_LABEL[kategori as LaporanKategori] ?? kategori
 }
 
-// Bobot urutan prioritas: makin besar makin di atas. Laporan tanpa
-// prioritas (`null`, belum diproses backend) bobotnya 0 sehingga di bawah.
-const BOBOT_PRIORITAS: Record<string, number> = {
-  tinggi: 3,
-  sedang: 2,
-  rendah: 1,
-}
-
-function bobotPrioritas(item: Laporan): number {
-  return BOBOT_PRIORITAS[item.prioritas_kategori ?? ''] ?? 0
-}
-
+// `filter` masih diterima karena route mengirimnya (?filter=...), tapi
+// dashboard ini tidak lagi menampilkan tabel antrian, jadi tidak dipakai.
 export function DashboardAdmin({
   user,
-  filter,
 }: {
   user: User
-  filter: AntrianFilter
+  filter?: AntrianFilter
 }) {
   const laporan = useLaporanList()
   const [fotoBesar, setFotoBesar] = useState<string | null>(null)
@@ -101,7 +84,7 @@ export function DashboardAdmin({
       menunggu={menunggu}
       header={<DashboardIntro user={user} />}
     >
-      <div className="flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
         {laporan.isPending ? (
           <DashboardSkeleton />
         ) : laporan.isError ? (
@@ -110,11 +93,7 @@ export function DashboardAdmin({
             onRetry={() => void laporan.refetch()}
           />
         ) : (
-          <DashboardContent
-            laporan={laporan.data}
-            filter={filter}
-            onBukaFoto={setFotoBesar}
-          />
+          <DashboardContent laporan={laporan.data} onBukaFoto={setFotoBesar} />
         )}
       </div>
 
@@ -144,36 +123,242 @@ function DashboardIntro({ user }: { user: User }) {
   )
 }
 
-function StatusSelect({
-  value,
-  onChange,
+function DashboardContent({
+  laporan,
+  onBukaFoto,
 }: {
-  value: StatusPilihan
-  onChange: (value: StatusPilihan) => void
+  laporan: Laporan[]
+  onBukaFoto: (src: string) => void
 }) {
+  const ringkasan = hitungRingkasan(laporan)
+
   return (
-    <label className="relative inline-flex items-center">
-      <span className="sr-only">Filter status laporan</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value as StatusPilihan)}
-        className="cursor-pointer appearance-none rounded-full border border-emerald-100 bg-emerald-50 py-1 pr-8 pl-3 text-xs font-medium text-emerald-800 transition-colors outline-none hover:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35"
+    <>
+      <HeroAntrian ringkasan={ringkasan} />
+      <TotalKartu ringkasan={ringkasan} />
+
+      <section
+        aria-label="Ringkasan status"
+        className="grid grid-cols-2 gap-4 xl:grid-cols-4"
       >
-        {STATUS_OPSI.map((opsi) => (
-          <option key={opsi.value} value={opsi.value}>
-            {opsi.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-emerald-800"
+        <StatKartu
+          label="Menunggu"
+          jumlah={ringkasan.menunggu}
+          caption="Belum diverifikasi"
+          Icon={Clock}
+          iconClass="text-amber-100"
+        />
+        <StatKartu
+          label="Diproses"
+          jumlah={ringkasan.diproses}
+          caption="Sedang dikerjakan"
+          Icon={Wrench}
+          iconClass="text-sky-100"
+        />
+        <StatKartu
+          label="Selesai"
+          jumlah={ringkasan.selesai}
+          caption="Sudah ditangani"
+          Icon={ShieldCheck}
+          iconClass="text-emerald-100"
+        />
+        <StatKartu
+          label="Ditolak"
+          jumlah={ringkasan.ditolak}
+          caption="Tidak lolos verifikasi"
+          Icon={Ban}
+          iconClass="text-red-100"
+        />
+      </section>
+
+      <LaporanTerbaru
+        // `antrian` sudah diurutkan dari yang terbaru oleh hitungRingkasan.
+        laporan={ringkasan.antrian.slice(0, JUMLAH_TERBARU)}
+        onBukaFoto={onBukaFoto}
       />
-    </label>
+    </>
   )
 }
 
-// Thumbnail foto di baris tabel. Kalau `foto` null atau gagal dimuat,
+// Kartu hijau tua di paling atas, susunannya sama dengan dashboard user:
+// chip jumlah, judul, penjelasan, lalu satu tombol utama.
+function HeroAntrian({ ringkasan }: { ringkasan: RingkasanDashboard }) {
+  const ada = ringkasan.menunggu > 0
+  const adaTertunda = ringkasan.terverifikasi > 0
+
+  return (
+    <section
+      aria-label="Perlu tindakan"
+      className="relative overflow-hidden rounded-[26px] bg-[#0f3d2e] px-8 py-7 text-white"
+    >
+      <span
+        aria-hidden="true"
+        className="absolute -top-20 -right-14 size-64 rounded-full bg-white/5"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -right-4 -bottom-28 size-52 rounded-full bg-white/5"
+      />
+
+      <div className="relative">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-medium ring-1 ring-white/10">
+            <ClipboardList aria-hidden="true" className="size-4" />
+            {ringkasan.menunggu} laporan menunggu verifikasi
+          </span>
+
+          {/* Chip kedua hanya muncul kalau ada laporan terverifikasi yang
+              belum dikerjakan. Kalau 0, tidak ditampilkan. */}
+          {adaTertunda && (
+            <Link
+              to="/verifikasi"
+              search={{ filter: 'terverifikasi' }}
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-sm font-medium ring-1 ring-white/10 transition-colors hover:bg-white/20"
+            >
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              {ringkasan.terverifikasi} terverifikasi, belum dikerjakan
+            </Link>
+          )}
+        </div>
+
+        <h2 className="mt-4 text-2xl font-semibold">
+          {ada ? 'Ada laporan yang perlu dicek?' : 'Semua laporan sudah dicek'}
+        </h2>
+        <p className="mt-1.5 max-w-lg text-sm text-emerald-100/80">
+          {ada
+            ? 'Cek foto dan keterangannya, lalu verifikasi atau tolak laporan yang masuk.'
+            : 'Belum ada laporan baru yang perlu Anda verifikasi. Bagus!'}
+        </p>
+
+        {ada && (
+          <Link
+            to="/verifikasi"
+            search={{ filter: 'menunggu' }}
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0f3d2e] transition-colors hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
+          >
+            Cek sekarang
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </Link>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function TotalKartu({ ringkasan }: { ringkasan: RingkasanDashboard }) {
+  return (
+    <section
+      aria-label="Total laporan"
+      className={cn('relative overflow-hidden px-6 py-5', CARD_CLASS)}
+    >
+      <ClipboardList
+        aria-hidden="true"
+        strokeWidth={1.5}
+        className="absolute -top-3 -right-3 size-24 text-neutral-100"
+      />
+      <p className="relative text-xs font-semibold tracking-wider text-neutral-500 uppercase">
+        Total
+      </p>
+      <p className="relative mt-1 text-4xl leading-none font-bold tabular-nums">
+        {ringkasan.total}
+      </p>
+      <p className="relative mt-2 text-sm text-neutral-500">
+        Semua laporan · {ringkasan.diproses} sedang dikerjakan
+      </p>
+    </section>
+  )
+}
+
+function StatKartu({
+  label,
+  jumlah,
+  caption,
+  Icon,
+  iconClass,
+}: {
+  label: string
+  jumlah: number
+  caption: string
+  Icon: LucideIcon
+  iconClass: string
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[22px] border border-neutral-200/70 bg-white p-5 shadow-sm">
+      <Icon
+        aria-hidden="true"
+        strokeWidth={1.5}
+        className={cn('absolute -top-3 -right-3 size-20', iconClass)}
+      />
+      <p className="relative text-xs font-semibold tracking-wider text-neutral-500 uppercase">
+        {label}
+      </p>
+      <p className="relative mt-1 text-3xl leading-none font-bold tabular-nums">
+        {jumlah}
+      </p>
+      <p className="relative mt-2 text-sm text-neutral-500">{caption}</p>
+    </div>
+  )
+}
+
+function LaporanTerbaru({
+  laporan,
+  onBukaFoto,
+}: {
+  laporan: Laporan[]
+  onBukaFoto: (src: string) => void
+}) {
+  return (
+    <section className={cn('p-6', CARD_CLASS)}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold">Laporan terbaru</h2>
+          <p className="text-sm text-neutral-500">
+            Menampilkan {JUMLAH_TERBARU} laporan terakhir
+          </p>
+        </div>
+        <Link
+          to="/verifikasi"
+          search={{ filter: 'semua' }}
+          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[#1f6b4f] hover:underline focus-visible:outline-none"
+        >
+          Lihat semua
+          <ArrowRight aria-hidden="true" className="size-4" />
+        </Link>
+      </div>
+
+      {laporan.length === 0 ? (
+        <p className="mt-6 text-center text-sm text-neutral-400">
+          Belum ada laporan masuk.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-neutral-100">
+          {laporan.map((item) => (
+            <li key={item.id} className="flex items-center gap-3 py-3">
+              <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-medium">{item.deskripsi}</p>
+                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+                </div>
+                <p className="mt-0.5 truncate text-xs text-neutral-400">
+                  {kategoriLabel(item.kategori)} · {item.lokasi}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <StatusBadge status={item.status} />
+                <span className="text-xs text-neutral-400">
+                  {formatTanggal(item.created_at)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+// Thumbnail foto di baris daftar. Kalau `foto` null atau gagal dimuat,
 // tetap digambar kotak putus-putus berukuran sama supaya tinggi baris
 // tidak melompat dan tidak ada ikon gambar patah.
 function FotoThumb({
@@ -253,140 +438,17 @@ function FotoLightbox({ src, onTutup }: { src: string; onTutup: () => void }) {
   )
 }
 
-function DashboardContent({
-  laporan,
-  filter,
-  onBukaFoto,
-}: {
-  laporan: Laporan[]
-  filter: AntrianFilter
-  onBukaFoto: (src: string) => void
-}) {
-  const [status, setStatus] = useState<StatusPilihan>('semua')
-
-  const ringkasan = hitungRingkasan(laporan)
-  // Dashboard cuma ringkasan: maksimal 5 baris. Urutan: prioritas tertinggi
-  // dulu, lalu yang paling baru. Kalau waktunya sama persis, ID yang lebih
-  // besar didahulukan. Daftar lengkap tetap ada di /verifikasi.
-  const antrian = filterAntrian(ringkasan.antrian, filter).filter(
-    (item) => status === 'semua' || item.status === status,
-  )
-  const antrianUrut = antrian
-    .slice()
-    .sort((a, b) => {
-      const prioritas = bobotPrioritas(b) - bobotPrioritas(a)
-      if (prioritas !== 0) return prioritas
-      const selisih = waktu(b) - waktu(a)
-      return selisih !== 0 ? selisih : b.id - a.id
-    })
-    .slice(0, 5)
-  const harian = laporanPerHari(laporan)
-
-  return (
-    <div className="flex flex-col gap-6">
-      <PerluTindakanCards ringkasan={ringkasan} />
-      <StatusBarCard ringkasan={ringkasan} />
-
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-lg font-semibold">Laporan Antrian</h2>
-              <StatusSelect value={status} onChange={setStatus} />
-            </div>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
-              Total {ringkasan.total}
-            </span>
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[26rem] text-sm">
-              <thead>
-                <tr className="text-left text-neutral-400">
-                  <th className="pb-2 font-medium">Laporan</th>
-                  <th className="pb-2 text-right font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {antrianUrut.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={2}
-                      className="py-6 text-center text-neutral-400"
-                    >
-                      {emptyText(filter, status)}
-                    </td>
-                  </tr>
-                ) : (
-                  antrianUrut.map((item) => (
-                    <tr key={item.id} className="border-t border-neutral-100">
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-3">
-                          <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-medium">{item.deskripsi}</p>
-                              <PrioritasBadge
-                                kategori={item.prioritas_kategori ?? null}
-                              />
-                            </div>
-                            <p className="mt-0.5 text-xs text-neutral-400">
-                              {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
-                              {formatTanggal(item.created_at)}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 text-right">
-                        <span className="whitespace-nowrap">
-                          <StatusBadge status={item.status} />
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <LaporanHarianCard harian={harian} />
-      </div>
-    </div>
-  )
-}
-
-function kategoriLabel(kategori: string): string {
-  return KATEGORI_LABEL[kategori as LaporanKategori] ?? kategori
-}
-
-function emptyText(filter: AntrianFilter, status: StatusPilihan): string {
-  if (status !== 'semua') {
-    const label =
-      STATUS_OPSI.find((opsi) => opsi.value === status)?.label ?? status
-    return `Belum ada laporan dengan status ${label.toLowerCase()}.`
-  }
-  if (filter === 'menunggu') {
-    return 'Belum ada laporan yang menunggu verifikasi.'
-  }
-  if (filter === 'terverifikasi') {
-    return 'Belum ada laporan yang sudah terverifikasi.'
-  }
-  return 'Belum ada laporan masuk.'
-}
-
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <Skeleton className="h-24 rounded-[26px]" />
-        <Skeleton className="h-24 rounded-[26px]" />
+    <div className="flex flex-col gap-5">
+      <Skeleton className="h-44 rounded-[26px]" />
+      <Skeleton className="h-28 rounded-[26px]" />
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((key) => (
+          <Skeleton key={key} className="h-28 rounded-[22px]" />
+        ))}
       </div>
-      <Skeleton className="h-36 rounded-[26px]" />
-      <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <Skeleton className="h-72 rounded-[26px]" />
-        <Skeleton className="h-72 rounded-[26px]" />
-      </div>
+      <Skeleton className="h-64 rounded-[26px]" />
     </div>
   )
 }

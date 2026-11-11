@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/password-input'
 import {
   errorMessage,
   fieldErrors,
@@ -172,9 +173,8 @@ export function UserFormDialog({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid || undefined}>
                 <FieldLabel htmlFor="admin-password">Password</FieldLabel>
-                <Input
+                <PasswordInput
                   id="admin-password"
-                  type="password"
                   placeholder={
                     isEdit
                       ? 'Biarkan kosong untuk tetap sama'
@@ -194,12 +194,17 @@ export function UserFormDialog({
             <Button
               type="button"
               variant="outline"
+              className="rounded-full"
               onClick={() => onOpenChange(false)}
             >
               Batal
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              Simpan
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-full bg-[#1f6b4f] px-5 text-white hover:bg-[#0d3f31]"
+            >
+              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </DialogFooter>
         </form>
