@@ -35,6 +35,7 @@ const superAdmin: AdminUser = {
   nim: null,
   email: 'superadmin@facility.test',
   role: 'super_admin',
+  foto: null,
   active: true,
 }
 
