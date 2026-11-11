@@ -68,6 +68,49 @@ it('requires identifier and password', function (): void {
     postJson('/api/v1/auth/login', [])->assertUnprocessable();
 });
 
+it('rejects deactivated account', function (): void {
+    $user = makeLoginUser();
+    $user->forceFill(['active' => false])->save();
+
+    postJson('/api/v1/auth/login', [
+        'identifier' => $user->email,
+        'password' => 'secret-password',
+    ])->assertUnauthorized();
+});
+
+it('rejects deactivated account by nim', function (): void {
+    $user = makeLoginUser();
+    $user->forceFill(['active' => false])->save();
+
+    postJson('/api/v1/auth/login', [
+        'identifier' => $user->nim,
+        'password' => 'secret-password',
+    ])->assertUnauthorized();
+});
+
+it('rejects deactivated account without leaking account existence', function (): void {
+    $user = makeLoginUser();
+    $user->forceFill(['active' => false])->save();
+
+    postJson('/api/v1/auth/login', [
+        'identifier' => $user->email,
+        'password' => 'secret-password',
+    ])->assertUnauthorized()
+        ->assertJsonPath('message', 'Invalid credentials.');
+});
+
+it('does not authenticate a deactivated account', function (): void {
+    $user = makeLoginUser();
+    $user->forceFill(['active' => false])->save();
+
+    postJson('/api/v1/auth/login', [
+        'identifier' => $user->email,
+        'password' => 'secret-password',
+    ])->assertUnauthorized();
+
+    $this->assertGuest();
+});
+
 it('returns the authenticated user', function (): void {
     $user = makeLoginUser();
 

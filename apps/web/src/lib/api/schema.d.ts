@@ -128,6 +128,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/profile/foto': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Upload foto profil milik user yang sedang login */
+    post: operations['profile.updateFoto']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/profile/password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Ganti password user yang sedang login */
+    patch: operations['profile.changePassword']
+    trace?: never
+  }
   '/status': {
     parameters: {
       query?: never
@@ -137,6 +171,29 @@ export interface paths {
     }
     get: operations['v1.status']
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/users/{user}/deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Deactivate an admin account
+     * @description Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan
+     *     dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     *     Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     *     dengan update/destroy di atas.
+     */
+    put: operations['user.deactivate']
     post?: never
     delete?: never
     options?: never
@@ -184,6 +241,12 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** ChangePasswordRequest */
+    ChangePasswordRequest: {
+      current_password: string
+      password: string
+      password_confirmation: string
+    }
     /**
      * LaporanKategori
      * @enum {string}
@@ -282,6 +345,14 @@ export interface components {
       nilai_frekuensi?: number
       alasan?: string | null
     }
+    /** UpdateProfileFotoRequest */
+    UpdateProfileFotoRequest: {
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto: string
+    }
     /** UpdateUserRequest */
     UpdateUserRequest: {
       name?: string
@@ -296,6 +367,8 @@ export interface components {
       nim: string | null
       email: string | null
       role: string
+      foto: string | null
+      active: boolean
     }
   }
   responses: {
@@ -576,6 +649,62 @@ export interface operations {
       401: components['responses']['AuthenticationException']
     }
   }
+  'profile.updateFoto': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['UpdateProfileFotoRequest']
+      }
+    }
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'profile.changePassword': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @constant */
+            message: 'Password berhasil diperbarui.'
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
   'v1.status': {
     parameters: {
       query?: never
@@ -596,6 +725,33 @@ export interface operations {
           }
         }
       }
+    }
+  }
+  'user.deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
     }
   }
   'users.index': {

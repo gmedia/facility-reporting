@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\LaporanController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\StatusController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('auth/logout', LogoutController::class);
         Route::get('auth/me', MeController::class);
 
+        // Akun milik user sendiri: foto profil & ganti password (issue #93)
+        Route::post('profile/foto', [ProfileController::class, 'updateFoto']);
+        Route::patch('profile/password', [ProfileController::class, 'changePassword']);
+
         Route::get('reports', [LaporanController::class, 'index']);
         Route::post('reports', [LaporanController::class, 'store']);
 
@@ -30,6 +35,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::middleware('super_admin')->group(function (): void {
+            Route::put('admin/users/{user}/deactivate', [UserController::class, 'deactivate']);
             Route::apiResource('admin/users', UserController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
         });
