@@ -96,6 +96,27 @@ export function useDeactivateAdminUser() {
   })
 }
 
+export function useActivateAdminUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await initializeCsrf()
+      const { data, error, response } = await api.PUT(
+        '/admin/users/{user}/activate',
+        {
+          params: { path: { user: id } },
+        },
+      )
+      if (error || !data)
+        throw apiError(response.status, error, 'Gagal mengaktifkan akun.')
+      return data.data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 function apiError(status: number, body: unknown, fallback: string): Error {
   let pesanApi: string | null = null
 

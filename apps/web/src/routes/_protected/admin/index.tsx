@@ -19,6 +19,7 @@ import {
   adminUsersQueryOptions,
   errorMessage,
   errorStatus,
+  useActivateAdminUser,
   useDeactivateAdminUser,
   type AdminUser,
 } from '@/features/admin/users-query'
@@ -44,22 +45,39 @@ const CARD_CLASS =
 function AdminUsersPage() {
   const users = useQuery(adminUsersQueryOptions)
   const deactivateMutation = useDeactivateAdminUser()
+  const activateMutation = useActivateAdminUser()
   const [form, setForm] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
   })
-  const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
+  const [pendingAction, setPendingAction] = useState<{
+    user: AdminUser | null
+    type: 'activate' | 'deactivate' | null
+  }>({ user: null, type: null })
 
-  function handleDeactivate() {
-    if (!pendingDelete) return
-    deactivateMutation.mutate(pendingDelete.id, {
+  function handleActivate() {
+    if (!pendingAction.user) return
+    activateMutation.mutate(pendingAction.user.id, {
       onSuccess: () => {
-        toast.success(`Akun ${pendingDelete.name} dinonaktifkan`)
-        setPendingDelete(null)
+        toast.success(`Akun ${pendingAction.user.name} diaktifkan`)
+        setPendingAction({ user: null, type: null })
       },
       onError: (error) => toast.error(errorMessage(error)),
     })
   }
+
+  function handleDeactivate() {
+    if (!pendingAction.user) return
+    deactivateMutation.mutate(pendingAction.user.id, {
+      onSuccess: () => {
+        toast.success(`Akun ${pendingAction.user.name} dinonaktifkan`)
+        setPendingAction({ user: null, type: null })
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    })
+  }
+
+  const isPending = deactivateMutation.isPending || activateMutation.isPending
 
   return (
     <div className="flex flex-col gap-4">
@@ -153,10 +171,19 @@ function AdminUsersPage() {
                             type="button"
                             size="sm"
                             variant="ghost"
-                            className="rounded-full bg-orange-50 text-xs text-orange-600 hover:bg-orange-100 hover:text-orange-700"
-                            onClick={() => setPendingDelete(user)}
+                            className={`rounded-full text-xs ${
+                              user.active
+                                ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700'
+                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
+                            }`}
+                            onClick={() =>
+                              setPendingAction({
+                                user,
+                                type: user.active ? 'deactivate' : 'activate',
+                              })
+                            }
                           >
-                            Nonaktifkan
+                            {user.active ? 'Nonaktifkan' : 'Aktifkan'}
                           </Button>
                         </div>
                       </TableCell>
@@ -169,19 +196,25 @@ function AdminUsersPage() {
         </section>
       )}
 
-      {pendingDelete && (
+      {pendingAction.user && (
         <Alert variant="destructive" className="rounded-[26px]">
-          <AlertTitle>Nonaktifkan akun {pendingDelete.name}?</AlertTitle>
+          <AlertTitle>
+            {pendingAction.type === 'activate'
+              ? `Aktifkan akun ${pendingAction.user.name}?`
+              : `Nonaktifkan akun ${pendingAction.user.name}?`}
+          </AlertTitle>
           <AlertDescription>
-            Akun yang dinonaktifkan tidak dapat login.
+            {pendingAction.type === 'activate'
+              ? 'Akun yang diaktifkan dapat login kembali.'
+              : 'Akun yang dinonaktifkan tidak dapat login.'}
             <div className="mt-3 flex gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 className="rounded-full"
-                onClick={() => setPendingDelete(null)}
-                disabled={deactivateMutation.isPending}
+                onClick={() => setPendingAction({ user: null, type: null })}
+                disabled={isPending}
               >
                 Batal
               </Button>
@@ -190,12 +223,20 @@ function AdminUsersPage() {
                 size="sm"
                 variant="destructive"
                 className="rounded-full"
-                onClick={handleDeactivate}
-                disabled={deactivateMutation.isPending}
+                onClick={
+                  pendingAction.type === 'activate'
+                    ? handleActivate
+                    : handleDeactivate
+                }
+                disabled={isPending}
               >
-                {deactivateMutation.isPending
-                  ? 'Menonaktifkan...'
-                  : 'Ya, nonaktifkan'}
+                {isPending
+                  ? pendingAction.type === 'activate'
+                    ? 'Mengaktifkan...'
+                    : 'Menonaktifkan...'
+                  : pendingAction.type === 'activate'
+                    ? 'Ya, aktifkan'
+                    : 'Ya, nonaktifkan'}
               </Button>
             </div>
           </AlertDescription>
