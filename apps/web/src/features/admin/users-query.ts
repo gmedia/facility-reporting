@@ -76,7 +76,29 @@ export function useDeleteAdminUser() {
 }
 
 function apiError(status: number, body: unknown, fallback: string): Error {
-  const message = messageFor(status, fallback)
+  let pesanApi: string | null = null
+
+  if (body && typeof body === 'object') {
+    const msg1 = (body as { message?: unknown }).message
+    if (typeof msg1 === 'string' && msg1.length > 0) {
+      pesanApi = msg1
+    } else if (
+      (body as { data?: unknown }).data &&
+      typeof (body as { data?: unknown }).data === 'object'
+    ) {
+      const msg2 = (
+        (body as { data?: { message?: unknown } }).data as {
+          message?: unknown
+        }
+      ).message
+      if (typeof msg2 === 'string' && msg2.length > 0) {
+        pesanApi = msg2
+      }
+    }
+  }
+
+  const message =
+    status === 422 && pesanApi ? pesanApi : messageFor(status, fallback)
   const error = new Error(message)
   Object.assign(error, { status }, body ?? {})
   error.message = message
