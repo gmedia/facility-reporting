@@ -255,7 +255,11 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
-            <div className="flex flex-wrap gap-3">
+            <div
+              role="group"
+              aria-label="Filter status"
+              className="flex flex-wrap gap-3"
+            >
               <select
                 aria-label="Status"
                 value={filter}

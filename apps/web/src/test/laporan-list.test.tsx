@@ -188,12 +188,13 @@ describe('halaman /verifikasi', () => {
     await daftar.findByText('lampu mati')
     const filterGroup = screen.getByRole('group', { name: 'Filter status' })
 
-    fireEvent.click(
-      within(filterGroup).getByRole('button', { name: /Selesai/ }),
+    fireEvent.change(
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+      { target: { value: 'selesai' } },
     )
     expect(
-      within(filterGroup).getByRole('button', { name: /Selesai/ }),
-    ).toHaveAttribute('aria-pressed', 'true')
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+    ).toHaveValue('selesai')
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
     expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
     expect(api.GET).toHaveBeenCalledWith('/reports')
@@ -303,19 +304,24 @@ describe('halaman /verifikasi', () => {
 
     // Semua pengecekan lewat `daftar`, karena judul laporan terpilih juga
     // tampil di panel detail.
-    fireEvent.click(
-      within(filterGroup).getByRole('button', { name: /Menunggu/ }),
+    fireEvent.change(
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+      { target: { value: 'menunggu_verifikasi' } },
     )
     expect(daftar.getByText('lampu mati')).toBeInTheDocument()
     expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
 
-    fireEvent.click(
-      within(filterGroup).getByRole('button', { name: /Selesai/ }),
+    fireEvent.change(
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+      { target: { value: 'selesai' } },
     )
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
     expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
 
-    fireEvent.click(within(filterGroup).getByRole('button', { name: /Semua/ }))
+    fireEvent.change(
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+      { target: { value: 'semua' } },
+    )
     expect(daftar.getByText('lampu mati')).toBeInTheDocument()
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
   })
@@ -327,8 +333,9 @@ describe('halaman /verifikasi', () => {
     await daftar.findByText('lampu mati')
     const filterGroup = screen.getByRole('group', { name: 'Filter status' })
 
-    fireEvent.click(
-      within(filterGroup).getByRole('button', { name: /Terverifikasi/ }),
+    fireEvent.change(
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+      { target: { value: 'valid' } },
     )
 
     expect(
@@ -338,8 +345,8 @@ describe('halaman /verifikasi', () => {
     ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     expect(
-      within(filterGroup).getByRole('button', { name: /Semua/ }),
-    ).toBeInTheDocument()
+      within(filterGroup).getByRole('combobox', { name: 'Status' }),
+    ).toHaveValue('valid')
 
     fireEvent.click(screen.getByRole('button', { name: 'Reset filter' }))
     expect(await daftar.findByText('lampu mati')).toBeInTheDocument()
