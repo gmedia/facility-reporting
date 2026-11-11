@@ -136,8 +136,7 @@ describe('dashboard pengelola', () => {
     expect(
       await screen.findByRole('heading', { name: 'Halo, Super Admin' }),
     ).toBeInTheDocument()
-    expect(await screen.findByText('Antrian verifikasi')).toBeInTheDocument()
-    expect(screen.getByText('Prioritas')).toBeInTheDocument()
+    expect(await screen.findByText('Laporan Antrian')).toBeInTheDocument()
     expect(screen.getByText('Laporan per hari')).toBeInTheDocument()
     expect(screen.getByText('Total 4')).toBeInTheDocument()
     expect(await screen.findByText('lampu koridor mati')).toBeInTheDocument()
@@ -145,19 +144,19 @@ describe('dashboard pengelola', () => {
     expect(api.GET).toHaveBeenCalledWith('/reports')
   })
 
-  it('tab Menunggu memfilter antrian lewat URL', async () => {
-    const router = renderAt('/dashboard')
+  it('filter status menyaring antrian melalui StatusSelect', async () => {
+    renderAt('/dashboard')
 
     await screen.findByText('lampu koridor mati')
-    fireEvent.click(screen.getByRole('link', { name: 'Menunggu' }))
+    const select = screen.getByRole('combobox', {
+      name: 'Filter status laporan',
+    })
+    fireEvent.change(select, { target: { value: 'diproses' } })
 
-    await waitFor(() =>
-      expect(router.state.location.search).toMatchObject({
-        filter: 'menunggu',
-      }),
-    )
-    expect(await screen.findByText('lampu koridor mati')).toBeInTheDocument()
-    expect(screen.queryByText('meja kelas rusak')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('lampu koridor mati')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('proyektor tidak menyala')).toBeInTheDocument()
   })
 
   it('state kosong per filter menampilkan pesan yang sesuai', async () => {

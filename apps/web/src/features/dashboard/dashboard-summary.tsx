@@ -1,4 +1,5 @@
 import { BadgeCheck, Clock, ShieldCheck, Wrench } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import type { LaporanStatus } from '@/features/laporan/laporan-query'
 import type { BarHarian, RingkasanDashboard } from './dashboard-utils'
 import { periodeHarian } from './dashboard-utils'
@@ -10,12 +11,14 @@ const BULAN = new Intl.DateTimeFormat('id-ID', {
 })
 
 const CHIP =
-  'rounded-[10px] bg-[#e0f1e8] px-3.5 py-1 text-sm font-medium text-[#2f8059]'
+  'rounded-[10px] bg-emerald-50 px-3.5 py-1 text-sm font-medium text-emerald-800'
 
-const KARTU = 'rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6'
+// Kartu disamakan dengan dashboard user: putih, border tipis, shadow lembut.
+const KARTU =
+  'rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-sm'
 
 const KARTU_STAT =
-  'flex flex-col items-center gap-2 rounded-[26px] bg-[#faf3e5] px-4 py-6 text-center'
+  'flex flex-col items-center gap-2 rounded-[26px] border border-neutral-200/70 bg-white px-4 py-6 text-center shadow-sm'
 
 type StatStatus = Extract<
   LaporanStatus,
@@ -64,7 +67,7 @@ export function RingkasanCards({
       {STATS.map(({ status, label, key, Icon }) => {
         const content = (
           <>
-            <span className="flex size-[62px] items-center justify-center rounded-full bg-white text-[#3b9b6b]">
+            <span className="flex size-[62px] items-center justify-center rounded-full bg-emerald-50 text-[#1f6b4f]">
               <Icon aria-hidden="true" className="size-6" />
             </span>
             <p className="text-3xl font-bold">{ringkasan[key]}</p>
@@ -88,9 +91,9 @@ export function RingkasanCards({
             onClick={() => onSelect(status)}
             className={cn(
               KARTU_STAT,
-              'transition hover:-translate-y-0.5 hover:shadow-sm',
+              'transition hover:-translate-y-0.5 hover:shadow-md',
               activeStatus === status &&
-                'ring-2 ring-[#3b9b6b]/35 ring-offset-2 ring-offset-white',
+                'ring-2 ring-[#1f6b4f]/35 ring-offset-2 ring-offset-[#f6f7f4]',
             )}
           >
             {content}
@@ -101,6 +104,129 @@ export function RingkasanCards({
   )
 }
 
+// ------------------------------------------------------------------
+// Kartu "Perlu tindakan" (khusus dashboard admin)
+// ------------------------------------------------------------------
+const PERLU_TINDAKAN = [
+  {
+    key: 'menunggu',
+    filter: 'menunggu',
+    judul: 'Menunggu dicek',
+    aktif: 'Laporan baru yang belum Anda verifikasi.',
+    kosong: 'Tidak ada laporan baru. Bagus!',
+    tombol: 'Cek sekarang',
+  },
+  {
+    key: 'terverifikasi',
+    filter: 'terverifikasi',
+    judul: 'Terverifikasi, belum dikerjakan',
+    aktif: 'Sudah valid, tinggal ditindaklanjuti.',
+    kosong: 'Semua laporan valid sudah dikerjakan.',
+    tombol: 'Lihat daftar',
+  },
+] as const
+
+export function PerluTindakanCards({
+  ringkasan,
+}: {
+  ringkasan: RingkasanDashboard
+}) {
+  return (
+    <section aria-label="Perlu tindakan" className="grid gap-4 md:grid-cols-2">
+      {PERLU_TINDAKAN.map((item) => {
+        const jumlah = ringkasan[item.key]
+        return (
+          <div
+            key={item.key}
+            className={cn(
+              'flex items-center gap-4 rounded-[26px] border px-6 py-5 shadow-sm',
+              jumlah > 0
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-neutral-200/70 bg-white opacity-90',
+            )}
+          >
+            <p className="text-4xl leading-none font-bold">{jumlah}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">{item.judul}</p>
+              <p className="text-sm text-neutral-500">
+                {jumlah > 0 ? item.aktif : item.kosong}
+              </p>
+            </div>
+            {jumlah > 0 && (
+              <Link
+                to="/verifikasi"
+                search={{ filter: item.filter }}
+                className="shrink-0 rounded-xl bg-[#1f6b4f] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#0f3d2e]"
+              >
+                {item.tombol}
+              </Link>
+            )}
+          </div>
+        )
+      })}
+    </section>
+  )
+}
+
+// ------------------------------------------------------------------
+// Bar status bertumpuk + legend (khusus dashboard admin)
+// ------------------------------------------------------------------
+const SEGMEN = [
+  { key: 'menunggu', label: 'Menunggu', className: 'bg-amber-400' },
+  { key: 'terverifikasi', label: 'Terverifikasi', className: 'bg-emerald-400' },
+  { key: 'diproses', label: 'Diproses', className: 'bg-sky-400' },
+  { key: 'selesai', label: 'Selesai', className: 'bg-neutral-400' },
+  { key: 'ditolak', label: 'Ditolak', className: 'bg-red-400' },
+] as const
+
+export function StatusBarCard({
+  ringkasan,
+}: {
+  ringkasan: RingkasanDashboard
+}) {
+  const { total } = ringkasan
+
+  return (
+    <section className={KARTU}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">
+          {ringkasan.diproses} dari {total} laporan sedang dikerjakan
+        </h2>
+        <span className={CHIP}>Semua laporan</span>
+      </div>
+
+      <div
+        role="img"
+        aria-label="Sebaran status laporan"
+        className="mt-4 flex h-4 overflow-hidden rounded-full bg-neutral-100"
+      >
+        {SEGMEN.map(({ key, className }) =>
+          ringkasan[key] > 0 ? (
+            <div
+              key={key}
+              className={className}
+              style={{ width: `${(ringkasan[key] / total) * 100}%` }}
+            />
+          ) : null,
+        )}
+      </div>
+
+      <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        {SEGMEN.map(({ key, label, className }) => (
+          <li key={key} className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={cn('size-2.5 rounded-full', className)}
+            />
+            {label} <b>{ringkasan[key]}</b>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+// Masih dipertahankan kalau dipakai halaman lain (mis. dashboard user).
 export function PrioritasCard({
   ringkasan,
 }: {
@@ -109,7 +235,7 @@ export function PrioritasCard({
   return (
     <section className={KARTU}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Prioritas</h2>
+        <h2 className="text-lg font-semibold">Progres laporan</h2>
         <span className={CHIP}>{BULAN.format(new Date())}</span>
       </div>
 
@@ -140,6 +266,11 @@ export function PrioritasCard({
 
 export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
   const maxHarian = Math.max(1, ...harian.map((item) => item.jumlah))
+  const total = harian.reduce((acc, item) => acc + item.jumlah, 0)
+  const puncak = harian.reduce<BarHarian | null>(
+    (acc, item) => (!acc || item.jumlah > acc.jumlah ? item : acc),
+    null,
+  )
 
   return (
     <section className={KARTU}>
@@ -147,7 +278,12 @@ export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
         <h2 className="text-lg font-semibold">Laporan per hari</h2>
         <span className={CHIP}>{periodeHarian(harian)}</span>
       </div>
-      <div className="mt-8 flex items-end justify-between gap-2 sm:gap-4">
+      <p className="mt-2 text-sm text-neutral-500">
+        {total === 0 || !puncak
+          ? 'Belum ada laporan dalam 7 hari terakhir.'
+          : `${total} laporan dalam 7 hari. Paling ramai ${puncak.ariaLabel} dengan ${puncak.jumlah} laporan.`}
+      </p>
+      <div className="mt-6 flex items-end justify-between gap-2 sm:gap-4">
         {harian.map((bar) => (
           <div
             key={bar.ariaLabel}
@@ -155,7 +291,7 @@ export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
           >
             <span
               className={cn(
-                'text-xs font-semibold text-[#2f8059] transition-opacity',
+                'text-xs font-semibold text-emerald-800 transition-opacity',
                 bar.sorot ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
               )}
             >
@@ -167,8 +303,8 @@ export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
               className={cn(
                 'w-full max-w-10 rounded-xl transition-colors sm:max-w-9',
                 bar.sorot
-                  ? 'bg-[#3b9b6b]'
-                  : 'bg-[#ede2c4] group-hover:bg-[#dfc787]',
+                  ? 'bg-[#0f3d2e]'
+                  : 'bg-emerald-100 group-hover:bg-emerald-300',
               )}
               style={{ height: `${(bar.jumlah / maxHarian) * 9}rem` }}
             />
@@ -193,7 +329,7 @@ function DonutChart({ percent }: { percent: number }) {
           cy="80"
           r="60"
           fill="none"
-          stroke="#f1ead6"
+          stroke="#e8ece6"
           strokeWidth="14"
         />
         <circle
