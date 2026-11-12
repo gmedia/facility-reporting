@@ -3,7 +3,20 @@ import { api, initializeCsrf } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
 
 export type LaporanKategori = components['schemas']['LaporanKategori']
-export type Laporan = components['schemas']['LaporanResource']
+
+// Data pelapor hanya dikirim backend untuk admin/super admin.
+export type Pelapor = {
+  id: number
+  name: string
+  email: string | null
+  nim: string | null
+  foto: string | null
+}
+
+// Intersection supaya aman sebelum dan sesudah types:generate dijalankan.
+export type Laporan = components['schemas']['LaporanResource'] & {
+  pelapor?: Pelapor | null
+}
 
 // Kunci objek ini = nilai enum di backend. Kalau backend nambah kategori,
 // tambah di sini + jalankan `pnpm --dir apps/web types:generate`.

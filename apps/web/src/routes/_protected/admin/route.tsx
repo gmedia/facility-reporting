@@ -19,9 +19,14 @@ function AdminLayout() {
     <DashboardShell
       user={user}
       header={
-        <p className="text-xs font-medium tracking-widest text-neutral-400 uppercase">
-          Admin / Akun Admin
-        </p>
+        <div className="min-w-0 py-2">
+          <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+            Akun Admin
+          </h1>
+          <p className="truncate text-xs text-neutral-500">
+            Kelola akun dengan role admin
+          </p>
+        </div>
       }
     >
       <Outlet />

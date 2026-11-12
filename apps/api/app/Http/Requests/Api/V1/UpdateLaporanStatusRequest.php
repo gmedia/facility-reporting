@@ -59,6 +59,15 @@ class UpdateLaporanStatusRequest extends FormRequest
                 'max:255',
                 Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Ditolak->value),
             ],
+
+            'foto_bukti' => [
+                'sometimes',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Selesai->value),
+            ],
         ];
     }
 
@@ -71,6 +80,7 @@ class UpdateLaporanStatusRequest extends FormRequest
             nilaiDampak: $this->validated('nilai_dampak'),
             nilaiFrekuensi: $this->validated('nilai_frekuensi'),
             alasan: $this->validated('alasan'),
+            fotoBukti: $this->file('foto_bukti'),
         );
     }
 }

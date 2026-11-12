@@ -283,13 +283,17 @@ describe('halaman /akun', () => {
     ).toBeInTheDocument()
   })
 
-  it('melempar role selain user ke /dashboard', async () => {
+  it('role admin: membuka halaman akun', async () => {
     currentUser = { ...mahasiswa, role: 'admin' }
-    const router = renderAt('/akun')
+    renderAt('/akun')
 
     await waitFor(() =>
-      expect(router.state.location.pathname).toBe('/dashboard'),
+      expect(screen.getByText('Foto Profil & Keamanan')).toBeInTheDocument(),
     )
-    expect(screen.queryByLabelText('Password Saat Ini')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Password Saat Ini')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password Baru')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Simpan Password' }),
+    ).toBeInTheDocument()
   })
 })

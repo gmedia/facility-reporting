@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Actions\Admin\ActivateUser;
 use App\Actions\Admin\CreateUser;
 use App\Actions\Admin\DeactivateUser;
 use App\Actions\Admin\DeleteUser;
@@ -57,6 +58,21 @@ final class UserController extends Controller
      * dengan update/destroy di atas.
      */
     public function deactivate(User $user, DeactivateUser $action): UserResource
+    {
+        abort_unless($user->role === UserRole::Admin->value, 404);
+
+        return new UserResource($action($user));
+    }
+
+    /**
+     * Activate an admin account.
+     *
+     * Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan
+     * dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     * Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     * dengan update/destroy di atas.
+     */
+    public function activate(User $user, ActivateUser $action): UserResource
     {
         abort_unless($user->role === UserRole::Admin->value, 404);
 

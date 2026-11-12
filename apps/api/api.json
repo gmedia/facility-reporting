@@ -161,7 +161,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
                             }
@@ -534,6 +534,53 @@
                 }
             }
         },
+        "/admin/users/{user}/activate": {
+            "put": {
+                "operationId": "user.activate",
+                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+                "summary": "Activate an admin account",
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "description": "The user ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/admin/users": {
             "get": {
                 "operationId": "users.index",
@@ -830,6 +877,46 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "pelapor": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "Data pelapor: hanya untuk admin. loadMissing() menjaga agar\nrespons updateStatus/updateBukti (yang tidak eager load user)\ntetap menyertakan pelapor.",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "email": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "nim": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "foto": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "email",
+                            "nim",
+                            "foto"
+                        ]
                     }
                 },
                 "required": [
@@ -1071,6 +1158,12 @@
                             "null"
                         ],
                         "maxLength": 255
+                    },
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
                     }
                 },
                 "required": [

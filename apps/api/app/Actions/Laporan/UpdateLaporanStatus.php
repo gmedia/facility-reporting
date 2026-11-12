@@ -9,7 +9,9 @@ use App\Enums\LaporanStatus;
 use App\Models\Laporan;
 use App\Models\LaporanStatusHistory;
 use App\Services\PrioritasService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 final class UpdateLaporanStatus
 {
@@ -47,6 +49,17 @@ final class UpdateLaporanStatus
             ]);
         }
 
+        // Simpan foto bukti yang di-upload (jika ada) sebelum dicek ke database
+        if ($data->fotoBukti instanceof UploadedFile) {
+            $path = $data->fotoBukti->store('bukti', 'public');
+
+            if ($path === false) {
+                throw new RuntimeException('Gagal menyimpan foto bukti.');
+            }
+
+            $laporan->foto_bukti = $path;
+        }
+
         // Aturan: foto bukti wajib sebelum status diubah ke Selesai
         if ($data->status === LaporanStatus::Selesai && ! $laporan->foto_bukti) {
             throw ValidationException::withMessages([
@@ -79,12 +92,14 @@ final class UpdateLaporanStatus
 
         $laporan->save();
 
+        $changedBy = auth()->user()?->id;
+
         LaporanStatusHistory::create([
             'laporan_id' => $laporan->id,
             'status_from' => $statusFrom->value,
             'status_to' => $data->status->value,
             'alasan' => $data->alasan,
-            'changed_by' => auth()->user()?->id,
+            'changed_by' => $changedBy,
         ]);
 
         return $laporan;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Data;
 
 use App\Enums\LaporanStatus;
+use Illuminate\Http\UploadedFile;
 
 final readonly class UpdateLaporanStatusData
 {
@@ -15,5 +16,6 @@ final readonly class UpdateLaporanStatusData
         public ?int $nilaiDampak = null,
         public ?int $nilaiFrekuensi = null,
         public ?string $alasan = null,
+        public ?UploadedFile $fotoBukti = null,
     ) {}
 }

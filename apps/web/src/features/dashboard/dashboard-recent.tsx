@@ -90,6 +90,11 @@ export function DashboardRecent({
                     </span>
                   </p>
                   <p className="mt-0.5 truncate text-xs text-neutral-400">
+                    {!isUser && row.pelapor && (
+                      <span className="font-medium text-neutral-500">
+                        {row.pelapor.name} ·{' '}
+                      </span>
+                    )}
                     {row.deskripsi}
                   </p>
                 </div>

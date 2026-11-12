@@ -5,13 +5,6 @@ import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -26,7 +19,8 @@ import {
   adminUsersQueryOptions,
   errorMessage,
   errorStatus,
-  useDeleteAdminUser,
+  useActivateAdminUser,
+  useDeactivateAdminUser,
   type AdminUser,
 } from '@/features/admin/users-query'
 
@@ -44,93 +38,145 @@ export const Route = createFileRoute('/_protected/admin/')({
   component: AdminUsersPage,
 })
 
+// Gaya kartu disamakan dengan dashboard dan verifikasi.
+const CARD_CLASS =
+  'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
+
 function AdminUsersPage() {
   const users = useQuery(adminUsersQueryOptions)
-  const deleteMutation = useDeleteAdminUser()
+  const deactivateMutation = useDeactivateAdminUser()
+  const activateMutation = useActivateAdminUser()
   const [form, setForm] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
   })
-  const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
+  const [pendingAction, setPendingAction] = useState<{
+    user: AdminUser | null
+    type: 'activate' | 'deactivate' | null
+  }>({ user: null, type: null })
 
-  function handleDelete() {
-    if (!pendingDelete) return
-    deleteMutation.mutate(pendingDelete.id, {
+  function handleActivate() {
+    const user = pendingAction.user
+    if (!user) return
+    activateMutation.mutate(user.id, {
       onSuccess: () => {
-        toast.success(`Akun ${pendingDelete.name} dihapus`)
-        setPendingDelete(null)
+        toast.success(`Akun ${user.name} diaktifkan`)
+        setPendingAction({ user: null, type: null })
       },
       onError: (error) => toast.error(errorMessage(error)),
     })
   }
 
+  function handleDeactivate() {
+    const user = pendingAction.user
+    if (!user) return
+    deactivateMutation.mutate(user.id, {
+      onSuccess: () => {
+        toast.success(`Akun ${user.name} dinonaktifkan`)
+        setPendingAction({ user: null, type: null })
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    })
+  }
+
+  const isPending = deactivateMutation.isPending || activateMutation.isPending
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Akun Admin</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Kelola akun dengan role admin.
-          </p>
-        </div>
-        <Button
-          type="button"
-          onClick={() => setForm({ open: true, user: null })}
-        >
-          Tambah akun
-        </Button>
-      </div>
-
       {users.isPending ? (
-        <Card>
-          <CardContent className="flex flex-col gap-3 py-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-5/6" />
-            <Skeleton className="h-8 w-2/3" />
-          </CardContent>
-        </Card>
+        <section className={`flex flex-col gap-3 p-6 ${CARD_CLASS}`}>
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-5/6" />
+          <Skeleton className="h-8 w-2/3" />
+        </section>
       ) : users.isError ? (
         <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar akun</CardTitle>
-            <CardDescription>
-              {users.data.length} akun terdaftar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {users.data.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Belum ada akun admin. Klik Tambah akun untuk membuat yang
-                pertama.
-              </p>
-            ) : (
-              <Table>
+        <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-lg font-semibold">Daftar akun</h2>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+                Total {users.data.length}
+              </span>
+            </div>
+            <Button
+              type="button"
+              className="rounded-full bg-[#1f6b4f] px-5 text-white hover:bg-[#0d3f31]"
+              onClick={() => setForm({ open: true, user: null })}
+            >
+              Tambah akun
+            </Button>
+          </div>
+
+          {users.data.length === 0 ? (
+            <p className="mt-6 py-6 text-center text-sm text-neutral-400">
+              Belum ada akun admin. Klik Tambah akun untuk membuat yang pertama.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <Table className="min-w-[36rem] text-sm">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>NIM</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className="pl-0 font-medium text-neutral-400">
+                      Nama
+                    </TableHead>
+                    <TableHead className="font-medium text-neutral-400">
+                      E-mail
+                    </TableHead>
+                    <TableHead className="font-medium text-neutral-400">
+                      NIM
+                    </TableHead>
+                    <TableHead className="font-medium text-neutral-400">
+                      Peran
+                    </TableHead>
+                    <TableHead className="pr-0 text-right font-medium text-neutral-400">
+                      Aksi
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {users.data.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email ?? '-'}</TableCell>
-                      <TableCell>{user.nim ?? '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{user.role}</Badge>
+                    <TableRow
+                      key={user.id}
+                      className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
+                    >
+                      <TableCell className="py-3 pl-0 font-medium">
+                        {user.name}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-3">
+                        {user.email ?? '-'}
+                      </TableCell>
+                      <TableCell className="py-3 text-neutral-400">
+                        {user.nim ?? '-'}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-full bg-emerald-50 px-2.5 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+                          >
+                            {user.role}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-full px-2.5 text-xs font-medium ${
+                              user.active
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                                : 'bg-red-100 text-red-700 hover:bg-red-100'
+                            }`}
+                          >
+                            {user.active ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 pr-0 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="rounded-full text-xs"
                             onClick={() => setForm({ open: true, user })}
                           >
                             Edit
@@ -138,10 +184,20 @@ function AdminUsersPage() {
                           <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
-                            onClick={() => setPendingDelete(user)}
+                            variant="ghost"
+                            className={`rounded-full text-xs ${
+                              user.active
+                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800'
+                                : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
+                            }`}
+                            onClick={() =>
+                              setPendingAction({
+                                user,
+                                type: user.active ? 'deactivate' : 'activate',
+                              })
+                            }
                           >
-                            Hapus
+                            {user.active ? 'Aktifkan' : 'Nonaktifkan'}
                           </Button>
                         </div>
                       </TableCell>
@@ -149,34 +205,65 @@ function AdminUsersPage() {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </section>
       )}
 
-      {pendingDelete && (
-        <Alert variant="destructive">
-          <AlertTitle>Hapus akun {pendingDelete.name}?</AlertTitle>
+      {pendingAction.user && (
+        <Alert
+          variant={
+            pendingAction.type === 'deactivate' ? 'destructive' : 'default'
+          }
+          className="rounded-[26px]"
+        >
+          <AlertTitle>
+            {pendingAction.type === 'activate'
+              ? `Aktifkan akun ${pendingAction.user.name}?`
+              : `Nonaktifkan akun ${pendingAction.user.name}?`}
+          </AlertTitle>
           <AlertDescription>
-            Tindakan ini tidak bisa dibatalkan.
+            {pendingAction.type === 'activate'
+              ? 'Akun yang diaktifkan dapat login kembali.'
+              : 'Akun ini tidak akan bisa login sampai diaktifkan kembali.'}
             <div className="mt-3 flex gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => setPendingDelete(null)}
-                disabled={deleteMutation.isPending}
+                className="rounded-full"
+                onClick={() => setPendingAction({ user: null, type: null })}
+                disabled={isPending}
               >
                 Batal
               </Button>
               <Button
                 type="button"
                 size="sm"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
+                variant={
+                  pendingAction.type === 'deactivate'
+                    ? 'destructive'
+                    : 'default'
+                }
+                className={`rounded-full ${
+                  pendingAction.type === 'activate'
+                    ? 'bg-[#1f6b4f] text-white hover:bg-[#0d3f31]'
+                    : ''
+                }`}
+                onClick={
+                  pendingAction.type === 'activate'
+                    ? handleActivate
+                    : handleDeactivate
+                }
+                disabled={isPending}
               >
-                {deleteMutation.isPending ? 'Menghapus...' : 'Ya, hapus'}
+                {isPending
+                  ? pendingAction.type === 'activate'
+                    ? 'Mengaktifkan...'
+                    : 'Menonaktifkan...'
+                  : pendingAction.type === 'activate'
+                    ? 'Ya, aktifkan'
+                    : 'Ya, nonaktifkan'}
               </Button>
             </div>
           </AlertDescription>

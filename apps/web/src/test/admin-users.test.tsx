@@ -171,17 +171,4 @@ describe('dashboard CRUD admin', () => {
       }),
     )
   })
-
-  it('menghapus akun admin setelah konfirmasi', async () => {
-    renderAt('/admin')
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Hapus' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Ya, hapus' }))
-
-    await waitFor(() =>
-      expect(api.DELETE).toHaveBeenCalledWith('/admin/users/{user}', {
-        params: { path: { user: 1 } },
-      }),
-    )
-  })
 })

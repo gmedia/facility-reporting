@@ -18,7 +18,8 @@ import {
   type LaporanKategori,
 } from './laporan-query'
 import { GrafikTahunan } from './grafik-tahunan'
-import { KartuStatus, KartuTotal, hitungStatistik } from './ringkasan-laporan'
+import { KartuStatus, KartuTotal } from './ringkasan-laporan'
+import { hitungStatistik } from './laporan-statistik'
 import { StatusBadge } from './status-badge'
 import { PrioritasBadge } from './prioritas-badge'
 import { TimelineStatus } from './timeline-status'

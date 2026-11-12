@@ -1,11 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -136,35 +130,29 @@ describe('dashboard pengelola', () => {
     expect(
       await screen.findByRole('heading', { name: 'Halo, Super Admin' }),
     ).toBeInTheDocument()
-    expect(await screen.findByText('Laporan Antrian')).toBeInTheDocument()
-    expect(screen.getByText('Laporan per hari')).toBeInTheDocument()
-    expect(screen.getByText('Total 4')).toBeInTheDocument()
+    expect(await screen.findByText('Laporan terbaru')).toBeInTheDocument()
+    expect(screen.getByText('Total')).toBeInTheDocument()
     expect(await screen.findByText('lampu koridor mati')).toBeInTheDocument()
     expect(screen.getByText('meja kelas rusak')).toBeInTheDocument()
     expect(api.GET).toHaveBeenCalledWith('/reports')
   })
 
-  it('filter status menyaring antrian melalui StatusSelect', async () => {
+  it('menampilkan kartu statistik status', async () => {
     renderAt('/dashboard')
 
     await screen.findByText('lampu koridor mati')
-    const select = screen.getByRole('combobox', {
-      name: 'Filter status laporan',
-    })
-    fireEvent.change(select, { target: { value: 'diproses' } })
-
-    await waitFor(() => {
-      expect(screen.queryByText('lampu koridor mati')).not.toBeInTheDocument()
-    })
-    expect(screen.getByText('proyektor tidak menyala')).toBeInTheDocument()
+    expect(screen.getByText('Menunggu')).toBeInTheDocument()
+    expect(screen.getAllByText('Diproses').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Selesai').length).toBeGreaterThan(0)
+    expect(screen.getByText('Ditolak')).toBeInTheDocument()
   })
 
-  it('state kosong per filter menampilkan pesan yang sesuai', async () => {
+  it('state kosong menampilkan pesan yang sesuai', async () => {
     vi.mocked(api.GET).mockResolvedValue(ok({ data: [] }))
-    renderAt('/dashboard?filter=terverifikasi')
+    renderAt('/dashboard')
 
     expect(
-      await screen.findByText('Belum ada laporan yang sudah terverifikasi.'),
+      await screen.findByText('Belum ada laporan masuk.'),
     ).toBeInTheDocument()
   })
 })

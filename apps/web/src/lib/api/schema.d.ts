@@ -201,6 +201,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/users/{user}/activate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Activate an admin account
+     * @description Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan
+     *     dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     *     Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     *     dengan update/destroy di atas.
+     */
+    put: operations['user.activate']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/admin/users': {
     parameters: {
       query?: never
@@ -276,6 +299,18 @@ export interface components {
       created_at: string | null
       /** Format: date-time */
       updated_at: string | null
+      /**
+       * @description Data pelapor: hanya untuk admin. loadMissing() menjaga agar
+       *     respons updateStatus/updateBukti (yang tidak eager load user)
+       *     tetap menyertakan pelapor.
+       */
+      pelapor?: {
+        id: number
+        name: string
+        email: string | null
+        nim: string | null
+        foto: string | null
+      } | null
     }
     /**
      * LaporanStatus
@@ -344,6 +379,11 @@ export interface components {
       nilai_dampak?: number
       nilai_frekuensi?: number
       alasan?: string | null
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti?: string
     }
     /** UpdateProfileFotoRequest */
     UpdateProfileFotoRequest: {
@@ -522,7 +562,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['UpdateLaporanStatusRequest']
+        'multipart/form-data': components['schemas']['UpdateLaporanStatusRequest']
       }
     }
     responses: {
@@ -728,6 +768,33 @@ export interface operations {
     }
   }
   'user.deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
+    }
+  }
+  'user.activate': {
     parameters: {
       query?: never
       header?: never

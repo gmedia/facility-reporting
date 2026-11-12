@@ -1,6 +1,13 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ComponentProps,
+  type Ref,
+} from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Eye, EyeOff } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -15,12 +22,14 @@ import {
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { meQueryOptions, type User } from '@/features/auth/auth-query'
+import { DashboardShell } from '@/features/dashboard/dashboard-shell'
 import {
   BATAS_FOTO_BYTE,
   FOTO_ACCEPT,
   FOTO_MIME_IZIN,
   errorMessage,
   fieldErrors,
+  useLaporanList,
 } from '@/features/laporan/laporan-query'
 import { fotoUrl, useChangePassword, useUpdateFoto } from './akun-query'
 
@@ -31,6 +40,9 @@ import { fotoUrl, useChangePassword, useUpdateFoto } from './akun-query'
 // dari cache /auth/me lewat useQuery — bukan prop route — supaya setelah
 // unggahan foto sukses (mutation menimpa cache ['me']), pratinjau ikut
 // berubah tanpa navigasi.
+//
+// Mahasiswa: dibungkus UserShell dari luar (seperti sebelumnya).
+// Admin / super admin: dibungkus DashboardShell di sini.
 // ============================================================
 
 const schemaPassword = z
@@ -60,24 +72,66 @@ const FIELD_SERVER: ReadonlyArray<keyof PasswordValues> = [
 export function AkunPage() {
   const { data: user } = useQuery(meQueryOptions)
 
-  // Guard role sudah jalan di beforeLoad route, jadi user praktis pasti
+  // Guard login sudah jalan di route _protected, jadi user praktis pasti
   // ada; null-nya cuma jaring pengaman saat cache belum terisi.
   if (!user) return null
 
+  if (user.role === 'user') {
+    return <AkunIsi user={user} tampilJudul />
+  }
+
+  return <AkunPengelola user={user} />
+}
+
+// Admin dan super admin: sidebar hijau tua milik DashboardShell. Judul
+// halaman ditaruh di header atas, jadi tidak diulang di dalam konten.
+function AkunPengelola({ user }: { user: User }) {
+  // Badge jumlah laporan menunggu di menu Verifikasi tetap tampil di
+  // halaman ini, sama seperti di Dasbor dan Verifikasi.
+  const laporan = useLaporanList()
+  const menunggu = laporan.data?.filter(
+    (item) => item.status === 'menunggu_verifikasi',
+  ).length
+
+  return (
+    <DashboardShell
+      user={user}
+      menunggu={menunggu}
+      header={
+        <div className="min-w-0 leading-tight">
+          <h1 className="truncate text-xl font-bold tracking-tight">
+            Foto Profil &amp; Keamanan
+          </h1>
+          <p className="truncate text-sm text-[#8a8f87]">
+            Atur foto dan jaga akses akunmu tetap aman
+          </p>
+        </div>
+      }
+    >
+      <div className="mx-auto w-full max-w-3xl">
+        <AkunIsi user={user} tampilJudul={false} />
+      </div>
+    </DashboardShell>
+  )
+}
+
+function AkunIsi({ user, tampilJudul }: { user: User; tampilJudul: boolean }) {
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <p className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
-          Akun Saya
-        </p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-[26px]">
-          Foto Profil &amp; Keamanan
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-neutral-500">
-          Atur foto yang menemanimu di aplikasi dan jaga akses akunmu tetap
-          aman.
-        </p>
-      </div>
+      {tampilJudul && (
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
+            Akun Saya
+          </p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-[26px]">
+            Foto Profil &amp; Keamanan
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-neutral-500">
+            Atur foto yang menemanimu di aplikasi dan jaga akses akunmu tetap
+            aman.
+          </p>
+        </div>
+      )}
 
       <KartuFoto user={user} />
       <KartuKeamanan />
@@ -93,6 +147,42 @@ function inisial(name: string): string {
     .slice(0, 2)
     .join('')
     .toUpperCase()
+}
+
+// Kolom password dengan tombol mata untuk melihat / menyembunyikan isinya.
+// `ref` dari react-hook-form dioper lewat `inputRef` supaya fokus otomatis
+// ke kolom yang salah tetap jalan.
+function PasswordInput({
+  inputRef,
+  ...props
+}: Omit<ComponentProps<typeof Input>, 'type' | 'ref'> & {
+  inputRef?: Ref<HTMLInputElement>
+}) {
+  const [tampil, setTampil] = useState(false)
+
+  return (
+    <div className="relative">
+      <Input
+        ref={inputRef}
+        type={tampil ? 'text' : 'password'}
+        className="pr-11"
+        {...props}
+      />
+      <button
+        type="button"
+        onClick={() => setTampil((nilai) => !nilai)}
+        aria-label={tampil ? 'Sembunyikan password' : 'Tampilkan password'}
+        aria-pressed={tampil}
+        className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-neutral-500 transition-colors hover:text-neutral-900 focus-visible:ring-2 focus-visible:ring-[#0d3f31]/35 focus-visible:outline-none"
+      >
+        {tampil ? (
+          <EyeOff aria-hidden="true" className="size-[18px]" />
+        ) : (
+          <Eye aria-hidden="true" className="size-[18px]" />
+        )}
+      </button>
+    </div>
+  )
 }
 
 function KartuFoto({ user }: { user: User }) {
@@ -253,12 +343,15 @@ function KartuKeamanan() {
                 <FieldLabel htmlFor="akun-password-lama">
                   Password Saat Ini
                 </FieldLabel>
-                <Input
+                <PasswordInput
                   id="akun-password-lama"
-                  type="password"
                   autoComplete="current-password"
                   placeholder="Password yang sekarang dipakai"
-                  {...field}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
                 />
                 <FieldError
                   errors={fieldState.error ? [fieldState.error] : undefined}
@@ -275,12 +368,15 @@ function KartuKeamanan() {
                 <FieldLabel htmlFor="akun-password-baru">
                   Password Baru
                 </FieldLabel>
-                <Input
+                <PasswordInput
                   id="akun-password-baru"
-                  type="password"
                   autoComplete="new-password"
                   placeholder="Minimal 8 karakter"
-                  {...field}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
                 />
                 <FieldError
                   errors={fieldState.error ? [fieldState.error] : undefined}
@@ -297,12 +393,15 @@ function KartuKeamanan() {
                 <FieldLabel htmlFor="akun-password-konfirmasi">
                   Konfirmasi Password Baru
                 </FieldLabel>
-                <Input
+                <PasswordInput
                   id="akun-password-konfirmasi"
-                  type="password"
                   autoComplete="new-password"
                   placeholder="Ulangi password baru"
-                  {...field}
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
                 />
                 <FieldError
                   errors={fieldState.error ? [fieldState.error] : undefined}
