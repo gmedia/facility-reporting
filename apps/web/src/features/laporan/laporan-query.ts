@@ -8,7 +8,7 @@ export type LaporanKategori = components['schemas']['LaporanKategori']
 export type Pelapor = {
   id: number
   name: string
-  email: string
+  email: string | null
   nim: string | null
   foto: string | null
 }

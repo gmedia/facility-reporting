@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { CheckCircle2, Clock, FileText, Wrench, XCircle } from 'lucide-react'
 import type { Statistik } from './laporan-statistik'
-import { hitungStatistik } from './laporan-statistik'
 
 // ============================================================
 // RINGKASAN ANGKA LAPORAN — SATU KOMPONEN, DUA HALAMAN

@@ -171,5 +171,4 @@ describe('dashboard CRUD admin', () => {
       }),
     )
   })
-
-  })
+})

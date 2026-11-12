@@ -144,14 +144,14 @@ export function VerifikasiPage({ user }: { user: User }) {
 
   const counts = list.data
     ? STATUS_VALUES.reduce(
-      (result, status) => {
-        result[status] = laporan.filter(
-          (item) => item.status === status,
-        ).length
-        return result
-      },
-      {} as Record<LaporanStatus, number>,
-    )
+        (result, status) => {
+          result[status] = laporan.filter(
+            (item) => item.status === status,
+          ).length
+          return result
+        },
+        {} as Record<LaporanStatus, number>,
+      )
     : undefined
 
   // Yang paling baru di atas. Kalau waktunya sama persis, ID yang lebih
@@ -527,7 +527,7 @@ function PelaporInfo({ pelapor }: { pelapor: Pelapor | null | undefined }) {
             {pelapor.name}
           </p>
           <p
-            title={pelapor.email}
+            title={pelapor.email ?? undefined}
             className="truncate text-sm text-[#5f655d]"
           >
             {pelapor.email}
