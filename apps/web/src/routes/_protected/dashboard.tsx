@@ -147,10 +147,15 @@ const BARIS_SKELETON = ['satu', 'dua', 'tiga']
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-5">
+      {/* meniru PageHeader compact: eyebrow + judul satu baris,
+          keterangan baris kedua — tingginya nyaris sama supaya tidak
+          ada lompatan layout saat data sampai. */}
       <div>
-        <Skeleton className="h-3 w-16" />
-        <Skeleton className="mt-2.5 h-7 w-56" />
-        <Skeleton className="mt-2 h-4 w-44" />
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-5 w-56" />
+        </div>
+        <Skeleton className="mt-1 h-3.5 w-44" />
       </div>
       <Skeleton className="h-44 rounded-[28px]" />
       {/* ringkasan: satu baris total + empat kartu */}

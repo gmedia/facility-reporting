@@ -224,9 +224,9 @@ function DaftarPerBulan({
       ref={daftarRef}
       aria-label="Daftar laporan"
       // scroll-mt: saat menempel, header halaman (topbar mobile 56px +
-      // PageHeader ±86px) menutupi puncak viewport; kasih jarak supaya
-      // judul "Daftar Laporan" tidak jatuh di baliknya.
-      className="flex scroll-mt-36 flex-col gap-4 lg:scroll-mt-24"
+      // PageHeader compact ±60px) menutupi puncak viewport; kasih jarak
+      // supaya judul "Daftar Laporan" tidak jatuh di baliknya.
+      className="flex scroll-mt-28 flex-col gap-4 lg:scroll-mt-16"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
@@ -438,13 +438,15 @@ function PagerHalaman({
   const nomor = susunNomor(total, halaman + 1)
   const aktif = halaman + 1 // 1-based, untuk dibandingkan & aria-current
 
+  // Compact (masukan 13 Nov): kotak h-7 (28px), ikon 3.5, jarak rapat
+  // gap-1 — bukan tombol setinggi 32px yang ditengahkan.
   const tombol =
-    'grid h-8 min-w-8 place-items-center rounded-lg border border-black/10 bg-white px-2 text-sm font-medium tabular-nums transition-colors outline-none hover:bg-[#eef4f1] focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15 disabled:pointer-events-none disabled:opacity-40'
+    'grid h-7 min-w-7 place-items-center rounded-md border border-black/10 bg-white px-1.5 text-sm font-medium tabular-nums transition-colors outline-none hover:bg-[#eef4f1] focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15 disabled:pointer-events-none disabled:opacity-40'
 
   return (
     <nav
       aria-label="Halaman daftar laporan"
-      className="flex flex-wrap items-center justify-center gap-1.5 pt-1"
+      className="flex flex-wrap items-center justify-end gap-1 pt-0.5"
     >
       <button
         type="button"
@@ -453,7 +455,7 @@ function PagerHalaman({
         onClick={() => onPilih(0)}
         className={tombol}
       >
-        <ChevronsLeftIcon aria-hidden="true" className="size-4" />
+        <ChevronsLeftIcon aria-hidden="true" className="size-3.5" />
       </button>
       <button
         type="button"
@@ -462,7 +464,7 @@ function PagerHalaman({
         onClick={() => onPilih(halaman - 1)}
         className={tombol}
       >
-        <ChevronLeftIcon aria-hidden="true" className="size-4" />
+        <ChevronLeftIcon aria-hidden="true" className="size-3.5" />
       </button>
 
       {nomor.map((item, i) =>
@@ -470,7 +472,7 @@ function PagerHalaman({
           <span
             key={`titik-${i}`}
             aria-hidden="true"
-            className="px-1 text-sm text-neutral-400"
+            className="px-0.5 text-xs text-neutral-400"
           >
             …
           </span>
@@ -498,7 +500,7 @@ function PagerHalaman({
         onClick={() => onPilih(halaman + 1)}
         className={tombol}
       >
-        <ChevronRightIcon aria-hidden="true" className="size-4" />
+        <ChevronRightIcon aria-hidden="true" className="size-3.5" />
       </button>
       <button
         type="button"
@@ -507,7 +509,7 @@ function PagerHalaman({
         onClick={() => onPilih(total - 1)}
         className={tombol}
       >
-        <ChevronsRightIcon aria-hidden="true" className="size-4" />
+        <ChevronsRightIcon aria-hidden="true" className="size-3.5" />
       </button>
     </nav>
   )
