@@ -1083,7 +1083,11 @@
                     "kategori",
                     "lokasi",
                     "deskripsi",
-                    "foto"
+                    "foto",
+                    "nilai_kerusakan",
+                    "nilai_risiko",
+                    "nilai_dampak",
+                    "nilai_frekuensi"
                 ],
                 "title": "StoreLaporanRequest"
             },

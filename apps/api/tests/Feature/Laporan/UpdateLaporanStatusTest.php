@@ -141,6 +141,12 @@ it('cannot be reached through mass assignment on create', function (): void {
             'kategori' => 'elektronik',
             'lokasi' => 'Lab 3 Lt.2',
             'deskripsi' => 'Proyektor mati total sejak pagi.',
+            // Nilai SMART wajib sejak 11 Nov 2026 — hanya syarat lolos
+            // validasi, bukan bagian yang diuji di sini.
+            'nilai_kerusakan' => 5,
+            'nilai_risiko' => 4,
+            'nilai_dampak' => 4,
+            'nilai_frekuensi' => 3,
             'foto' => UploadedFile::fake()->createWithContent(
                 'foto.png',
                 base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGWWjIWgAAAABJRU5ErkJggg=='),

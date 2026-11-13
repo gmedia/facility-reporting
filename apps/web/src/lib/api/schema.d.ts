@@ -351,10 +351,10 @@ export interface components {
        * @description Maximum file size: 2048 kilobytes.
        */
       foto: string
-      nilai_kerusakan?: number
-      nilai_risiko?: number
-      nilai_dampak?: number
-      nilai_frekuensi?: number
+      nilai_kerusakan: number
+      nilai_risiko: number
+      nilai_dampak: number
+      nilai_frekuensi: number
     }
     /** StoreUserRequest */
     StoreUserRequest: {
