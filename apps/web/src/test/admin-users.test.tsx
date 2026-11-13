@@ -35,7 +35,9 @@ const superAdmin: AdminUser = {
   nim: null,
   email: 'superadmin@facility.test',
   role: 'super_admin',
-  foto: null,
+  // `foto` bertipe string (bukan nullable) di kontrak terbaru — lihat
+  // `UserResource`; nilai kosong cukup string kosong.
+  foto: '',
   active: true,
 }
 
