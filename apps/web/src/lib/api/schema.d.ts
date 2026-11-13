@@ -367,7 +367,7 @@ export interface components {
       nim: string | null
       email: string | null
       role: string
-      foto: string
+      foto: string | null
       active: boolean
     }
   }
