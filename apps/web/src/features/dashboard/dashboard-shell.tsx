@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 
 // Rute yang boleh muncul di sidebar. Union eksplisit supaya Link dapat
 // tipe route yang benar dan menu tidak pernah mengarah ke halaman fiktif.
-type NavTo = '/dashboard' | '/verifikasi' | '/akun' | '/admin'
+type NavTo = '/dashboard' | '/verifikasi' | '/pengaturan' | '/admin'
 
 interface NavItem {
   label: string
@@ -40,18 +40,23 @@ const menuUtama: NavItem[] = [
   { label: 'Verifikasi', to: '/verifikasi', icon: ShieldCheck },
 ]
 
-// Akun milik sendiri: ganti foto profil dan password. Selalu paling bawah.
-const akunSaya: NavItem = { label: 'Akun Saya', to: '/akun', icon: UserRound }
+// Pengaturan milik sendiri: foto profil, password, bantuan (issue #113
+// — dulu "Akun Saya" di /akun). Selalu paling bawah.
+const pengaturan: NavItem = {
+  label: 'Pengaturan',
+  to: '/pengaturan',
+  icon: UserRound,
+}
 
-const adminNav: NavItem[] = [...menuUtama, akunSaya]
+const adminNav: NavItem[] = [...menuUtama, pengaturan]
 
 // Akun Admin (kelola akun admin lain) cuma untuk super_admin. Menu
-// Prioritas/Statistik/Pengaturan belum punya route di main, jadi sengaja
-// tidak dipasang sebagai link mati.
+// Prioritas/Statistik belum punya route di main, jadi sengaja tidak
+// dipasang sebagai link mati.
 const superAdminNav: NavItem[] = [
   ...menuUtama,
   { label: 'Akun Admin', to: '/admin', icon: Users },
-  akunSaya,
+  pengaturan,
 ]
 
 function navFor(role: string): NavItem[] {
@@ -104,7 +109,7 @@ export function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Cache ['me'] dibaca langsung (bukan cuma prop route) supaya foto di
-  // kartu profil ikut berubah seketika setelah diganti di /akun.
+  // kartu profil ikut berubah seketika setelah diganti di /pengaturan.
   const { data: me } = useQuery(meQueryOptions)
   const akun = me ?? user
 

@@ -30,7 +30,7 @@ export function useUpdateFoto() {
       return data.data
     },
     onSuccess: (user) => {
-      // Nimpa cache /auth/me — pratinjau foto di halaman /akun langsung
+      // Nimpa cache /auth/me — pratinjau foto di halaman /pengaturan langsung
       // berubah tanpa perlu navigasi (komponennya membaca cache yang sama).
       queryClient.setQueryData(['me'], user)
     },

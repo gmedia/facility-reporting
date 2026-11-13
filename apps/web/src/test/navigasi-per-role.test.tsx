@@ -101,7 +101,7 @@ afterEach(() => vi.clearAllMocks())
 // Yang dites cuma menu-item yang routenya SUDAH ADA. /prioritas,
 // /admin/statistik dll. belum dibuat, jadi belum dimasukkan.
 describe('Navigasi per role', () => {
-  it('role user: sidebar punya Beranda, Lapor Kerusakan, Riwayat Laporan, dan Akun', async () => {
+  it('role user: sidebar punya Beranda, Lapor Kerusakan, Riwayat Laporan, dan Pengaturan', async () => {
     currentUser = mahasiswa
     renderAt('/dashboard')
 
@@ -126,10 +126,11 @@ describe('Navigasi per role', () => {
       '/laporan/saya',
     )
 
-    // Issue #93: menu Akun (edit foto profil & ganti password).
-    expect(nav.getByRole('link', { name: 'Akun' })).toHaveAttribute(
+    // Issue #93: menu Akun — sejak #113 berganti jadi Pengaturan
+    // (foto profil, password, dan Bantuan) di /pengaturan.
+    expect(nav.getByRole('link', { name: 'Pengaturan' })).toHaveAttribute(
       'href',
-      '/akun',
+      '/pengaturan',
     )
 
     // Issue #42: /verifikasi khusus pengelola, user biasa gak boleh lihat.
@@ -156,8 +157,15 @@ describe('Navigasi per role', () => {
     expect(
       nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
     ).not.toBeInTheDocument()
-    // Menu Akun hanya untuk mahasiswa — pengelola punya /admin sendiri.
-    expect(nav.queryByRole('link', { name: 'Akun' })).not.toBeInTheDocument()
+    // Menu khusus mahasiswa (Lapor/Riwayat) tidak ada untuk pengelola,
+    // tapi Pengaturan tetap ada — halamannya memang untuk semua role (#113).
+    expect(
+      nav.queryByRole('link', { name: 'Riwayat Laporan' }),
+    ).not.toBeInTheDocument()
+    expect(nav.getByRole('link', { name: 'Pengaturan' })).toHaveAttribute(
+      'href',
+      '/pengaturan',
+    )
 
     // Issue #42: admin boleh buka halaman daftar laporan di /verifikasi.
     expect(nav.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
