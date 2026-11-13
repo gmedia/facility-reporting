@@ -224,9 +224,9 @@ function DaftarPerBulan({
       ref={daftarRef}
       aria-label="Daftar laporan"
       // scroll-mt: saat menempel, header halaman (topbar mobile 56px +
-      // PageHeader compact ±60px) menutupi puncak viewport; kasih jarak
-      // supaya judul "Daftar Laporan" tidak jatuh di baliknya.
-      className="flex scroll-mt-28 flex-col gap-4 lg:scroll-mt-16"
+      // PageHeader ±64px) menutupi puncak viewport; kasih jarak supaya
+      // judul "Daftar Laporan" tidak jatuh di baliknya.
+      className="flex scroll-mt-32 flex-col gap-4 lg:scroll-mt-16"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
