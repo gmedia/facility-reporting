@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowRight, ClipboardListIcon } from 'lucide-react'
 import type { User } from '@/features/auth/auth-query'
+import { PageHeader } from '@/components/page-header'
 import { DashboardAdmin } from '@/features/dashboard/dashboard-admin'
-import { DashboardFaq } from '@/features/dashboard/dashboard-faq'
 import { DashboardRecent } from '@/features/dashboard/dashboard-recent'
 import {
   readFilter,
@@ -76,24 +76,20 @@ function DashboardUser({ user }: { user: User }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* sapaan — hierarki jelas: eyebrow, judul, identitas */}
-      <div>
-        <p className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
-          Beranda
-        </p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-[26px]">
-          Halo, {user.name}
-        </h1>
-        {/*
+      {/* sapaan — hierarki jelas: eyebrow, judul, identitas. PageHeader
+          bikin blok ini ikut sticky saat scroll (#113), pola sama
+          dengan halaman admin yang sudah lebih dulu demikian. */}
+      <PageHeader
+        eyebrow="Beranda"
+        judul={`Halo, ${user.name}`}
+        /*
           Sengaja TIDAK pakai identitas() dari dashboard-utils: helper itu
           nge-return role mentah ('user', 'admin', 'admin@...') yang justru
           bikin bingung buat pembaca. Halaman user ditulis lengkap di sini
           supaya yang tampil label yang dipahami orang, bukan nilai enum.
-        */}
-        <p className="mt-1 text-sm text-neutral-500">
-          {user.nim ? `Mahasiswa · NIM ${user.nim}` : 'Mahasiswa'}
-        </p>
-      </div>
+        */
+        keterangan={user.nim ? `Mahasiswa · NIM ${user.nim}` : 'Mahasiswa'}
+      />
 
       {/* kartu ajakan — hijau tua, warna yang sama dengan panel kiri login.
           Ini pengganti tombol polos di pojok kanan atas: lebih kelihatan,
@@ -139,13 +135,13 @@ function DashboardUser({ user }: { user: User }) {
           Diproses / Selesai / Ditolak empat sejajar — lima kartu. */}
       <RingkasanLaporan statistik={statistik} />
       <DashboardRecent laporans={laporan.data} role={user.role} />
-      <DashboardFaq />
+      {/* FAQ tidak lagi di Beranda — QnA pindah ke Pengaturan > Bantuan
+          (issue #113), jadi Beranda berhenti di "Laporan terbaru". */}
     </div>
   )
 }
 
 const KARTU_SKELETON = ['menunggu', 'diproses', 'selesai', 'ditolak']
-const FAQ_SKELETON = ['satu', 'dua', 'tiga', 'empat']
 const BARIS_SKELETON = ['satu', 'dua', 'tiga']
 
 function DashboardSkeleton() {
@@ -174,29 +170,7 @@ function DashboardSkeleton() {
           ))}
         </div>
       </div>
-      {/* FAQ: satu kartu ringkas — empat baris pertanyaan saja
-          (jawaban dilipat), meniru struktur DashboardFaq. */}
-      <div className="rounded-3xl border border-black/5 bg-white shadow-[0_1px_2px_rgba(16,24,20,0.05)]">
-        <div className="border-b border-black/5 px-5 py-4">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="mt-2 h-3.5 w-64" />
-        </div>
-        <div className="grid sm:grid-cols-2">
-          {FAQ_SKELETON.map((key, i) => (
-            <div
-              key={key}
-              className={[
-                'px-5 py-3.5',
-                i >= 1 ? 'border-t border-black/5' : '',
-                i === 1 ? 'sm:border-t-0' : '',
-                i % 2 === 1 ? 'sm:border-l sm:border-black/5' : '',
-              ].join(' ')}
-            >
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* FAQ skeleton ikut dihapus — QnA pindah ke Pengaturan (#113). */}
     </div>
   )
 }

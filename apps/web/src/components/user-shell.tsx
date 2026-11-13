@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils'
 // Halaman user butuh warna yang sama dengan panel kiri login (#0d3f31),
 // jadi digabung cuma bakal bikin salah satu pihak dikorbankan.
 // ============================================================
-type NavTo = '/dashboard' | '/lapor' | '/laporan/saya' | '/akun'
+type NavTo = '/dashboard' | '/lapor' | '/laporan/saya' | '/pengaturan'
 
 interface NavItem {
   label: string
@@ -44,7 +44,8 @@ const NAV_USER: NavItem[] = [
   { label: 'Beranda', to: '/dashboard', icon: LayoutDashboard, end: true },
   { label: 'Lapor Kerusakan', to: '/lapor', icon: PlusCircle },
   { label: 'Riwayat Laporan', to: '/laporan/saya', icon: History },
-  { label: 'Akun', to: '/akun', icon: UserRound },
+  // Issue #113: halaman /akun berganti nama jadi Pengaturan.
+  { label: 'Pengaturan', to: '/pengaturan', icon: UserRound },
 ]
 
 function initialsOf(name: string): string {
@@ -86,7 +87,7 @@ export function UserShell({
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Cache ['me'] dibaca langsung (bukan cuma prop context route) supaya kartu
-  // akun ikut update seketika setelah foto diganti di /akun — context route
+  // akun ikut update seketika setelah foto diganti di /pengaturan — context route
   // baru segar saat navigasi berikutnya.
   const { data: me } = useQuery(meQueryOptions)
   const akun = me ?? user
