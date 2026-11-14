@@ -139,6 +139,7 @@ afterEach(() => vi.clearAllMocks())
 describe('halaman /pengaturan', () => {
   it('menampilkan kartu Kelola Akun dan Keamanan', async () => {
     renderAt('/pengaturan')
+    const user = userEvent.setup()
 
     // Tab 'Profil' aktif secara default.
     expect(await screen.findByText('Profil')).toBeInTheDocument()
@@ -287,6 +288,7 @@ describe('halaman /pengaturan', () => {
   it('role admin: membuka halaman Pengaturan', async () => {
     currentUser = { ...mahasiswa, role: 'admin' }
     renderAt('/pengaturan')
+    const user = userEvent.setup()
 
     // Judulnya ada di header shell; nav shell juga punya link "Pengaturan",
     // jadi dicari lewat peran heading supaya tidak nyangkut link-nya.
