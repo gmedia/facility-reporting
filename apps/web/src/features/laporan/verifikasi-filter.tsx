@@ -169,7 +169,8 @@ export function VerifikasiFilter({
       <div className="flex min-h-6 flex-wrap items-center gap-2 text-sm text-[#8a8f87]">
         <span aria-live="polite">{jumlah} laporan</span>
         {aktif.map((g) => {
-          const label = g.opsi.find((o) => o.value === g.nilai)?.label ?? g.nilai
+          const label =
+            g.opsi.find((o) => o.value === g.nilai)?.label ?? g.nilai
           return (
             <span
               key={g.key}

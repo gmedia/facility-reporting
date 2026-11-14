@@ -68,20 +68,20 @@ const formSchema = z.object({
   // Skala SMART 1–5, wajib diisi pelapor (backend mewajibkannya).
   // z.coerce.number() tetap dipakai sebagai pengaman, walaupun UI-nya
   // sekarang tombol pilihan 1–5 (bukan input yang bisa diketik).
-  nilai_kerusakan: z
-    .coerce.number()
+  nilai_kerusakan: z.coerce
+    .number()
     .min(1, 'Nilai kerusakan wajib diisi (1–5)')
     .max(5, 'Nilai kerusakan maksimal 5'),
-  nilai_risiko: z
-    .coerce.number()
+  nilai_risiko: z.coerce
+    .number()
     .min(1, 'Nilai risiko wajib diisi (1–5)')
     .max(5, 'Nilai risiko maksimal 5'),
-  nilai_dampak: z
-    .coerce.number()
+  nilai_dampak: z.coerce
+    .number()
     .min(1, 'Nilai dampak wajib diisi (1–5)')
     .max(5, 'Nilai dampak maksimal 5'),
-  nilai_frekuensi: z
-    .coerce.number()
+  nilai_frekuensi: z.coerce
+    .number()
     .min(1, 'Nilai frekuensi wajib diisi (1–5)')
     .max(5, 'Nilai frekuensi maksimal 5'),
 })
@@ -166,7 +166,7 @@ function SkalaNilai({
             onBlur={onBlur}
             className="peer sr-only"
           />
-          <span className="hover:bg-muted peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50 grid h-10 place-items-center rounded-xl border text-sm font-medium transition-colors">
+          <span className="hover:bg-muted grid h-10 place-items-center rounded-xl border text-sm font-medium transition-colors peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50">
             {n}
           </span>
         </label>
