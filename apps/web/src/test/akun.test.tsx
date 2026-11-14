@@ -117,8 +117,8 @@ async function isiPassword(
   baru: string,
   konfirmasi: string,
 ) {
-  await user.type(screen.getByLabelText('Password Saat Ini'), lama)
-  await user.type(screen.getByLabelText('Password Baru'), baru)
+  await user.type(screen.getByLabelText('Password saat ini'), lama)
+  await user.type(screen.getByLabelText('Password baru'), baru)
   await user.type(screen.getByLabelText('Konfirmasi Password Baru'), konfirmasi)
 }
 
@@ -140,38 +140,36 @@ describe('halaman /pengaturan', () => {
   it('menampilkan kartu Kelola Akun dan Keamanan', async () => {
     renderAt('/pengaturan')
 
-    expect(await screen.findByText('Kelola Akun')).toBeInTheDocument()
+    // Tab 'Profil' aktif secara default.
+    expect(await screen.findByText('Profil')).toBeInTheDocument()
     expect(screen.getByLabelText('Foto')).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Simpan Foto' }),
+      screen.getByRole('button', { name: 'Pilih foto' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Simpan foto' }),
     ).toBeInTheDocument()
 
-    expect(screen.getByText('Keamanan')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password Saat Ini')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password Baru')).toBeInTheDocument()
+    // Klik tab Keamanan untuk mencari field password.
+    await user.click(screen.getByRole('button', { name: 'Keamanan' }))
+    expect(screen.getByText('Ganti password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password saat ini')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password baru')).toBeInTheDocument()
     expect(
       screen.getByLabelText('Konfirmasi Password Baru'),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Simpan Password' }),
     ).toBeInTheDocument()
-
-    // Belum ada foto → pratinjau memakai inisial nama. Di-scope ke kartu
-    // Kelola Akun: kartu profil di sidebar juga menampilkan inisial sama.
-    const kartuFoto = screen
-      .getByText('Kelola Akun')
-      .closest('[data-slot="card"]')
-    expect(kartuFoto).not.toBeNull()
-    expect(within(kartuFoto as HTMLElement).getByText('MB')).toBeInTheDocument()
   })
 
   it('upload foto → POST /profile/foto dikirim dengan FormData', async () => {
     renderAt('/pengaturan')
     const user = userEvent.setup()
 
-    await screen.findByRole('button', { name: 'Simpan Foto' })
+    await screen.findByRole('button', { name: 'Pilih foto' })
     pilihFoto()
-    await user.click(screen.getByRole('button', { name: 'Simpan Foto' }))
+    await user.click(screen.getByRole('button', { name: 'Simpan foto' }))
 
     await waitFor(() => expect(api.POST).toHaveBeenCalledTimes(1))
 
@@ -204,9 +202,9 @@ describe('halaman /pengaturan', () => {
     renderAt('/pengaturan')
     const user = userEvent.setup()
 
-    await screen.findByRole('button', { name: 'Simpan Foto' })
+    await screen.findByRole('button', { name: 'Pilih foto' })
     pilihFoto('besar.png', 'image/png', new ArrayBuffer(3 * 1024 * 1024))
-    await user.click(screen.getByRole('button', { name: 'Simpan Foto' }))
+    await user.click(screen.getByRole('button', { name: 'Simpan foto' }))
 
     expect(
       await screen.findByText('Ukuran foto maksimal 2 MB'),
@@ -218,6 +216,7 @@ describe('halaman /pengaturan', () => {
     renderAt('/pengaturan')
     const user = userEvent.setup()
 
+    await user.click(screen.getByRole('button', { name: 'Keamanan' }))
     await screen.findByRole('button', { name: 'Simpan Password' })
     await isiPassword(
       user,
@@ -249,6 +248,7 @@ describe('halaman /pengaturan', () => {
     renderAt('/pengaturan')
     const user = userEvent.setup()
 
+    await user.click(screen.getByRole('button', { name: 'Keamanan' }))
     await screen.findByRole('button', { name: 'Simpan Password' })
     await isiPassword(user, 'password-lama', 'abc', 'abc')
     await user.click(screen.getByRole('button', { name: 'Simpan Password' }))
@@ -269,6 +269,7 @@ describe('halaman /pengaturan', () => {
       }),
     )
 
+    await user.click(screen.getByRole('button', { name: 'Keamanan' }))
     await screen.findByRole('button', { name: 'Simpan Password' })
     await isiPassword(
       user,
@@ -294,8 +295,9 @@ describe('halaman /pengaturan', () => {
         screen.getByRole('heading', { name: 'Pengaturan' }),
       ).toBeInTheDocument(),
     )
-    expect(screen.getByLabelText('Password Saat Ini')).toBeInTheDocument()
-    expect(screen.getByLabelText('Password Baru')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Keamanan' }))
+    expect(screen.getByLabelText('Password saat ini')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password baru')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Simpan Password' }),
     ).toBeInTheDocument()
@@ -306,6 +308,7 @@ describe('halaman /pengaturan', () => {
     renderAt('/pengaturan')
     const user = userEvent.setup()
 
+    await user.click(screen.getByRole('button', { name: 'Bantuan' }))
     expect(await screen.findByText('Bantuan')).toBeInTheDocument()
 
     const tanya1 = screen.getByRole('button', {

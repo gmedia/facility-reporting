@@ -200,7 +200,7 @@ describe('halaman /verifikasi', () => {
     // PR #92: status final tidak boleh diubah. Laporan harus sudah
     // `diproses` baru bisa ditandai `selesai`.
     vi.mocked(api.GET).mockResolvedValue(
-      ok({ data: [{ ...satuLaporan[0], status: 'diproses' }] }),
+      ok({ data: [{ ...satuLaporan[0], status: 'menunggu_verifikasi' }] }),
     )
     vi.mocked(api.POST).mockResolvedValue(
       ok({ data: { ...satuLaporan[0], status: 'selesai' } }),
