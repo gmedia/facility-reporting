@@ -37,6 +37,12 @@ export type LaporanFormValues = {
   lokasi: string
   deskripsi: string
   foto?: FileList
+  // Skala SMART 1–5, wajib diisi oleh pelapor saat membuat laporan
+  // (backend mewajibkannya sejak 11 Nov 2026, lihat StoreLaporanRequest).
+  nilai_kerusakan: number
+  nilai_risiko: number
+  nilai_dampak: number
+  nilai_frekuensi: number
 }
 
 // Sama dengan validasi backend (Billy, PR #33)
@@ -224,6 +230,10 @@ export function useCreateLaporan() {
       form.append('kategori', values.kategori)
       form.append('lokasi', values.lokasi)
       form.append('deskripsi', values.deskripsi)
+      form.append('nilai_kerusakan', String(values.nilai_kerusakan))
+      form.append('nilai_risiko', String(values.nilai_risiko))
+      form.append('nilai_dampak', String(values.nilai_dampak))
+      form.append('nilai_frekuensi', String(values.nilai_frekuensi))
 
       const file = values.foto?.[0]
       if (file) form.append('foto', file)

@@ -65,6 +65,25 @@ const formSchema = z.object({
     .custom<FileList>()
     .optional()
     .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
+  // Skala SMART 1–5, wajib diisi pelapor (backend mewajibkannya).
+  // z.coerce.number() agar string dari <input type="number"> otomatis
+  // dikonversi ke number sebelum di-validasi min/max.
+  nilai_kerusakan: z
+    .coerce.number()
+    .min(1, 'Nilai kerusakan wajib diisi (1–5)')
+    .max(5, 'Nilai kerusakan maksimal 5'),
+  nilai_risiko: z
+    .coerce.number()
+    .min(1, 'Nilai risiko wajib diisi (1–5)')
+    .max(5, 'Nilai risiko maksimal 5'),
+  nilai_dampak: z
+    .coerce.number()
+    .min(1, 'Nilai dampak wajib diisi (1–5)')
+    .max(5, 'Nilai dampak maksimal 5'),
+  nilai_frekuensi: z
+    .coerce.number()
+    .min(1, 'Nilai frekuensi wajib diisi (1–5)')
+    .max(5, 'Nilai frekuensi maksimal 5'),
 })
 
 // Beda tipenya, dan ini penting:
@@ -82,6 +101,10 @@ const FIELD_SERVER: ReadonlyArray<keyof FormValues> = [
   'lokasi',
   'deskripsi',
   'foto',
+  'nilai_kerusakan',
+  'nilai_risiko',
+  'nilai_dampak',
+  'nilai_frekuensi',
 ]
 
 export function LaporanForm() {
@@ -95,7 +118,16 @@ export function LaporanForm() {
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { kategori: '', lokasi: '', deskripsi: '', foto: undefined },
+    defaultValues: {
+      kategori: '',
+      lokasi: '',
+      deskripsi: '',
+      foto: undefined,
+      nilai_kerusakan: 1,
+      nilai_risiko: 1,
+      nilai_dampak: 1,
+      nilai_frekuensi: 1,
+    },
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -236,6 +268,88 @@ export function LaporanForm() {
           </Field>
         )}
       />
+
+      {/* Skala SMART 1–5: nilai penilaian kerusakan, risiko, dampak, dan
+          frekuensi yang wajib diisi pelapor. Backend menghitung skor
+          prioritas dari keempat nilai ini. */}
+      <div className="grid grid-cols-2 gap-4">
+        <Controller
+          control={control}
+          name="nilai_kerusakan"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="nilai-kerusakan">Nilai Kerusakan (1–5)</FieldLabel>
+              <Input
+                id="nilai-kerusakan"
+                type="number"
+                min={1}
+                max={5}
+                {...field}
+              />
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )}
+        />
+        <Controller
+          control={control}
+          name="nilai_risiko"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="nilai-risiko">Nilai Risiko (1–5)</FieldLabel>
+              <Input
+                id="nilai-risiko"
+                type="number"
+                min={1}
+                max={5}
+                {...field}
+              />
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )}
+        />
+        <Controller
+          control={control}
+          name="nilai_dampak"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="nilai-dampak">Nilai Dampak (1–5)</FieldLabel>
+              <Input
+                id="nilai-dampak"
+                type="number"
+                min={1}
+                max={5}
+                {...field}
+              />
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )}
+        />
+        <Controller
+          control={control}
+          name="nilai_frekuensi"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="nilai-frekuensi">Nilai Frekuensi (1–5)</FieldLabel>
+              <Input
+                id="nilai-frekuensi"
+                type="number"
+                min={1}
+                max={5}
+                {...field}
+              />
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )}
+        />
+      </div>
 
       {/* Tombol aksi utama diganti hijau tua, bukan warna --primary bawaan
           tema (hitam netral): di /lapor semua aksi penting berada di satu

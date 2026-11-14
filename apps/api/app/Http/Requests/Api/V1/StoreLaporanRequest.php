@@ -63,10 +63,10 @@ class StoreLaporanRequest extends FormRequest
             kategori: $this->validated('kategori'),
             lokasi: $this->validated('lokasi'),
             deskripsi: $this->validated('deskripsi'),
-            nilai_kerusakan: $this->validated('nilai_kerusakan'),
-            nilai_risiko: $this->validated('nilai_risiko'),
-            nilai_dampak: $this->validated('nilai_dampak'),
-            nilai_frekuensi: $this->validated('nilai_frekuensi'),
+            nilai_kerusakan: (int) $this->validated('nilai_kerusakan'),
+            nilai_risiko: (int) $this->validated('nilai_risiko'),
+            nilai_dampak: (int) $this->validated('nilai_dampak'),
+            nilai_frekuensi: (int) $this->validated('nilai_frekuensi'),
             foto: $foto,
         );
     }
