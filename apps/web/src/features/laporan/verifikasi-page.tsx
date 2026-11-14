@@ -451,8 +451,7 @@ export function VerifikasiPage({ user }: { user: User }) {
                 jumlah: jumlahAntrian,
               },
               ...FILTERS.filter(
-                (f) =>
-                  f.value !== 'semua' && !statusFinal(f.value as string),
+                (f) => f.value !== 'semua' && !statusFinal(f.value as string),
               ).map((f) => ({
                 value: f.value as string,
                 label: f.label,

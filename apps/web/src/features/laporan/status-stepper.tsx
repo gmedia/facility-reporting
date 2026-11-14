@@ -15,9 +15,7 @@ const INDEKS: Record<Exclude<LaporanStatus, 'ditolak'>, number> = {
 export function StatusStepper({ status }: { status: string }) {
   const ditolak = status === 'ditolak'
   const langkah = ditolak ? ['Dilaporkan', 'Ditolak'] : LANGKAH
-  const sekarang = ditolak
-    ? 1
-    : (INDEKS[status as keyof typeof INDEKS] ?? 0)
+  const sekarang = ditolak ? 1 : (INDEKS[status as keyof typeof INDEKS] ?? 0)
 
   return (
     <ol
@@ -27,7 +25,9 @@ export function StatusStepper({ status }: { status: string }) {
       {langkah.map((label, i) => {
         const selesai = i <= sekarang
         const merah = ditolak && i === 1
-        const warna = merah ? 'bg-red-600 border-red-600' : 'bg-[#1f6b4f] border-[#1f6b4f]'
+        const warna = merah
+          ? 'bg-red-600 border-red-600'
+          : 'bg-[#1f6b4f] border-[#1f6b4f]'
 
         return (
           <li
@@ -40,7 +40,11 @@ export function StatusStepper({ status }: { status: string }) {
                 aria-hidden="true"
                 className={cn(
                   'absolute top-[5px] right-1/2 h-0.5 w-full',
-                  selesai ? (merah ? 'bg-red-600' : 'bg-[#1f6b4f]') : 'bg-[#e3e8e5]',
+                  selesai
+                    ? merah
+                      ? 'bg-red-600'
+                      : 'bg-[#1f6b4f]'
+                    : 'bg-[#e3e8e5]',
                 )}
               />
             )}

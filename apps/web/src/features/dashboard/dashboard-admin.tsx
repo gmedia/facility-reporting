@@ -492,10 +492,7 @@ function LaporanTerbaru({
   // setelah refetch).
   const totalHalaman = Math.max(1, Math.ceil(urut.length / ukuran))
   const halamanAktif = Math.min(halaman, totalHalaman)
-  const tampil = urut.slice(
-    (halamanAktif - 1) * ukuran,
-    halamanAktif * ukuran,
-  )
+  const tampil = urut.slice((halamanAktif - 1) * ukuran, halamanAktif * ukuran)
 
   const keterangan =
     laporan.length === 0

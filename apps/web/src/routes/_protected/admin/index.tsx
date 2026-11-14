@@ -119,8 +119,7 @@ function AdminUsersPage() {
   // selesai). `terakhir` menyimpan aksi yang terakhir dipilih, khusus untuk
   // isi dialog, supaya judul dan teksnya tidak berganti saat dialog sedang
   // menutup.
-  const [pendingAction, setPendingAction] =
-    useState<PendingAction>(TANPA_AKSI)
+  const [pendingAction, setPendingAction] = useState<PendingAction>(TANPA_AKSI)
   const [terakhir, setTerakhir] = useState<PendingAction>(TANPA_AKSI)
   const [cari, setCari] = useState('')
 
