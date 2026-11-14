@@ -22,7 +22,9 @@ import {
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { meQueryOptions, type User } from '@/features/auth/auth-query'
+import { PageHeader } from '@/components/page-header'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
+import { BantuanQna } from './bantuan'
 import {
   BATAS_FOTO_BYTE,
   FOTO_ACCEPT,
@@ -34,15 +36,21 @@ import {
 import { fotoUrl, useChangePassword, useUpdateFoto } from './akun-query'
 
 // ============================================================
-// HALAMAN AKUN (issue #93)
+// HALAMAN PENGATURAN (dulu "Akun", issue #93; berganti nama #113)
 //
-// Dua kartu: Foto Profil dan Keamanan (ganti password). Data user dibaca
-// dari cache /auth/me lewat useQuery — bukan prop route — supaya setelah
-// unggahan foto sukses (mutation menimpa cache ['me']), pratinjau ikut
-// berubah tanpa navigasi.
+// Tiga bagian, urut sesuai permintaan:
+//   1. Kelola Akun — ganti foto profil
+//   2. Keamanan    — ganti password
+//   3. Bantuan     — QnA pindahan dari Beranda (dashboard-faq)
 //
-// Mahasiswa: dibungkus UserShell dari luar (seperti sebelumnya).
-// Admin / super admin: dibungkus DashboardShell di sini.
+// Data user dibaca dari cache /auth/me lewat useQuery — bukan prop
+// route — supaya setelah unggahan foto sukses (mutation menimpa cache
+// ['me']), pratinjau ikut berubah tanpa navigasi.
+//
+// Mahasiswa: dibungkus UserShell dari luar (seperti sebelumnya), judul
+// halaman pakai PageHeader yang ikut sticky saat scroll (#113).
+// Admin / super admin: dibungkus DashboardShell di sini — header
+// shell-nya memang sudah sticky, jadi judul cukup lewat prop `header`.
 // ============================================================
 
 const schemaPassword = z
@@ -69,7 +77,7 @@ const FIELD_SERVER: ReadonlyArray<keyof PasswordValues> = [
   'password',
 ]
 
-export function AkunPage() {
+export function PengaturanPage() {
   const { data: user } = useQuery(meQueryOptions)
 
   // Guard login sudah jalan di route _protected, jadi user praktis pasti
@@ -77,15 +85,15 @@ export function AkunPage() {
   if (!user) return null
 
   if (user.role === 'user') {
-    return <AkunIsi user={user} tampilJudul />
+    return <PengaturanIsi user={user} tampilJudul />
   }
 
-  return <AkunPengelola user={user} />
+  return <PengaturanPengelola user={user} />
 }
 
 // Admin dan super admin: sidebar hijau tua milik DashboardShell. Judul
 // halaman ditaruh di header atas, jadi tidak diulang di dalam konten.
-function AkunPengelola({ user }: { user: User }) {
+function PengaturanPengelola({ user }: { user: User }) {
   // Badge jumlah laporan menunggu di menu Verifikasi tetap tampil di
   // halaman ini, sama seperti di Dasbor dan Verifikasi.
   const laporan = useLaporanList()
@@ -100,41 +108,41 @@ function AkunPengelola({ user }: { user: User }) {
       header={
         <div className="min-w-0 leading-tight">
           <h1 className="truncate text-xl font-bold tracking-tight">
-            Foto Profil &amp; Keamanan
+            Pengaturan
           </h1>
           <p className="truncate text-sm text-[#8a8f87]">
-            Atur foto dan jaga akses akunmu tetap aman
+            Kelola foto profil, keamanan, dan bantuan akunmu
           </p>
         </div>
       }
     >
       <div className="mx-auto w-full max-w-3xl">
-        <AkunIsi user={user} tampilJudul={false} />
+        <PengaturanIsi user={user} tampilJudul={false} />
       </div>
     </DashboardShell>
   )
 }
 
-function AkunIsi({ user, tampilJudul }: { user: User; tampilJudul: boolean }) {
+function PengaturanIsi({
+  user,
+  tampilJudul,
+}: {
+  user: User
+  tampilJudul: boolean
+}) {
   return (
     <div className="flex flex-col gap-5">
       {tampilJudul && (
-        <div>
-          <p className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
-            Akun Saya
-          </p>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900 sm:text-[26px]">
-            Foto Profil &amp; Keamanan
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-neutral-500">
-            Atur foto yang menemanimu di aplikasi dan jaga akses akunmu tetap
-            aman.
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Akun & Keamanan"
+          judul="Pengaturan"
+          keterangan="Kelola foto profil, ganti password, dan temukan jawaban di Bantuan."
+        />
       )}
 
-      <KartuFoto user={user} />
+      <KartuKelolaAkun user={user} />
       <KartuKeamanan />
+      <KartuBantuan />
     </div>
   )
 }
@@ -185,7 +193,9 @@ function PasswordInput({
   )
 }
 
-function KartuFoto({ user }: { user: User }) {
+// Bagian 1 — "Kelola Akun": intinya ganti foto profil (#93), judul
+// kartu mengikuti nama menu Pengaturan (#113).
+function KartuKelolaAkun({ user }: { user: User }) {
   const update = useUpdateFoto()
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -225,9 +235,10 @@ function KartuFoto({ user }: { user: User }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Foto Profil</CardTitle>
+        <CardTitle>Kelola Akun</CardTitle>
         <CardDescription>
-          Tampilan akunmu di aplikasi. JPG, PNG, atau WebP, maksimal 2 MB.
+          Ganti foto profil yang tampil di aplikasi. JPG, PNG, atau WebP,
+          maksimal 2 MB.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -420,6 +431,25 @@ function KartuKeamanan() {
             {busy ? 'Menyimpan...' : 'Simpan Password'}
           </Button>
         </form>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Bagian 3 — "Bantuan": QnA pindahan dari Beranda (#113). Isinya
+// accordion (features/akun/bantuan.tsx); judul & deskripsi kartu dari
+// CardHeader supaya seragam dengan dua kartu di atasnya.
+function KartuBantuan() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Bantuan</CardTitle>
+        <CardDescription>
+          Pertanyaan yang paling sering muncul — klik untuk membuka jawabannya.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <BantuanQna />
       </CardContent>
     </Card>
   )

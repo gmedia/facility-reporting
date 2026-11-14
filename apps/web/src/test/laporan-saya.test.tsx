@@ -278,6 +278,12 @@ describe('halaman /laporan/saya', () => {
     expect(screen.getByText('plafon bocor')).toBeInTheDocument()
 
     expect(api.GET).toHaveBeenCalledWith('/reports')
+
+    // ≤ 10 laporan → paginasi disembunyikan (issue #113): satu halaman
+    // cukup, tombol halaman yang cuma "1" tidak ada gunanya.
+    expect(
+      screen.queryByRole('navigation', { name: 'Halaman daftar laporan' }),
+    ).not.toBeInTheDocument()
   })
 
   it('status ditampilkan sebagai label, bukan value mentah', async () => {
@@ -724,5 +730,64 @@ describe('halaman /laporan/saya', () => {
     if (!tombolDetail) throw new Error('tombol Detail tidak ditemukan')
     fireEvent.click(tombolDetail)
     await screen.findByText('Riwayat status tidak tersedia saat ini.')
+  })
+
+  // Paginasi klien 10/halaman (issue #113).
+  it('membatasi 10 laporan per halaman dan menyediakan tombol halaman', async () => {
+    // 15 laporan terbaru di September → 2 halaman (10 + 5). Tanggal
+    // dibuat mundur dari tgl 30 supaya urutannya bisa diprediksi.
+    const banyak = Array.from({ length: 15 }, (_, i) => ({
+      ...laporanBaru,
+      id: 50 + i,
+      deskripsi: `laporan nomor ${i + 1}`,
+      created_at: `2026-09-${String(30 - i).padStart(2, '0')}T09:00:00Z`,
+      updated_at: `2026-09-${String(30 - i).padStart(2, '0')}T09:00:00Z`,
+    }))
+    vi.mocked(api.GET).mockImplementation(async (url: string) =>
+      url === '/reports' ? ok({ data: banyak }) : ok({ data: [] }),
+    )
+
+    renderAt('/laporan/saya')
+    await screen.findByText('laporan nomor 1')
+
+    const pager = () =>
+      within(screen.getByRole('navigation', { name: 'Halaman daftar laporan' }))
+
+    // Halaman 1: 10 kartu tampil, 5 sisanya masih di halaman 2, dan
+    // jumlah per bulan mengikuti halaman yang sedang tampil.
+    expect(screen.getAllByText(/^laporan nomor/)).toHaveLength(10)
+    expect(screen.getByText('laporan nomor 10')).toBeInTheDocument()
+    expect(screen.queryByText('laporan nomor 11')).not.toBeInTheDocument()
+    expect(screen.getByText('10 laporan')).toBeInTheDocument()
+    expect(pager().getByRole('button', { name: '1' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(
+      pager().getByRole('button', { name: 'Halaman pertama' }),
+    ).toBeDisabled()
+
+    // Halaman 2: 5 sisanya; "terakhir" nonaktif karena sudah mentok.
+    fireEvent.click(pager().getByRole('button', { name: '2' }))
+    expect(await screen.findByText('laporan nomor 11')).toBeInTheDocument()
+    expect(screen.queryByText('laporan nomor 10')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/^laporan nomor/)).toHaveLength(5)
+    expect(screen.getByText('5 laporan')).toBeInTheDocument()
+    expect(pager().getByRole('button', { name: '2' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(
+      pager().getByRole('button', { name: 'Halaman terakhir' }),
+    ).toBeDisabled()
+
+    // Tombol "pertama" balik ke halaman 1.
+    fireEvent.click(pager().getByRole('button', { name: 'Halaman pertama' }))
+    expect(await screen.findByText('laporan nomor 1')).toBeInTheDocument()
+    expect(screen.getAllByText(/^laporan nomor/)).toHaveLength(10)
+    expect(pager().getByRole('button', { name: '1' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 })

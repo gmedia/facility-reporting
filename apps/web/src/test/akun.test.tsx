@@ -136,11 +136,11 @@ beforeEach(() => {
 
 afterEach(() => vi.clearAllMocks())
 
-describe('halaman /akun', () => {
-  it('menampilkan kartu Foto Profil dan Keamanan', async () => {
-    renderAt('/akun')
+describe('halaman /pengaturan', () => {
+  it('menampilkan kartu Kelola Akun dan Keamanan', async () => {
+    renderAt('/pengaturan')
 
-    expect(await screen.findByText('Foto Profil')).toBeInTheDocument()
+    expect(await screen.findByText('Kelola Akun')).toBeInTheDocument()
     expect(screen.getByLabelText('Foto')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Simpan Foto' }),
@@ -157,16 +157,16 @@ describe('halaman /akun', () => {
     ).toBeInTheDocument()
 
     // Belum ada foto → pratinjau memakai inisial nama. Di-scope ke kartu
-    // Foto Profil: kartu akun di sidebar juga menampilkan inisial yang sama.
+    // Kelola Akun: kartu profil di sidebar juga menampilkan inisial sama.
     const kartuFoto = screen
-      .getByText('Foto Profil')
+      .getByText('Kelola Akun')
       .closest('[data-slot="card"]')
     expect(kartuFoto).not.toBeNull()
     expect(within(kartuFoto as HTMLElement).getByText('MB')).toBeInTheDocument()
   })
 
   it('upload foto → POST /profile/foto dikirim dengan FormData', async () => {
-    renderAt('/akun')
+    renderAt('/pengaturan')
     const user = userEvent.setup()
 
     await screen.findByRole('button', { name: 'Simpan Foto' })
@@ -184,10 +184,10 @@ describe('halaman /akun', () => {
     expect(options.body.get('foto')).toBeInstanceOf(File)
 
     // Sukses → cache /auth/me ditimpa: pratinjau halaman jadi <img>
-    // (di-scope ke kartu Foto Profil) dan kartu sidebar yang membaca
-    // cache yang sama ikut berganti dari inisial ke foto.
+    // (di-scope ke kartu Kelola Akun) dan kartu profil di sidebar yang
+    // membaca cache yang sama ikut berganti dari inisial ke foto.
     const kartuFoto = screen
-      .getByText('Foto Profil')
+      .getByText('Kelola Akun')
       .closest('[data-slot="card"]')
     expect(kartuFoto).not.toBeNull()
     expect(
@@ -201,7 +201,7 @@ describe('halaman /akun', () => {
   })
 
   it('menolak foto lebih dari 2 MB tanpa memanggil API', async () => {
-    renderAt('/akun')
+    renderAt('/pengaturan')
     const user = userEvent.setup()
 
     await screen.findByRole('button', { name: 'Simpan Foto' })
@@ -215,7 +215,7 @@ describe('halaman /akun', () => {
   })
 
   it('ganti password → PATCH /profile/password dikirim lalu form direset', async () => {
-    renderAt('/akun')
+    renderAt('/pengaturan')
     const user = userEvent.setup()
 
     await screen.findByRole('button', { name: 'Simpan Password' })
@@ -246,7 +246,7 @@ describe('halaman /akun', () => {
   })
 
   it('validasi lokal: password baru minimal 8 karakter', async () => {
-    renderAt('/akun')
+    renderAt('/pengaturan')
     const user = userEvent.setup()
 
     await screen.findByRole('button', { name: 'Simpan Password' })
@@ -260,7 +260,7 @@ describe('halaman /akun', () => {
   })
 
   it('menampilkan pesan per field ketika server balas 422', async () => {
-    renderAt('/akun')
+    renderAt('/pengaturan')
     const user = userEvent.setup()
 
     vi.mocked(api.PATCH).mockResolvedValue(
@@ -283,17 +283,52 @@ describe('halaman /akun', () => {
     ).toBeInTheDocument()
   })
 
-  it('role admin: membuka halaman akun', async () => {
+  it('role admin: membuka halaman Pengaturan', async () => {
     currentUser = { ...mahasiswa, role: 'admin' }
-    renderAt('/akun')
+    renderAt('/pengaturan')
 
+    // Judulnya ada di header shell; nav shell juga punya link "Pengaturan",
+    // jadi dicari lewat peran heading supaya tidak nyangkut link-nya.
     await waitFor(() =>
-      expect(screen.getByText('Foto Profil & Keamanan')).toBeInTheDocument(),
+      expect(
+        screen.getByRole('heading', { name: 'Pengaturan' }),
+      ).toBeInTheDocument(),
     )
     expect(screen.getByLabelText('Password Saat Ini')).toBeInTheDocument()
     expect(screen.getByLabelText('Password Baru')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Simpan Password' }),
     ).toBeInTheDocument()
+  })
+
+  // Bagian 3 halaman Pengaturan (issue #113): QnA pindahan dari Beranda.
+  it('bagian Bantuan: klik pertanyaan membuka jawabannya, satu waktu', async () => {
+    renderAt('/pengaturan')
+    const user = userEvent.setup()
+
+    expect(await screen.findByText('Bantuan')).toBeInTheDocument()
+
+    const tanya1 = screen.getByRole('button', {
+      name: 'Apa itu Facility Reporting?',
+    })
+    expect(tanya1).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(tanya1)
+    expect(
+      await screen.findByText(/Portal untuk melaporkan kerusakan fasilitas/),
+    ).toBeInTheDocument()
+    expect(tanya1).toHaveAttribute('aria-expanded', 'true')
+
+    // Membuka pertanyaan kedua menutup yang pertama — cuma satu jawaban
+    // terbuka sekaligus, supaya tingginya tetap terkendali.
+    const tanya2 = screen.getByRole('button', {
+      name: 'Bagaimana cara mengirim laporan?',
+    })
+    await user.click(tanya2)
+    expect(
+      screen.queryByText(/Portal untuk melaporkan kerusakan fasilitas/),
+    ).not.toBeInTheDocument()
+    expect(tanya1).toHaveAttribute('aria-expanded', 'false')
+    expect(tanya2).toHaveAttribute('aria-expanded', 'true')
   })
 })

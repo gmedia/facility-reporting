@@ -10,10 +10,10 @@ final readonly class StoreLaporanData
         public string $kategori,
         public string $lokasi,
         public string $deskripsi,
+        public int $nilai_kerusakan,
+        public int $nilai_risiko,
+        public int $nilai_dampak,
+        public int $nilai_frekuensi,
         public ?string $foto = null,
-        public ?int $nilai_kerusakan = null,
-        public ?int $nilai_risiko = null,
-        public ?int $nilai_dampak = null,
-        public ?int $nilai_frekuensi = null,
     ) {}
 }

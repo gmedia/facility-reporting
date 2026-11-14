@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\LaporanStatus;
 use App\Enums\UserRole;
+use App\Models\Laporan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -31,6 +32,10 @@ function validReportPayload(): array
         'kategori' => 'elektronik',
         'lokasi' => 'Lab 3 Lt.2',
         'deskripsi' => 'Proyektor mati total sejak pagi.',
+        'nilai_kerusakan' => 5,
+        'nilai_risiko' => 4,
+        'nilai_dampak' => 4,
+        'nilai_frekuensi' => 3,
     ];
 }
 
@@ -95,7 +100,7 @@ it('requires kategori, lokasi, deskripsi, and foto', function (): void {
     $this->actingAs(makeReporter())
         ->postJson('/api/v1/reports', [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['kategori', 'lokasi', 'deskripsi', 'foto']);
+        ->assertJsonValidationErrors(['kategori', 'lokasi', 'deskripsi', 'foto', 'nilai_kerusakan', 'nilai_risiko', 'nilai_dampak', 'nilai_frekuensi']);
 });
 
 it('rejects a payload that has every field but the photo', function (): void {
@@ -175,3 +180,53 @@ it('rejects a non-image file', function (): void {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['foto']);
 });
+
+it('menghitung skor prioritas dari nilai SMART yang dikirim mahasiswa', function (): void {
+    $user = makeReporter();
+
+    // 5*0.35 + 4*0.25 + 4*0.25 + 3*0.15 = 1.75 + 1.00 + 1.00 + 0.45 = 4.20 -> tinggi
+    $this->actingAs($user)
+        ->post('/api/v1/reports', payloadWithPhoto(), ['Accept' => 'application/json'])
+        ->assertCreated()
+        ->assertJsonPath('data.prioritas_kategori', 'tinggi');
+
+    $this->assertDatabaseHas('laporans', [
+        'user_id' => $user->id,
+        'nilai_kerusakan' => 5,
+        'nilai_risiko' => 4,
+        'nilai_dampak' => 4,
+        'nilai_frekuensi' => 3,
+    ]);
+
+    $laporan = Laporan::query()->where('user_id', $user->id)->firstOrFail();
+    expect((float) $laporan->skor_prioritas)->toBe(4.20);
+});
+
+it('menolak laporan yang hanya mengirim sebagian nilai SMART', function (string $field): void {
+    $payload = validReportPayload();
+    unset($payload[$field]);
+
+    $this->actingAs(makeReporter())
+        ->post('/api/v1/reports', array_merge($payload, [
+            'foto' => UploadedFile::fake()->createWithContent('foto.png', pngBytes()),
+        ]), ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([$field]);
+
+    $this->assertDatabaseMissing('laporans', ['lokasi' => 'Lab 3 Lt.2']);
+})->with([
+    'nilai_kerusakan',
+    'nilai_risiko',
+    'nilai_dampak',
+    'nilai_frekuensi',
+]);
+
+it('menolak nilai SMART di luar skala 1-5', function (int $value): void {
+    $this->actingAs(makeReporter())
+        ->post('/api/v1/reports', array_merge(validReportPayload(), [
+            'nilai_kerusakan' => $value,
+            'foto' => UploadedFile::fake()->createWithContent('foto.png', pngBytes()),
+        ]), ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['nilai_kerusakan']);
+})->with([0, 6]);

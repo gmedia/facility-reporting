@@ -13,9 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedAdminRouteRouteImport } from './routes/_protected/admin/route'
-import { Route as ProtectedAkunRouteImport } from './routes/_protected/akun'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
+import { Route as ProtectedPengaturanRouteImport } from './routes/_protected/pengaturan'
 import { Route as ProtectedVerifikasiRouteImport } from './routes/_protected/verifikasi'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 import { Route as ProtectedLaporanSayaRouteImport } from './routes/_protected/laporan/saya'
@@ -39,11 +39,6 @@ const ProtectedAdminRouteRoute = ProtectedAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedAkunRoute = ProtectedAkunRouteImport.update({
-  id: '/akun',
-  path: '/akun',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -52,6 +47,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
 const ProtectedLaporRoute = ProtectedLaporRouteImport.update({
   id: '/lapor',
   path: '/lapor',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPengaturanRoute = ProtectedPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedVerifikasiRoute = ProtectedVerifikasiRouteImport.update({
@@ -74,9 +74,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin': typeof ProtectedAdminRouteRouteWithChildren
-  '/akun': typeof ProtectedAkunRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/pengaturan': typeof ProtectedPengaturanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin/': typeof ProtectedAdminIndexRoute
@@ -84,9 +84,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/akun': typeof ProtectedAkunRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/pengaturan': typeof ProtectedPengaturanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin': typeof ProtectedAdminIndexRoute
@@ -97,9 +97,9 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/login': typeof LoginRoute
   '/_protected/admin': typeof ProtectedAdminRouteRouteWithChildren
-  '/_protected/akun': typeof ProtectedAkunRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/lapor': typeof ProtectedLaporRoute
+  '/_protected/pengaturan': typeof ProtectedPengaturanRoute
   '/_protected/verifikasi': typeof ProtectedVerifikasiRoute
   '/_protected/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
@@ -110,9 +110,9 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin'
-    | '/akun'
     | '/dashboard'
     | '/lapor'
+    | '/pengaturan'
     | '/verifikasi'
     | '/laporan/saya'
     | '/admin/'
@@ -120,9 +120,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/akun'
     | '/dashboard'
     | '/lapor'
+    | '/pengaturan'
     | '/verifikasi'
     | '/laporan/saya'
     | '/admin'
@@ -132,9 +132,9 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/login'
     | '/_protected/admin'
-    | '/_protected/akun'
     | '/_protected/dashboard'
     | '/_protected/lapor'
+    | '/_protected/pengaturan'
     | '/_protected/verifikasi'
     | '/_protected/laporan/saya'
     | '/_protected/admin/'
@@ -176,13 +176,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAdminRouteRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/akun': {
-      id: '/_protected/akun'
-      path: '/akun'
-      fullPath: '/akun'
-      preLoaderRoute: typeof ProtectedAkunRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_protected/dashboard': {
       id: '/_protected/dashboard'
       path: '/dashboard'
@@ -195,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/lapor'
       fullPath: '/lapor'
       preLoaderRoute: typeof ProtectedLaporRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/pengaturan': {
+      id: '/_protected/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof ProtectedPengaturanRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/verifikasi': {
@@ -234,18 +234,18 @@ const ProtectedAdminRouteRouteWithChildren =
 
 interface ProtectedRouteChildren {
   ProtectedAdminRouteRoute: typeof ProtectedAdminRouteRouteWithChildren
-  ProtectedAkunRoute: typeof ProtectedAkunRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedLaporRoute: typeof ProtectedLaporRoute
+  ProtectedPengaturanRoute: typeof ProtectedPengaturanRoute
   ProtectedVerifikasiRoute: typeof ProtectedVerifikasiRoute
   ProtectedLaporanSayaRoute: typeof ProtectedLaporanSayaRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAdminRouteRoute: ProtectedAdminRouteRouteWithChildren,
-  ProtectedAkunRoute: ProtectedAkunRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedLaporRoute: ProtectedLaporRoute,
+  ProtectedPengaturanRoute: ProtectedPengaturanRoute,
   ProtectedVerifikasiRoute: ProtectedVerifikasiRoute,
   ProtectedLaporanSayaRoute: ProtectedLaporanSayaRoute,
 }

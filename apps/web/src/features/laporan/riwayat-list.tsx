@@ -1,7 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import {
   CalendarDaysIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
   ImageIcon,
   InboxIcon,
 } from 'lucide-react'
@@ -28,6 +32,12 @@ function kategoriLabel(kategori: string): string {
   return KATEGORI_LABEL[kategori as LaporanKategori] ?? kategori
 }
 
+// 10 laporan per halaman (issue #113): riwayat yang panjang tidak perlu
+// di-scroll habis-habisan. Pengubahan ini MURNI tampilan (slice) —
+// sumber data tetap useLaporanList() apa adanya, tanpa parameter
+// halaman ke API, jadi routes/api.php tidak tersentuh.
+const PER_HALAMAN = 10
+
 function tanggal(iso: string | null): string {
   if (!iso) return '-'
   const d = new Date(iso)
@@ -52,6 +62,21 @@ export function RiwayatList() {
   // judul daftar (permintaan 3 Nov) — tidak lagi tercecer.
   const [tahunDipilih, setTahunDipilih] = useState<string | null>(null)
   const [bulanDipilih, setBulanDipilih] = useState<number | null>(null)
+  // Halaman daftar (issue #113) ikut di sini, bukan di dalam
+  // DaftarPerBulan — supaya reset ke halaman 1 dilakukan di handler yang
+  // SAMA dengan ganti saringan. Reset lewat efek dilarang lint
+  // react-hooks/set-state-in-effect, dan pola "prev state di render"
+  // cuma menambah kebingungan.
+  const [halaman, setHalaman] = useState(0)
+
+  const pilihTahun = (tahun: string | null) => {
+    setTahunDipilih(tahun)
+    setHalaman(0) // saringan berubah → balik ke halaman pertama
+  }
+  const pilihBulan = (bulan: number | null) => {
+    setBulanDipilih(bulan)
+    setHalaman(0)
+  }
 
   if (list.isPending) return <RiwayatSkeleton />
 
@@ -125,8 +150,10 @@ export function RiwayatList() {
         tahunTersedia={tahunTersedia}
         tahunDipilih={tahunDipilih}
         bulanDipilih={bulanDipilih}
-        onPilihTahun={setTahunDipilih}
-        onPilihBulan={setBulanDipilih}
+        halaman={halaman}
+        onPilihTahun={pilihTahun}
+        onPilihBulan={pilihBulan}
+        onPindahHalaman={setHalaman}
       />
     </div>
   )
@@ -149,26 +176,58 @@ function DaftarPerBulan({
   tahunTersedia,
   tahunDipilih,
   bulanDipilih,
+  halaman,
   onPilihTahun,
   onPilihBulan,
+  onPindahHalaman,
 }: {
   laporans: Laporan[]
   tahunTersedia: string[]
   tahunDipilih: string | null
   bulanDipilih: number | null
+  halaman: number
   onPilihTahun: (tahun: string | null) => void
   onPilihBulan: (bulan: number | null) => void
+  onPindahHalaman: (halaman: number) => void
 }) {
   // Panel saringan tertutup sampai tombolnya ditekan (permintaan 3 Nov
   // 2026): pemilih tahun dan chip bulan yang dulu tercecer di dua baris
   // kini tinggal di dalam satu panel yang dibuka satu tombol.
   const [panelTerbuka, setPanelTerbuka] = useState(false)
 
-  const kelompok = kelompokPerBulan(laporans)
+  // Paginasi klien (issue #113): 10 laporan per halaman. Statenya di
+  // RiwayatList supaya reset ganti saringan bisa di handler yang sama;
+  // ref-nya tetap di sini karena menunjuk <section> yang dirender ini.
+  const daftarRef = useRef<HTMLElement>(null)
+
+  // Clamp di render, bukan di efek: kalau saringan baru memperkecil
+  // jumlah halaman, halaman lama langsung divalidasi tanpa state tambahan
+  // (dan tanpa risiko efek → setState → render → efek lagi).
+  const totalHalaman = Math.max(Math.ceil(laporans.length / PER_HALAMAN), 1)
+  const halamanEfektif = Math.min(halaman, totalHalaman - 1)
+  const mulai = halamanEfektif * PER_HALAMAN
+  const tampak = laporans.slice(mulai, mulai + PER_HALAMAN)
+
+  const kelompok = kelompokPerBulan(tampak)
   const ringkas = labelSaringan(tahunDipilih, bulanDipilih) || 'Semua waktu'
 
+  const pindahHalaman = (h: number) => {
+    onPindahHalaman(h)
+    // Balik ke atas daftar supaya halaman barunya kelihatan — kalau
+    // dibiarkan, user tetap nongol di posisi pager dan konten barunya
+    // ada jauh di atas. scrollIntoView opsional karena tidak ada di jsdom.
+    daftarRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <section aria-label="Daftar laporan" className="flex flex-col gap-4">
+    <section
+      ref={daftarRef}
+      aria-label="Daftar laporan"
+      // scroll-mt: saat menempel, header halaman (topbar mobile 56px +
+      // PageHeader ±64px) menutupi puncak viewport; kasih jarak supaya
+      // judul "Daftar Laporan" tidak jatuh di baliknya.
+      className="flex scroll-mt-32 flex-col gap-4 lg:scroll-mt-16"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[11px] font-semibold tracking-[0.12em] text-[#0d3f31]/70 uppercase">
           Daftar Laporan
@@ -316,6 +375,17 @@ function DaftarPerBulan({
           </div>
         ))
       )}
+
+      {/* Paginasi di bagian bawah daftar (issue #113). Cuma muncul kalau
+          daftar lebih dari satu halaman — data ≤ 10 tetap tampil penuh
+          tanpa tombol yang cuma jadi dekorasi. */}
+      {totalHalaman > 1 && (
+        <PagerHalaman
+          total={totalHalaman}
+          halaman={halamanEfektif}
+          onPilih={pindahHalaman}
+        />
+      )}
     </section>
   )
 }
@@ -344,6 +414,132 @@ function ChipPilih({
       {children}
     </button>
   )
+}
+
+// ============================================================
+// PAGINASI DAFTAR (issue #113)
+//
+// Bentuknya [«] [‹] [1] [2] … [10] [›] [»] di bagian bawah daftar:
+// 10 laporan per halaman, jadi riwayat panjang tidak perlu di-scroll
+// habis-habisan. Halaman pertama/terakhir pakai ikon Chevrons, langkah
+// satu pakai Chevron; tombol di ujung nonaktif saat sudah mentok.
+// Aksesibel: <nav aria-label>, aria-current="page" untuk halaman aktif,
+// dan aria-label bahasa Indonesia untuk tombol yang isinya ikon saja.
+// ============================================================
+function PagerHalaman({
+  total,
+  halaman,
+  onPilih,
+}: {
+  total: number
+  halaman: number // 0-based
+  onPilih: (halaman: number) => void
+}) {
+  const nomor = susunNomor(total, halaman + 1)
+  const aktif = halaman + 1 // 1-based, untuk dibandingkan & aria-current
+
+  // Compact (masukan 13 Nov): kotak h-7 (28px), ikon 3.5, jarak rapat
+  // gap-1 — bukan tombol setinggi 32px yang ditengahkan.
+  const tombol =
+    'grid h-7 min-w-7 place-items-center rounded-md border border-black/10 bg-white px-1.5 text-sm font-medium tabular-nums transition-colors outline-none hover:bg-[#eef4f1] focus-visible:border-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#0d3f31]/15 disabled:pointer-events-none disabled:opacity-40'
+
+  return (
+    <nav
+      aria-label="Halaman daftar laporan"
+      className="flex flex-wrap items-center justify-end gap-1 pt-0.5"
+    >
+      <button
+        type="button"
+        aria-label="Halaman pertama"
+        disabled={halaman === 0}
+        onClick={() => onPilih(0)}
+        className={tombol}
+      >
+        <ChevronsLeftIcon aria-hidden="true" className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Halaman sebelumnya"
+        disabled={halaman === 0}
+        onClick={() => onPilih(halaman - 1)}
+        className={tombol}
+      >
+        <ChevronLeftIcon aria-hidden="true" className="size-3.5" />
+      </button>
+
+      {nomor.map((item, i) =>
+        item === '…' ? (
+          <span
+            key={`titik-${i}`}
+            aria-hidden="true"
+            className="px-0.5 text-xs text-neutral-400"
+          >
+            …
+          </span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            aria-current={item === aktif ? 'page' : undefined}
+            onClick={() => onPilih(item - 1)}
+            className={cn(
+              tombol,
+              item === aktif &&
+                'border-[#0d3f31] bg-[#0d3f31] text-white hover:bg-[#0a3127]',
+            )}
+          >
+            {item}
+          </button>
+        ),
+      )}
+
+      <button
+        type="button"
+        aria-label="Halaman berikutnya"
+        disabled={halaman === total - 1}
+        onClick={() => onPilih(halaman + 1)}
+        className={tombol}
+      >
+        <ChevronRightIcon aria-hidden="true" className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Halaman terakhir"
+        disabled={halaman === total - 1}
+        onClick={() => onPilih(total - 1)}
+        className={tombol}
+      >
+        <ChevronsRightIcon aria-hidden="true" className="size-3.5" />
+      </button>
+    </nav>
+  )
+}
+
+// Angka halaman yang ditampilkan: penuh kalau ≤ 7; selain itu jendela
+// ±1 di sekitar halaman aktif ditambah halaman pertama & terakhir,
+// dipisah "…". Satu nomor yang terlewat persis satu (selisih 2) justru
+// ditulis utuh — "1 … 3" lebih membingungkan daripada "1 2 3".
+function susunNomor(total: number, aktif: number): Array<number | '…'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+
+  const simpul = new Set<number>()
+  for (const n of [1, total, aktif - 1, aktif, aktif + 1]) {
+    if (n >= 1 && n <= total) simpul.add(n)
+  }
+
+  const terurut = [...simpul].sort((a, b) => a - b)
+  const hasil: Array<number | '…'> = []
+  let sebelumnya = 0
+
+  for (const n of terurut) {
+    const selisih = n - sebelumnya
+    if (selisih === 2) hasil.push(sebelumnya + 1)
+    else if (selisih > 2) hasil.push('…')
+    hasil.push(n)
+    sebelumnya = n
+  }
+
+  return hasil
 }
 
 // Kunci "YYYY-MM" dari tanggal lokal (bukan potongan string ISO): supaya

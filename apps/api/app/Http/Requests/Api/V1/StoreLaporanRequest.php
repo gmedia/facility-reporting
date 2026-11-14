@@ -29,6 +29,12 @@ class StoreLaporanRequest extends FormRequest
      * laporan yang dibuat sebelum aturan ini berlaku dan memang tidak
      * memiliki foto.
      *
+     * Keempat `nilai_*` wajib sejak 11 Nov 2026 (opsi A): mahasiswa
+     * mengisi sendiri skala 1-5 saat melapor. Sebelumnya aturannya
+     * `sometimes`, sehingga laporan dari form web selalu masuk tanpa
+     * nilai dan `skor_prioritas` tersimpan `null` — prioritas SMART
+     * tidak pernah terisi untuk laporan baru.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -38,10 +44,10 @@ class StoreLaporanRequest extends FormRequest
             'lokasi' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'min:10', 'max:2000'],
             'foto' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'nilai_kerusakan' => ['sometimes', 'integer', 'between:1,5'],
-            'nilai_risiko' => ['sometimes', 'integer', 'between:1,5'],
-            'nilai_dampak' => ['sometimes', 'integer', 'between:1,5'],
-            'nilai_frekuensi' => ['sometimes', 'integer', 'between:1,5'],
+            'nilai_kerusakan' => ['required', 'integer', 'between:1,5'],
+            'nilai_risiko' => ['required', 'integer', 'between:1,5'],
+            'nilai_dampak' => ['required', 'integer', 'between:1,5'],
+            'nilai_frekuensi' => ['required', 'integer', 'between:1,5'],
         ];
     }
 
@@ -57,11 +63,11 @@ class StoreLaporanRequest extends FormRequest
             kategori: $this->validated('kategori'),
             lokasi: $this->validated('lokasi'),
             deskripsi: $this->validated('deskripsi'),
-            foto: $foto,
             nilai_kerusakan: $this->validated('nilai_kerusakan'),
             nilai_risiko: $this->validated('nilai_risiko'),
             nilai_dampak: $this->validated('nilai_dampak'),
             nilai_frekuensi: $this->validated('nilai_frekuensi'),
+            foto: $foto,
         );
     }
 }
