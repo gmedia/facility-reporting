@@ -326,9 +326,7 @@ describe('halaman /verifikasi', () => {
     await daftar.findByText('lampu mati')
     const filterGroup = screen.getByRole('group', { name: 'Filter status' })
 
-    fireEvent.click(
-      within(filterGroup).getByRole('button', { name: 'Valid' }),
-    )
+    fireEvent.click(within(filterGroup).getByRole('button', { name: 'Valid' }))
 
     expect(
       screen.getByText(
