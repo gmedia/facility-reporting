@@ -189,7 +189,7 @@ describe('halaman /verifikasi', () => {
     const filterGroup = screen.getByRole('group', { name: 'Filter status' })
 
     fireEvent.click(
-      within(filterGroup).getByRole('button', { name: 'Selesai' }),
+      within(filterGroup).getByRole('button', { name: /Selesai/ }),
     )
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
     expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
@@ -301,19 +301,19 @@ describe('halaman /verifikasi', () => {
     // Semua pengecekan lewat `daftar`, karena judul laporan terpilih juga
     // tampil di panel detail.
     fireEvent.click(
-      within(filterGroup).getByRole('button', { name: 'Menunggu' }),
+      within(filterGroup).getByRole('button', { name: /Menunggu/ }),
     )
     expect(daftar.getByText('lampu mati')).toBeInTheDocument()
     expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
 
     fireEvent.click(
-      within(filterGroup).getByRole('button', { name: 'Selesai' }),
+      within(filterGroup).getByRole('button', { name: /Selesai/ }),
     )
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
     expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
 
     fireEvent.click(
-      within(filterGroup).getByRole('button', { name: 'Semua status' }),
+      within(filterGroup).getByRole('button', { name: /Semua status/ }),
     )
     expect(daftar.getByText('lampu mati')).toBeInTheDocument()
     expect(daftar.getByText('meja rusak')).toBeInTheDocument()
@@ -326,7 +326,9 @@ describe('halaman /verifikasi', () => {
     await daftar.findByText('lampu mati')
     const filterGroup = screen.getByRole('group', { name: 'Filter status' })
 
-    fireEvent.click(within(filterGroup).getByRole('button', { name: 'Valid' }))
+    fireEvent.click(
+      within(filterGroup).getByRole('button', { name: /Terverifikasi/ }),
+    )
 
     expect(
       screen.getByText(
