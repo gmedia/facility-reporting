@@ -309,11 +309,18 @@ export function VerifikasiPage({ user }: { user: User }) {
                   judul: 'Status',
                   nilai: filter,
                   onPilih: (v) => setFilter(v as StatusFilter),
-                  opsi: FILTERS.filter((f) => f.value !== 'semua').map((f) => ({
-                    value: f.value,
-                    label: f.label,
-                    jumlah: counts?.[f.value as LaporanStatus] ?? 0,
-                  })),
+                  opsi: [
+                    {
+                      value: 'semua',
+                      label: 'Semua status',
+                      jumlah: laporan.length,
+                    },
+                    ...FILTERS.filter((f) => f.value !== 'semua').map((f) => ({
+                      value: f.value,
+                      label: f.label,
+                      jumlah: counts?.[f.value as LaporanStatus] ?? 0,
+                    })),
+                  ],
                 },
                 {
                   key: 'kategori',
