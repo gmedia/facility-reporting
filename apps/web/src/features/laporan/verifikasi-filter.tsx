@@ -43,6 +43,7 @@ export function VerifikasiFilter({
   const tombol = useRef<HTMLButtonElement>(null)
 
   const aktif = grup.filter((g) => g.nilai !== SEMUA)
+  const statusGrup = grup.find((g) => g.judul === 'Status')
 
   // Tutup popup kalau klik di luar atau tekan Esc.
   useEffect(() => {
@@ -118,20 +119,23 @@ export function VerifikasiFilter({
             )}
           >
             {/* Select untuk status — menyediakan combobox yang dapat diakses
-              lewat keyboard dan.screen reader, selaras dengan test. */}
-            <select
-              aria-label="Status"
-              className="mb-4 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-            >
-              <option value="semua">Semua status</option>
-              {grup
-                .find((g) => g.judul === 'Status')
-                ?.opsi.map((o) => (
+              lewat keyboard dan screen reader, selaras dengan test.
+              Terhubung ke statusGrup.nilai dan onPilih agar filter
+              benar-benar diterapkan ke daftar laporan. */}
+            {statusGrup && (
+              <select
+                aria-label="Status"
+                value={statusGrup.nilai}
+                onChange={(event) => statusGrup.onPilih(event.target.value)}
+                className="mb-4 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+              >
+                {statusGrup.opsi.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
-            </select>
+              </select>
+            )}
 
             {grup.map((g) => (
               <fieldset key={g.key} className="mb-4 last:mb-0">
