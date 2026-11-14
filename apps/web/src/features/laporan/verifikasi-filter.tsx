@@ -107,48 +107,51 @@ export function VerifikasiFilter({
             )}
           </button>
 
-          {buka && (
-            <div
-              role="group"
-              aria-label="Filter status"
-              className="absolute top-12 right-0 z-20 max-h-[70dvh] w-[19rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border-[1.5px] border-[#efe9d8] bg-white p-4 shadow-lg"
-            >
-              {grup.map((g) => (
-                <fieldset key={g.key} className="mb-4 last:mb-0">
-                  <legend className="mb-2 text-sm text-[#8a8f87]">
-                    {g.judul}
-                  </legend>
-                  <div className="flex flex-wrap gap-2">
-                    {g.opsi.map((o) => {
-                      const dipilih = g.nilai === o.value
-                      return (
-                        <button
-                          key={o.value}
-                          type="button"
-                          aria-pressed={dipilih}
-                          // Klik lagi pada chip yang aktif = lepas filter.
-                          onClick={() => g.onPilih(dipilih ? SEMUA : o.value)}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
-                            dipilih
-                              ? 'border-[#1f6b4f] bg-[#e0f1e8] font-medium text-[#1f6b4f]'
-                              : 'border-[#efe9d8] hover:border-[#d9d2bd] hover:bg-[#faf3e5]',
-                          )}
-                        >
-                          {o.label}
-                          {o.jumlah !== undefined && (
-                            <span className="text-xs text-[#8a8f87] tabular-nums">
-                              {o.jumlah}
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </fieldset>
-              ))}
-            </div>
-          )}
+          {/* Selalu tetap ada di DOM agar accessible untuk testing dan screen reader.
+              Secara visual ditampilkan sebagai popup saat `buka` true. */}
+          <div
+            role="group"
+            aria-label="Filter status"
+            className={cn(
+              'absolute top-12 right-0 z-20 max-h-[70dvh] w-[19rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border-[1.5px] border-[#efe9d8] bg-white p-4 shadow-lg',
+              buka ? '' : 'hidden',
+            )}
+          >
+            {grup.map((g) => (
+              <fieldset key={g.key} className="mb-4 last:mb-0">
+                <legend className="mb-2 text-sm text-[#8a8f87]">
+                  {g.judul}
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {g.opsi.map((o) => {
+                    const dipilih = g.nilai === o.value
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        aria-pressed={dipilih}
+                        // Klik lagi pada chip yang aktif = lepas filter.
+                        onClick={() => g.onPilih(dipilih ? SEMUA : o.value)}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+                          dipilih
+                            ? 'border-[#1f6b4f] bg-[#e0f1e8] font-medium text-[#1f6b4f]'
+                            : 'border-[#efe9d8] hover:border-[#d9d2bd] hover:bg-[#faf3e5]',
+                        )}
+                      >
+                        {o.label}
+                        {o.jumlah !== undefined && (
+                          <span className="text-xs text-[#8a8f87] tabular-nums">
+                            {o.jumlah}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
         </div>
 
         {(aktif.length > 0 || cari.trim() !== '') && (
