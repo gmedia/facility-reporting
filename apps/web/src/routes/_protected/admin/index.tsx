@@ -181,14 +181,18 @@ function AdminUsersPage() {
                           >
                             Edit
                           </Button>
+                          {/* Label & gaya mengikuti AKSI yang akan dijalankan,
+                              bukan status barisnya: akun aktif ditawari
+                              "Nonaktifkan" (merah), akun nonaktif ditawari
+                              "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
                           <Button
                             type="button"
                             size="sm"
                             variant="ghost"
                             className={`rounded-full text-xs ${
                               user.active
-                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800'
-                                : 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
+                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800'
                             }`}
                             onClick={() =>
                               setPendingAction({
@@ -197,7 +201,7 @@ function AdminUsersPage() {
                               })
                             }
                           >
-                            {user.active ? 'Aktifkan' : 'Nonaktifkan'}
+                            {user.active ? 'Nonaktifkan' : 'Aktifkan'}
                           </Button>
                         </div>
                       </TableCell>

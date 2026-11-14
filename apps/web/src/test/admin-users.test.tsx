@@ -172,3 +172,110 @@ describe('dashboard CRUD admin', () => {
     )
   })
 })
+
+// ============================================================
+// Tombol aktif/nonaktif — issue #115
+//
+// Bug-nya: label & gaya tombol pernah kebalik terhadap status
+// (akun aktif justru ditawari "Aktifkan" hijau). Test ini yang
+// mencegah kambuh: user aktif WAJIB melihat "Nonaktifkan", user
+// nonaktif WAJIB melihat "Aktifkan" — plus dialog konfirmasi dan
+// endpoint-nya ikut diverifikasi supaya satu rantai aksi tidak
+// mungkin salah lagi.
+// ============================================================
+describe('tombol aktif/nonaktif akun (#115)', () => {
+  const nonaktifUser: AdminUser = {
+    id: 2,
+    name: 'Akun Nonaktif',
+    nim: null,
+    email: 'nonaktif@facility.test',
+    role: 'user',
+    foto: null,
+    active: false,
+  }
+
+  function mockDuaUser() {
+    mockGet({
+      '/auth/me': () => ok({ data: superAdmin }),
+      '/admin/users': () => ok({ data: [superAdmin, nonaktifUser] }),
+    })
+  }
+
+  function baris(email: string) {
+    return screen.getByText(email).closest('tr') as HTMLElement
+  }
+
+  it('user aktif menampilkan tombol Nonaktifkan, bukan Aktifkan', async () => {
+    renderAt('/admin')
+
+    expect(
+      await screen.findByRole('button', { name: 'Nonaktifkan' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Aktifkan' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('user nonaktif menampilkan tombol Aktifkan di barisnya', async () => {
+    mockDuaUser()
+    renderAt('/admin')
+
+    await screen.findByText('nonaktif@facility.test')
+    expect(
+      within(baris('nonaktif@facility.test')).getByRole('button', {
+        name: 'Aktifkan',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(baris('nonaktif@facility.test')).queryByRole('button', {
+        name: 'Nonaktifkan',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('dialog konfirmasi mengikuti aksi tombol yang ditekan', async () => {
+    mockDuaUser()
+    renderAt('/admin')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
+    expect(
+      await screen.findByText('Nonaktifkan akun Super Admin?'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ya, nonaktifkan' }),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
+    expect(
+      await screen.findByText('Aktifkan akun Akun Nonaktif?'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ya, aktifkan' }),
+    ).toBeInTheDocument()
+  })
+
+  it('mengirim aksi ke endpoint yang benar', async () => {
+    vi.mocked(api.PUT).mockResolvedValue(ok({ data: superAdmin }))
+    mockDuaUser()
+    renderAt('/admin')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Ya, nonaktifkan' }),
+    )
+    await waitFor(() =>
+      expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/deactivate', {
+        params: { path: { user: 1 } },
+      }),
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya, aktifkan' }))
+    await waitFor(() =>
+      expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/activate', {
+        params: { path: { user: 2 } },
+      }),
+    )
+  })
+})
