@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ImageIcon, Search, X } from 'lucide-react'
+import { ImageIcon, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import {
   FOTO_MIME_IZIN,
   KATEGORI_LABEL,
   KATEGORI_VALUES,
+  PRIORITAS_LABEL,
   STATUS_LABEL,
   STATUS_VALUES,
   errorMessage,
@@ -30,7 +31,9 @@ import {
   type LaporanKategori,
   type LaporanStatus,
   type Pelapor,
+  type PrioritasKategori,
 } from '@/features/laporan/laporan-query'
+import { VerifikasiFilter } from '@/features/laporan/verifikasi-filter'
 import { cn } from '@/lib/utils'
 
 type StatusFilter = 'semua' | LaporanStatus
@@ -38,7 +41,9 @@ type StatusFilter = 'semua' | LaporanStatus
 // Urutan filter ngikutin alur verifikasi, bukan urutan enum backend.
 // "Terverifikasi" sengaja dipakai buat status `valid` biar bahasa UI-nya
 // sama dengan roadmap; badge status tetap pakai label asli `Valid`.
-// Label 'Status' dipakai sebagai teks awal dropdown (artinya: semua status).
+// Entri 'semua' tidak ditampilkan sebagai chip (filter dilepas dengan
+// klik chip yang aktif atau tombol Reset), tapi nilainya tetap dipakai
+// oleh tipe StatusFilter.
 const FILTERS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: 'semua', label: 'Status' },
   { value: 'menunggu_verifikasi', label: 'Menunggu' },
@@ -73,6 +78,21 @@ const AKSI: Partial<
   // `ditolak` dan `selesai` adalah status final (PR #92): tidak ada aksi
   // perubahan status lagi, jadi tidak dimasukkan di sini.
 }
+
+// Pilihan filter prioritas diambil dari PRIORITAS_LABEL (sumber yang sama
+// dengan badge), jadi nilainya pasti cocok dengan data. Diurutkan dari yang
+// paling mendesak: Tinggi, Sedang, Rendah. Label di luar tiga itu (kalau
+// ada) ditaruh paling belakang.
+const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
+
+function urutanLabel(label: string): number {
+  const index = URUTAN_LABEL.indexOf(label.toLowerCase())
+  return index === -1 ? URUTAN_LABEL.length : index
+}
+
+const PRIORITAS_OPSI = (
+  Object.entries(PRIORITAS_LABEL) as Array<[PrioritasKategori, string]>
+).sort((a, b) => urutanLabel(a[1]) - urutanLabel(b[1]))
 
 const CARD = 'rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6'
 
@@ -119,7 +139,10 @@ export function VerifikasiPage({ user }: { user: User }) {
   const [filter, setFilter] = useState<StatusFilter>('semua')
   const [cari, setCari] = useState('')
   const [kategori, setKategori] = useState<'semua' | LaporanKategori>('semua')
+  const [prioritas, setPrioritas] = useState<string>('semua')
   const [gedung, setGedung] = useState<string>('semua')
+  // Awal hari (timestamp) yang dipilih dari grafik; null = semua tanggal.
+  const [tanggal, setTanggal] = useState<number | null>(null)
   // id laporan yang sedang dilihat di panel detail.
   const [pilihId, setPilihId] = useState<number | null>(null)
   const [fotoBesar, setFotoBesar] = useState<string | null>(null)
@@ -160,7 +183,17 @@ export function VerifikasiPage({ user }: { user: User }) {
   const antrianUrut = ringkasan.antrian
     .filter((item) => filter === 'semua' || item.status === filter)
     .filter((item) => kategori === 'semua' || item.kategori === kategori)
+    .filter(
+      (item) => prioritas === 'semua' || item.prioritas_kategori === prioritas,
+    )
     .filter((item) => gedung === 'semua' || kunciGedung(item.lokasi) === gedung)
+    .filter((item) => {
+      if (tanggal === null) return true
+      const akhir = new Date(tanggal)
+      akhir.setDate(akhir.getDate() + 1)
+      const t = waktu(item)
+      return t >= tanggal && t < akhir.getTime()
+    })
     .filter(
       (item) =>
         !kata ||
@@ -178,11 +211,18 @@ export function VerifikasiPage({ user }: { user: User }) {
   const terpilih =
     antrianUrut.find((item) => item.id === pilihId) ?? antrianUrut[0]
 
+  // Hari yang dipilih dari grafik (untuk label chip dan penanda di grafik).
+  const indeksHari =
+    tanggal === null ? null : harian.findIndex((b) => b.awal === tanggal)
+  const hariDipilih = indeksHari !== null ? harian[indeksHari] : undefined
+
   const resetFilter = () => {
     setFilter('semua')
     setKategori('semua')
+    setPrioritas('semua')
     setGedung('semua')
     setCari('')
+    setTanggal(null)
   }
 
   // Mengembalikan true kalau berhasil, supaya dialog tahu kapan
@@ -258,73 +298,72 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
-            <div
-              role="group"
-              aria-label="Filter status"
-              className="flex flex-wrap gap-3"
-            >
-              <select
-                aria-label="Status"
-                value={filter}
-                onChange={(event) =>
-                  setFilter(event.target.value as StatusFilter)
-                }
-                className={cn(
-                  'h-10 rounded-xl border-[1.5px] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20',
-                  filter === 'semua' ? 'border-[#efe9d8]' : 'border-[#1f6b4f]',
-                )}
-              >
-                {FILTERS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.value === 'semua'
-                      ? item.label
-                      : `${item.label} (${counts?.[item.value as LaporanStatus] ?? 0})`}
-                  </option>
-                ))}
-              </select>
-              <label className="relative min-w-[14rem] flex-1">
-                <span className="sr-only">Cari laporan</span>
-                <Search
-                  aria-hidden="true"
-                  className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8a8f87]"
-                />
-                <input
-                  type="search"
-                  value={cari}
-                  onChange={(event) => setCari(event.target.value)}
-                  placeholder="Cari deskripsi, lokasi, atau pelapor…"
-                  className="h-10 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white pr-3 pl-10 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-                />
-              </label>
-              <select
-                aria-label="Kategori"
-                value={kategori}
-                onChange={(event) =>
-                  setKategori(event.target.value as 'semua' | LaporanKategori)
-                }
-                className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-              >
-                <option value="semua">Semua kategori</option>
-                {KATEGORI_VALUES.map((k) => (
-                  <option key={k} value={k}>
-                    {KATEGORI_LABEL[k]}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Gedung"
-                value={gedung}
-                onChange={(event) => setGedung(event.target.value)}
-                className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-              >
-                <option value="semua">Semua gedung</option>
-                {opsiGedung.map((k) => (
-                  <option key={k} value={k}>
-                    {labelGedung(k)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <VerifikasiFilter
+              cari={cari}
+              onCari={setCari}
+              jumlah={antrianUrut.length}
+              onReset={resetFilter}
+              grup={[
+                {
+                  key: 'status',
+                  judul: 'Status',
+                  nilai: filter,
+                  onPilih: (v) => setFilter(v as StatusFilter),
+                  opsi: FILTERS.filter((f) => f.value !== 'semua').map((f) => ({
+                    value: f.value,
+                    label: f.label,
+                    jumlah: counts?.[f.value as LaporanStatus] ?? 0,
+                  })),
+                },
+                {
+                  key: 'kategori',
+                  judul: 'Kategori',
+                  nilai: kategori,
+                  onPilih: (v) => setKategori(v as 'semua' | LaporanKategori),
+                  opsi: KATEGORI_VALUES.map((k) => ({
+                    value: k,
+                    label: KATEGORI_LABEL[k],
+                  })),
+                },
+                {
+                  key: 'prioritas',
+                  judul: 'Prioritas',
+                  nilai: prioritas,
+                  onPilih: setPrioritas,
+                  opsi: PRIORITAS_OPSI.map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                },
+                {
+                  key: 'gedung',
+                  judul: 'Gedung',
+                  nilai: gedung,
+                  onPilih: setGedung,
+                  opsi: opsiGedung.map((k) => ({
+                    value: k,
+                    label: labelGedung(k),
+                  })),
+                },
+              ]}
+            />
+
+            {hariDipilih && (
+              <div className="-mt-2 flex items-center gap-2 text-sm text-[#8a8f87]">
+                Tanggal:
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#e0f1e8] py-0.5 pr-1 pl-2.5 text-xs font-medium text-[#1f6b4f]">
+                  {hariDipilih.hari}, {hariDipilih.tanggal} {hariDipilih.bulan}
+                  <button
+                    type="button"
+                    aria-label="Hapus filter tanggal"
+                    onClick={() => setTanggal(null)}
+                    className="grid size-4.5 place-items-center rounded-full outline-none hover:bg-[#1f6b4f]/15 focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30"
+                  >
+                    <X aria-hidden="true" className="size-3" />
+                  </button>
+                </span>
+              </div>
+            )}
 
             <div className="grid items-start gap-6 xl:grid-cols-[1.5fr_1fr]">
               <section
@@ -371,8 +410,15 @@ export function VerifikasiPage({ user }: { user: User }) {
                             className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left focus-visible:outline-none"
                           >
                             <span className="min-w-0">
-                              <span className="block truncate font-medium text-[#1d2b26]">
-                                {item.deskripsi}
+                              {/* Judul + badge prioritas. Judul yang panjang
+                                  dipotong (truncate), badge tetap utuh. */}
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="truncate font-medium text-[#1d2b26]">
+                                  {item.deskripsi}
+                                </span>
+                                <PrioritasBadge
+                                  kategori={item.prioritas_kategori ?? null}
+                                />
                               </span>
                               <span className="mt-0.5 block truncate text-xs text-[#8a8f87]">
                                 {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
@@ -402,7 +448,13 @@ export function VerifikasiPage({ user }: { user: User }) {
               />
             </div>
 
-            <LaporanHarianCard harian={harian} />
+            <LaporanHarianCard
+              harian={harian}
+              terpilih={indeksHari}
+              onPilih={(i) =>
+                setTanggal(i === null ? null : (harian[i]?.awal ?? null))
+              }
+            />
           </>
         )}
       </div>

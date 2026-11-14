@@ -13,6 +13,13 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/features/auth/auth-query'
 import { DashboardActions } from '@/features/dashboard/dashboard-actions'
@@ -26,10 +33,12 @@ import {
 } from '@/features/dashboard/dashboard-utils'
 import {
   KATEGORI_LABEL,
+  PRIORITAS_LABEL,
   errorMessage,
   useLaporanList,
   type Laporan,
   type LaporanKategori,
+  type PrioritasKategori,
 } from '@/features/laporan/laporan-query'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import { StatusBadge } from '@/features/laporan/status-badge'
@@ -39,8 +48,24 @@ import { cn } from '@/lib/utils'
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-// Jumlah laporan yang ditampilkan di kartu "Laporan terbaru".
-const JUMLAH_TERBARU = 3
+// Pilihan filter prioritas diambil dari PRIORITAS_LABEL (sumber yang sama
+// dengan badge), jadi nilainya pasti cocok dengan data. Diurutkan dari yang
+// paling mendesak: Tinggi, Sedang, Rendah. Label di luar tiga itu (kalau
+// ada) ditaruh paling belakang.
+// Sengaja tidak di-export: file .tsx cuma boleh export komponen supaya
+// react-refresh tidak kasih warning baru.
+const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
+
+function urutanLabel(label: string): number {
+  const index = URUTAN_LABEL.indexOf(label.toLowerCase())
+  return index === -1 ? URUTAN_LABEL.length : index
+}
+
+const PRIORITAS_OPSI = (
+  Object.entries(PRIORITAS_LABEL) as Array<[PrioritasKategori, string]>
+).sort((a, b) => urutanLabel(a[1]) - urutanLabel(b[1]))
+
+const SEMUA_PRIORITAS = 'semua'
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
 // "laporan/abc.jpg"), bukan URL lengkap. Logikanya sama dengan fotoUrl di
@@ -132,6 +157,13 @@ function DashboardContent({
 }) {
   const ringkasan = hitungRingkasan(laporan)
 
+  // Semua laporan, diurutkan dari yang terbaru. Diurutkan di sini (bukan
+  // memakai ringkasan.antrian) supaya daftar ini tidak bergantung pada
+  // aturan filter di hitungRingkasan.
+  const semuaLaporan = [...laporan].sort((a, b) =>
+    (b.created_at ?? '').localeCompare(a.created_at ?? ''),
+  )
+
   return (
     <>
       <HeroAntrian ringkasan={ringkasan} />
@@ -171,11 +203,7 @@ function DashboardContent({
         />
       </section>
 
-      <LaporanTerbaru
-        // `antrian` sudah diurutkan dari yang terbaru oleh hitungRingkasan.
-        laporan={ringkasan.antrian.slice(0, JUMLAH_TERBARU)}
-        onBukaFoto={onBukaFoto}
-      />
+      <LaporanTerbaru laporan={semuaLaporan} onBukaFoto={onBukaFoto} />
     </>
   )
 }
@@ -300,6 +328,10 @@ function StatKartu({
   )
 }
 
+// Menampilkan semua laporan, bisa disaring per prioritas lewat dropdown
+// di sisi kanan judul. Tinggi daftar dibatasi (max-h-80, sekitar 4 baris)
+// dan bisa digulir, supaya halaman tidak memanjang kalau laporan banyak.
+// overscroll-contain mencegah halaman ikut bergulir saat daftar mentok.
 function LaporanTerbaru({
   laporan,
   onBukaFoto,
@@ -307,32 +339,67 @@ function LaporanTerbaru({
   laporan: Laporan[]
   onBukaFoto: (src: string) => void
 }) {
+  const [prioritas, setPrioritas] = useState<string>(SEMUA_PRIORITAS)
+
+  const disaring =
+    prioritas === SEMUA_PRIORITAS
+      ? laporan
+      : laporan.filter((item) => item.prioritas_kategori === prioritas)
+
+  const labelTerpilih =
+    prioritas === SEMUA_PRIORITAS
+      ? 'Semua prioritas'
+      : `Prioritas ${PRIORITAS_LABEL[prioritas as PrioritasKategori] ?? prioritas}`
+
+  const keterangan =
+    laporan.length === 0
+      ? 'Belum ada laporan masuk'
+      : prioritas === SEMUA_PRIORITAS
+        ? `Menampilkan ${laporan.length} laporan`
+        : `Menampilkan ${disaring.length} dari ${laporan.length} laporan`
+
   return (
     <section className={cn('p-6', CARD_CLASS)}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold">Laporan terbaru</h2>
-          <p className="text-sm text-neutral-500">
-            Menampilkan {JUMLAH_TERBARU} laporan terakhir
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold">Semua laporan</h2>
+          <p className="text-sm text-neutral-500">{keterangan}</p>
         </div>
-        <Link
-          to="/verifikasi"
-          search={{ filter: 'semua' }}
-          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[#1f6b4f] hover:underline focus-visible:outline-none"
-        >
-          Lihat semua
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
+
+        {laporan.length > 0 && (
+          <Select
+            value={prioritas}
+            onValueChange={(value) => setPrioritas(value ?? SEMUA_PRIORITAS)}
+          >
+            <SelectTrigger
+              aria-label="Filter prioritas"
+              className="w-[190px] shrink-0"
+            >
+              <SelectValue>{labelTerpilih}</SelectValue>
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value={SEMUA_PRIORITAS}>Semua prioritas</SelectItem>
+              {PRIORITAS_OPSI.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  Prioritas {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {laporan.length === 0 ? (
         <p className="mt-6 text-center text-sm text-neutral-400">
           Belum ada laporan masuk.
         </p>
+      ) : disaring.length === 0 ? (
+        <p className="mt-6 text-center text-sm text-neutral-400">
+          Tidak ada laporan dengan {labelTerpilih.toLowerCase()}.
+        </p>
       ) : (
-        <ul className="mt-3 divide-y divide-neutral-100">
-          {laporan.map((item) => (
+        <ul className="mt-3 max-h-80 divide-y divide-neutral-100 overflow-y-auto overscroll-contain pr-1">
+          {disaring.map((item) => (
             <li key={item.id} className="flex items-center gap-3 py-3">
               <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
               <div className="min-w-0 flex-1">

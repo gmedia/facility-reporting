@@ -22,6 +22,8 @@ export type RingkasanDashboard = {
 export type BarHarian = {
   tanggal: number
   bulan: string
+  hari: string // "Sab", "Min", dst.
+  awal: number // timestamp 00:00 hari itu, dipakai buat filter
   ariaLabel: string
   jumlah: number
   sorot: boolean
@@ -77,7 +79,7 @@ export function filterAntrian(
   return laporan
 }
 
-// Tujuh hari terakhir, termasuk hari ini. Dipakai buat grafik batang.
+// Tujuh hari terakhir, termasuk hari ini. Dipakai buat grafik harian.
 export function laporanPerHari(
   laporan: Laporan[],
   now = new Date(),
@@ -102,6 +104,8 @@ export function laporanPerHari(
     return {
       tanggal: date.getDate(),
       bulan: new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(date),
+      hari: new Intl.DateTimeFormat('id-ID', { weekday: 'short' }).format(date),
+      awal: date.getTime(),
       ariaLabel: new Intl.DateTimeFormat('id-ID', {
         day: 'numeric',
         month: 'long',

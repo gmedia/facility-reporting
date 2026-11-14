@@ -66,8 +66,8 @@ const formSchema = z.object({
     .optional()
     .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
   // Skala SMART 1–5, wajib diisi pelapor (backend mewajibkannya).
-  // z.coerce.number() agar string dari <input type="number"> otomatis
-  // dikonversi ke number sebelum di-validasi min/max.
+  // z.coerce.number() tetap dipakai sebagai pengaman, walaupun UI-nya
+  // sekarang tombol pilihan 1–5 (bukan input yang bisa diketik).
   nilai_kerusakan: z
     .coerce.number()
     .min(1, 'Nilai kerusakan wajib diisi (1–5)')
@@ -106,6 +106,74 @@ const FIELD_SERVER: ReadonlyArray<keyof FormValues> = [
   'nilai_dampak',
   'nilai_frekuensi',
 ]
+
+const SKALA_NILAI = [1, 2, 3, 4, 5] as const
+
+// Kalimat penjelasan sengaja pendek (satu baris) supaya tombol angka di
+// kedua kolom sejajar.
+const NILAI_FIELDS = [
+  {
+    name: 'nilai_kerusakan',
+    label: 'Nilai Kerusakan',
+    hint: 'Seberapa parah kondisinya.',
+  },
+  {
+    name: 'nilai_risiko',
+    label: 'Nilai Risiko',
+    hint: 'Seberapa berbahaya jika dibiarkan.',
+  },
+  {
+    name: 'nilai_dampak',
+    label: 'Nilai Dampak',
+    hint: 'Seberapa banyak yang terganggu.',
+  },
+  {
+    name: 'nilai_frekuensi',
+    label: 'Nilai Frekuensi',
+    hint: 'Seberapa sering terjadi.',
+  },
+] as const
+
+// Pilihan 1–5 berupa radio asli yang disembunyikan secara visual, jadi
+// keyboard (tab + panah) dan screen reader tetap jalan tanpa kode tambahan.
+// Tidak di-export, sama seperti LOKASI_VALUES (aturan react-refresh).
+function SkalaNilai({
+  name,
+  value,
+  onChange,
+  onBlur,
+}: {
+  name: string
+  value: number
+  onChange: (value: number) => void
+  onBlur: () => void
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-labelledby={`${name}-label`}
+      aria-describedby={`${name}-hint`}
+      className="grid grid-cols-5 gap-1.5"
+    >
+      {SKALA_NILAI.map((n) => (
+        <label key={n} className="cursor-pointer">
+          <input
+            type="radio"
+            name={name}
+            value={n}
+            checked={value === n}
+            onChange={() => onChange(n)}
+            onBlur={onBlur}
+            className="peer sr-only"
+          />
+          <span className="hover:bg-muted peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50 grid h-10 place-items-center rounded-xl border text-sm font-medium transition-colors">
+            {n}
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}
 
 export function LaporanForm() {
   const navigate = useNavigate()
@@ -269,86 +337,36 @@ export function LaporanForm() {
         )}
       />
 
-      {/* Skala SMART 1–5: nilai penilaian kerusakan, risiko, dampak, dan
-          frekuensi yang wajib diisi pelapor. Backend menghitung skor
-          prioritas dari keempat nilai ini. */}
-      <div className="grid grid-cols-2 gap-4">
-        <Controller
-          control={control}
-          name="nilai_kerusakan"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="nilai-kerusakan">Nilai Kerusakan (1–5)</FieldLabel>
-              <Input
-                id="nilai-kerusakan"
-                type="number"
-                min={1}
-                max={5}
-                {...field}
-              />
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
-            </Field>
-          )}
-        />
-        <Controller
-          control={control}
-          name="nilai_risiko"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="nilai-risiko">Nilai Risiko (1–5)</FieldLabel>
-              <Input
-                id="nilai-risiko"
-                type="number"
-                min={1}
-                max={5}
-                {...field}
-              />
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
-            </Field>
-          )}
-        />
-        <Controller
-          control={control}
-          name="nilai_dampak"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="nilai-dampak">Nilai Dampak (1–5)</FieldLabel>
-              <Input
-                id="nilai-dampak"
-                type="number"
-                min={1}
-                max={5}
-                {...field}
-              />
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
-            </Field>
-          )}
-        />
-        <Controller
-          control={control}
-          name="nilai_frekuensi"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="nilai-frekuensi">Nilai Frekuensi (1–5)</FieldLabel>
-              <Input
-                id="nilai-frekuensi"
-                type="number"
-                min={1}
-                max={5}
-                {...field}
-              />
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
-            </Field>
-          )}
-        />
+      {/* Skala SMART: pelapor memilih 1–5 lewat tombol, tidak mengetik.
+          Backend menghitung skor prioritas dari keempat nilai ini. */}
+      <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
+        {NILAI_FIELDS.map((item) => (
+          <Controller
+            key={item.name}
+            control={control}
+            name={item.name}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel id={`${item.name}-label`}>{item.label}</FieldLabel>
+                <p
+                  id={`${item.name}-hint`}
+                  className="text-muted-foreground -mt-1 text-xs leading-snug sm:min-h-4"
+                >
+                  {item.hint}
+                </p>
+                <SkalaNilai
+                  name={item.name}
+                  value={Number(field.value)}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+                <FieldError
+                  errors={fieldState.error ? [fieldState.error] : undefined}
+                />
+              </Field>
+            )}
+          />
+        ))}
       </div>
 
       {/* Tombol aksi utama diganti hijau tua, bukan warna --primary bawaan
