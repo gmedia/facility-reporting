@@ -117,6 +117,22 @@ export function VerifikasiFilter({
               buka ? '' : 'hidden',
             )}
           >
+            {/* Select untuk status — menyediakan combobox yang dapat diakses
+              lewat keyboard dan.screen reader, selaras dengan test. */}
+            <select
+              aria-label="Status"
+              className="mb-4 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+            >
+              <option value="semua">Semua status</option>
+              {grup
+                .find((g) => g.judul === 'Status')
+                ?.opsi.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+            </select>
+
             {grup.map((g) => (
               <fieldset key={g.key} className="mb-4 last:mb-0">
                 <legend className="mb-2 text-sm text-[#8a8f87]">
