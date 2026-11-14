@@ -110,7 +110,7 @@ export function VerifikasiFilter({
           {buka && (
             <div
               role="group"
-              aria-label="Filter laporan"
+              aria-label="Filter status"
               className="absolute top-12 right-0 z-20 max-h-[70dvh] w-[19rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border-[1.5px] border-[#efe9d8] bg-white p-4 shadow-lg"
             >
               {grup.map((g) => (
