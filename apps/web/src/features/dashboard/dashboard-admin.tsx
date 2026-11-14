@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
   Ban,
   Clock,
   ClipboardList,
@@ -48,10 +51,15 @@ import { cn } from '@/lib/utils'
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-// Pilihan filter prioritas diambil dari PRIORITAS_LABEL (sumber yang sama
-// dengan badge), jadi nilainya pasti cocok dengan data. Diurutkan dari yang
-// paling mendesak: Tinggi, Sedang, Rendah. Label di luar tiga itu (kalau
-// ada) ditaruh paling belakang.
+// Lebar kolom daftar laporan: Foto | Judul | Prioritas | Status.
+// Dipakai bersama oleh baris header dan baris data supaya selalu sejajar.
+const KOLOM_DESKTOP = 'md:grid-cols-[56px_minmax(0,1fr)_110px_120px]'
+
+// Pilihan jumlah baris per halaman. Default 5.
+const UKURAN_HALAMAN = [5, 10, 20]
+
+// Urutan prioritas dari yang paling mendesak. Label di luar tiga ini
+// (kalau ada) ditaruh paling belakang.
 // Sengaja tidak di-export: file .tsx cuma boleh export komponen supaya
 // react-refresh tidak kasih warning baru.
 const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
@@ -61,11 +69,52 @@ function urutanLabel(label: string): number {
   return index === -1 ? URUTAN_LABEL.length : index
 }
 
-const PRIORITAS_OPSI = (
-  Object.entries(PRIORITAS_LABEL) as Array<[PrioritasKategori, string]>
-).sort((a, b) => urutanLabel(a[1]) - urutanLabel(b[1]))
+function rankPrioritas(kategori: string | null | undefined): number {
+  if (!kategori) return URUTAN_LABEL.length
+  return urutanLabel(PRIORITAS_LABEL[kategori as PrioritasKategori] ?? kategori)
+}
 
-const SEMUA_PRIORITAS = 'semua'
+// Urutan status mengikuti alur kerja laporan. Status yang tidak ada di
+// daftar ini ditaruh paling belakang. Sesuaikan kalau nama status di
+// backend berbeda.
+const STATUS_URUTAN = [
+  'menunggu_verifikasi',
+  'terverifikasi',
+  'diproses',
+  'selesai',
+  'ditolak',
+]
+
+function rankStatus(status: string): number {
+  const index = STATUS_URUTAN.indexOf(status)
+  return index === -1 ? STATUS_URUTAN.length : index
+}
+
+type KolomUrut = 'judul' | 'prioritas' | 'status'
+type ArahUrut = 1 | -1
+
+// Nomor halaman yang ditampilkan di pagination. Kalau halamannya banyak,
+// bagian tengah diringkas dengan '…' (contoh: 1 … 4 5 6 … 12).
+function daftarHalaman(sekarang: number, total: number): Array<number | '…'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+
+  const set = new Set<number>([1, total, sekarang, sekarang - 1, sekarang + 1])
+  if (sekarang <= 3) [2, 3, 4].forEach((n) => set.add(n))
+  if (sekarang >= total - 2) {
+    ;[total - 1, total - 2, total - 3].forEach((n) => set.add(n))
+  }
+
+  const urut = [...set]
+    .filter((n) => n >= 1 && n <= total)
+    .sort((a, b) => a - b)
+
+  const hasil: Array<number | '…'> = []
+  urut.forEach((n, i) => {
+    if (i > 0 && n - urut[i - 1] > 1) hasil.push('…')
+    hasil.push(n)
+  })
+  return hasil
+}
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
 // "laporan/abc.jpg"), bukan URL lengkap. Logikanya sama dengan fotoUrl di
@@ -328,10 +377,76 @@ function StatKartu({
   )
 }
 
-// Menampilkan semua laporan, bisa disaring per prioritas lewat dropdown
-// di sisi kanan judul. Tinggi daftar dibatasi (max-h-80, sekitar 4 baris)
-// dan bisa digulir, supaya halaman tidak memanjang kalau laporan banyak.
-// overscroll-contain mencegah halaman ikut bergulir saat daftar mentok.
+// Tombol judul kolom yang bisa diklik untuk mengurutkan.
+function KolomUrut({
+  label,
+  aktif,
+  arah,
+  onClick,
+}: {
+  label: string
+  aktif: boolean
+  arah: ArahUrut
+  onClick: () => void
+}) {
+  const Icon = !aktif ? ArrowUpDown : arah === 1 ? ArrowUp : ArrowDown
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Urutkan berdasarkan ${label}`}
+      className={cn(
+        'inline-flex items-center gap-1.5 transition-colors hover:text-neutral-900',
+        aktif && 'text-neutral-900',
+      )}
+    >
+      {label}
+      <Icon
+        aria-hidden="true"
+        className={cn('size-3.5', aktif ? 'opacity-100' : 'opacity-50')}
+      />
+    </button>
+  )
+}
+
+// Tombol bulat-persegi di pagination (« ‹ 1 2 3 › »).
+function TombolHalaman({
+  label,
+  ariaLabel,
+  onClick,
+  disabled,
+  aktif,
+}: {
+  label: string
+  ariaLabel: string
+  onClick: () => void
+  disabled?: boolean
+  aktif?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-current={aktif ? 'page' : undefined}
+      className={cn(
+        'h-10 min-w-10 rounded-xl border border-[#efe9d8] bg-white px-2 text-sm transition-colors',
+        'hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-white',
+        aktif &&
+          'border-[#0f3d2e] bg-[#0f3d2e] font-bold text-white hover:bg-[#0f3d2e]',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+// Menampilkan semua laporan terbaru dengan header kolom yang bisa
+// diurutkan (Judul, Prioritas, Status) dan pagination. Klik header
+// pertama: naik, kedua: turun, ketiga: kembali ke urutan terbaru.
+// Setiap kali urutan atau jumlah baris berubah, halaman kembali ke 1.
 function LaporanTerbaru({
   laporan,
   onBukaFoto,
@@ -339,95 +454,214 @@ function LaporanTerbaru({
   laporan: Laporan[]
   onBukaFoto: (src: string) => void
 }) {
-  const [prioritas, setPrioritas] = useState<string>(SEMUA_PRIORITAS)
+  const [kolom, setKolom] = useState<KolomUrut | null>(null)
+  const [arah, setArah] = useState<ArahUrut>(1)
+  const [halaman, setHalaman] = useState(1)
+  const [ukuran, setUkuran] = useState(UKURAN_HALAMAN[0])
 
-  const disaring =
-    prioritas === SEMUA_PRIORITAS
-      ? laporan
-      : laporan.filter((item) => item.prioritas_kategori === prioritas)
+  function toggleUrut(target: KolomUrut) {
+    if (kolom !== target) {
+      setKolom(target)
+      setArah(1)
+    } else if (arah === 1) {
+      setArah(-1)
+    } else {
+      setKolom(null)
+      setArah(1)
+    }
+    setHalaman(1)
+  }
 
-  const labelTerpilih =
-    prioritas === SEMUA_PRIORITAS
-      ? 'Semua prioritas'
-      : `Prioritas ${PRIORITAS_LABEL[prioritas as PrioritasKategori] ?? prioritas}`
+  const urut = kolom
+    ? [...laporan].sort((a, b) => {
+        if (kolom === 'judul') {
+          return arah * a.deskripsi.localeCompare(b.deskripsi, 'id')
+        }
+        if (kolom === 'prioritas') {
+          return (
+            arah *
+            (rankPrioritas(a.prioritas_kategori) -
+              rankPrioritas(b.prioritas_kategori))
+          )
+        }
+        return arah * (rankStatus(a.status) - rankStatus(b.status))
+      })
+    : laporan
+
+  // Halaman dijaga supaya tidak melewati total (misal data berkurang
+  // setelah refetch).
+  const totalHalaman = Math.max(1, Math.ceil(urut.length / ukuran))
+  const halamanAktif = Math.min(halaman, totalHalaman)
+  const tampil = urut.slice(
+    (halamanAktif - 1) * ukuran,
+    halamanAktif * ukuran,
+  )
 
   const keterangan =
     laporan.length === 0
       ? 'Belum ada laporan masuk'
-      : prioritas === SEMUA_PRIORITAS
-        ? `Menampilkan ${laporan.length} laporan`
-        : `Menampilkan ${disaring.length} dari ${laporan.length} laporan`
+      : `Menampilkan ${laporan.length} laporan`
 
   return (
     <section className={cn('p-6', CARD_CLASS)}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold">Laporan terbaru</h2>
-          <p className="text-sm text-neutral-500">{keterangan}</p>
-        </div>
-
-        {laporan.length > 0 && (
-          <Select
-            value={prioritas}
-            onValueChange={(value) => setPrioritas(value ?? SEMUA_PRIORITAS)}
-          >
-            <SelectTrigger
-              aria-label="Filter prioritas"
-              className="w-[190px] shrink-0"
-            >
-              <SelectValue>{labelTerpilih}</SelectValue>
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value={SEMUA_PRIORITAS}>Semua prioritas</SelectItem>
-              {PRIORITAS_OPSI.map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  Prioritas {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+      <div className="min-w-0">
+        <h2 className="text-base font-semibold">Laporan terbaru</h2>
+        <p className="text-sm text-neutral-500">{keterangan}</p>
       </div>
 
       {laporan.length === 0 ? (
         <p className="mt-6 text-center text-sm text-neutral-400">
           Belum ada laporan masuk.
         </p>
-      ) : disaring.length === 0 ? (
-        <p className="mt-6 text-center text-sm text-neutral-400">
-          Tidak ada laporan dengan {labelTerpilih.toLowerCase()}.
-        </p>
       ) : (
-        <ul className="mt-3 max-h-80 divide-y divide-neutral-100 overflow-y-auto overscroll-contain pr-1">
-          {disaring.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 py-3">
-              <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+        <>
+          {/* Header kolom: hanya tampil di layar md ke atas. */}
+          <div
+            className={cn(
+              'mt-4 hidden items-center gap-x-4 rounded-xl bg-[#faf7ee] px-3 py-2.5 text-xs font-semibold text-neutral-500 md:grid',
+              KOLOM_DESKTOP,
+            )}
+          >
+            <span>Foto</span>
+            <span>
+              <KolomUrut
+                label="Judul"
+                aktif={kolom === 'judul'}
+                arah={arah}
+                onClick={() => toggleUrut('judul')}
+              />
+            </span>
+            <span>
+              <KolomUrut
+                label="Prioritas"
+                aktif={kolom === 'prioritas'}
+                arah={arah}
+                onClick={() => toggleUrut('prioritas')}
+              />
+            </span>
+            <span>
+              <KolomUrut
+                label="Status"
+                aktif={kolom === 'status'}
+                arah={arah}
+                onClick={() => toggleUrut('status')}
+              />
+            </span>
+          </div>
+
+          <ul className="mt-1 divide-y divide-neutral-100">
+            {tampil.map((item) => (
+              <li
+                key={item.id}
+                className={cn(
+                  'grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:gap-x-4',
+                  KOLOM_DESKTOP,
+                )}
+              >
+                <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
+
+                <div className="min-w-0">
                   <p className="truncate font-medium">{item.deskripsi}</p>
-                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
-                </div>
-                <p className="mt-0.5 truncate text-xs text-neutral-500">
-                  {kategoriLabel(item.kategori)} · {item.lokasi}
+                  <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
+                    {formatTanggal(item.created_at)}
+                  </p>
                   {item.pelapor && (
-                    <>
-                      {' · oleh '}
+                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                      Pelapor:{' '}
                       <span className="font-semibold text-[#0f3d2e]">
                         {item.pelapor.name}
                       </span>
-                    </>
+                    </p>
                   )}
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <StatusBadge status={item.status} />
-                <span className="text-xs text-neutral-400">
-                  {formatTanggal(item.created_at)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </div>
+
+                <div className="col-start-2 md:col-start-auto">
+                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+                </div>
+                <div className="col-start-2 md:col-start-auto">
+                  <StatusBadge status={item.status} />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Pagination */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-3 border-t border-[#efe9d8] pt-4 text-sm md:justify-between">
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(ukuran)}
+                onValueChange={(value) => {
+                  setUkuran(Number(value ?? UKURAN_HALAMAN[0]))
+                  setHalaman(1)
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Jumlah baris per halaman"
+                  className="w-[76px] shrink-0"
+                >
+                  <SelectValue>{ukuran}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {UKURAN_HALAMAN.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span>Jumlah baris per halaman</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <span className="mr-2 font-medium">
+                Halaman {halamanAktif} dari {totalHalaman}
+              </span>
+
+              <TombolHalaman
+                label="«"
+                ariaLabel="Halaman pertama"
+                onClick={() => setHalaman(1)}
+                disabled={halamanAktif === 1}
+              />
+              <TombolHalaman
+                label="‹"
+                ariaLabel="Halaman sebelumnya"
+                onClick={() => setHalaman(halamanAktif - 1)}
+                disabled={halamanAktif === 1}
+              />
+
+              {daftarHalaman(halamanAktif, totalHalaman).map((n, i) =>
+                n === '…' ? (
+                  <span key={`titik-${i}`} className="px-1 text-neutral-400">
+                    …
+                  </span>
+                ) : (
+                  <TombolHalaman
+                    key={n}
+                    label={String(n)}
+                    ariaLabel={`Halaman ${n}`}
+                    onClick={() => setHalaman(n)}
+                    aktif={n === halamanAktif}
+                  />
+                ),
+              )}
+
+              <TombolHalaman
+                label="›"
+                ariaLabel="Halaman berikutnya"
+                onClick={() => setHalaman(halamanAktif + 1)}
+                disabled={halamanAktif === totalHalaman}
+              />
+              <TombolHalaman
+                label="»"
+                ariaLabel="Halaman terakhir"
+                onClick={() => setHalaman(totalHalaman)}
+                disabled={halamanAktif === totalHalaman}
+              />
+            </div>
+          </div>
+        </>
       )}
     </section>
   )
