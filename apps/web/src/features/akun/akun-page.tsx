@@ -384,7 +384,7 @@ function TabProfil({ user }: { user: User }) {
           <FieldLabel htmlFor="akun-email">E-mail</FieldLabel>
           <Input
             id="akun-email"
-            value={user.email}
+            value={user.email ?? ''}
             readOnly
             className="h-12 rounded-xl"
           />

@@ -110,7 +110,7 @@ function daftarHalaman(sekarang: number, total: number): Array<number | '…'> {
 
   const hasil: Array<number | '…'> = []
   urut.forEach((n, i) => {
-    if (i > 0 && n - urut[i - 1] > 1) hasil.push('…')
+    if (i > 0 && n - (urut[i - 1] ?? 0) > 1) hasil.push('…')
     hasil.push(n)
   })
   return hasil
@@ -490,9 +490,12 @@ function LaporanTerbaru({
 
   // Halaman dijaga supaya tidak melewati total (misal data berkurang
   // setelah refetch).
-  const totalHalaman = Math.max(1, Math.ceil(urut.length / ukuran))
+  const totalHalaman = Math.max(1, Math.ceil(urut.length / (ukuran ?? 5)))
   const halamanAktif = Math.min(halaman, totalHalaman)
-  const tampil = urut.slice((halamanAktif - 1) * ukuran, halamanAktif * ukuran)
+  const tampil = urut.slice(
+    (halamanAktif - 1) * (ukuran ?? 5),
+    halamanAktif * (ukuran ?? 5),
+  )
 
   const keterangan =
     laporan.length === 0
