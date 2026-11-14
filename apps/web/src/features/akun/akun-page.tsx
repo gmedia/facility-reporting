@@ -142,7 +142,7 @@ function PengaturanIsi({
 
       <KartuKelolaAkun user={user} />
       <KartuKeamanan />
-      <KartuBantuan />
+      {user.role === 'user' && <KartuBantuan />}
     </div>
   )
 }
