@@ -129,6 +129,7 @@ export function VerifikasiFilter({
                 onChange={(event) => statusGrup.onPilih(event.target.value)}
                 className="mb-4 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 py-2 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
               >
+                <option value="semua">Semua status</option>
                 {statusGrup.opsi.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
