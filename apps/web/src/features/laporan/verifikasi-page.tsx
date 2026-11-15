@@ -473,8 +473,10 @@ export function VerifikasiPage({ user }: { user: User }) {
               Verifikasi
             </h1>
             <p className="truncate text-sm text-[#8a8f87]">
-              {tab === 'antrian' ? 'Antrian laporan' : 'Riwayat laporan'} ·{' '}
-              {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
+              {tab === 'antrian'
+                ? 'Antrian laporan'
+                : 'Riwayat laporan selesai'}{' '}
+              · {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
             </p>
           </div>
 
