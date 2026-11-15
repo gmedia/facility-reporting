@@ -191,10 +191,10 @@ export function LaporanForm() {
       lokasi: '',
       deskripsi: '',
       foto: undefined,
-      nilai_kerusakan: 1,
-      nilai_risiko: 1,
-      nilai_dampak: 1,
-      nilai_frekuensi: 1,
+      nilai_kerusakan: 0,
+      nilai_risiko: 0,
+      nilai_dampak: 0,
+      nilai_frekuensi: 0,
     },
   })
 

@@ -153,6 +153,17 @@ async function isiForm(user: UserEvent) {
     'Proyektor kelas mati total dan kabelnya terkelupas.',
   )
   pilihFoto()
+
+  // defaultValues skala SMART sekarang 0 — harus dipilih eksplisit agar
+  // form lolos validasi .min(1) (lihat laporan-form.tsx defaultValues).
+  const pilihNilai = async (label: string, nilai: number) => {
+    const rg = screen.getByRole('radiogroup', { name: label })
+    await user.click(within(rg).getByRole('radio', { name: String(nilai) }))
+  }
+  await pilihNilai('Nilai Kerusakan', 3)
+  await pilihNilai('Nilai Risiko', 3)
+  await pilihNilai('Nilai Dampak', 3)
+  await pilihNilai('Nilai Frekuensi', 3)
 }
 
 // Foto sekarang wajib, jadi tiap test yang mau submit harus nempelkin file.
@@ -237,6 +248,10 @@ describe('halaman /lapor', () => {
     expect(options.body).toBeInstanceOf(FormData)
     expect(options.body.get('kategori')).toBe('elektronik')
     expect(options.body.get('lokasi')).toBe('Gedung D')
+    expect(options.body.get('nilai_kerusakan')).toBe('3')
+    expect(options.body.get('nilai_risiko')).toBe('3')
+    expect(options.body.get('nilai_dampak')).toBe('3')
+    expect(options.body.get('nilai_frekuensi')).toBe('3')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
