@@ -239,19 +239,19 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
     expect(
-      await screen.findByText('Nonaktifkan akun Super Admin?'),
+      await screen.findByText('Nonaktifkan akun admin?'),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Ya, nonaktifkan' }),
+      screen.getByRole('button', { name: 'Ya, Nonaktifkan' }),
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
 
     fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
     expect(
-      await screen.findByText('Aktifkan akun Akun Nonaktif?'),
+      await screen.findByText('Aktifkan akun admin?'),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Ya, aktifkan' }),
+      screen.getByRole('button', { name: 'Ya, Aktifkan' }),
     ).toBeInTheDocument()
   })
 
@@ -262,7 +262,7 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Ya, nonaktifkan' }),
+      await screen.findByRole('button', { name: 'Ya, Nonaktifkan' }),
     )
     await waitFor(() =>
       expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/deactivate', {
@@ -271,7 +271,7 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     )
 
     fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Ya, aktifkan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya, Aktifkan' }))
     await waitFor(() =>
       expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/activate', {
         params: { path: { user: 2 } },
