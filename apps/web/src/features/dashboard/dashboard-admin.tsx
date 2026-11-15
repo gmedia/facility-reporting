@@ -51,9 +51,9 @@ import { cn } from '@/lib/utils'
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-// Lebar kolom daftar laporan: Foto | Judul | Prioritas | Status.
+// Lebar kolom daftar laporan: No | Foto | Judul | Prioritas | Status.
 // Dipakai bersama oleh baris header dan baris data supaya selalu sejajar.
-const KOLOM_DESKTOP = 'md:grid-cols-[56px_minmax(0,1fr)_110px_120px]'
+const KOLOM_DESKTOP = 'md:grid-cols-[40px_56px_minmax(0,1fr)_110px_120px]'
 
 // Pilihan jumlah baris per halaman. Default 5.
 const UKURAN_HALAMAN = [5, 10, 20]
@@ -522,6 +522,7 @@ function LaporanTerbaru({
               KOLOM_DESKTOP,
             )}
           >
+            <span className="text-xs font-semibold text-neutral-500">No</span>
             <span>Foto</span>
             <span>
               <KolomUrut
@@ -550,14 +551,18 @@ function LaporanTerbaru({
           </div>
 
           <ul className="mt-1 divide-y divide-neutral-100">
-            {tampil.map((item) => (
+            {tampil.map((item, itemIndex) => (
               <li
                 key={item.id}
                 className={cn(
-                  'grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:gap-x-4',
+                  'grid grid-cols-[40px_56px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:gap-x-4',
                   KOLOM_DESKTOP,
                 )}
               >
+                {/* Nomor urut: (halaman-1) * ukuran + index + 1. */}
+                <div className="relative z-10 text-center text-xs font-medium text-neutral-500 md:row-span-1">
+                  {(halamanAktif - 1) * (ukuran ?? 5) + itemIndex + 1}
+                </div>
                 <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
 
                 <div className="min-w-0">

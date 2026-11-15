@@ -56,7 +56,7 @@ const PER_HALAMAN_AWAL = 10
 
 // Kolom daftar: foto | judul | prioritas | status. Dipakai bersama oleh
 // baris header dan baris data supaya kolomnya selalu sejajar.
-const KOLOM = 'md:grid-cols-[3.5rem_minmax(0,1fr)_7rem_9rem]'
+const KOLOM = 'md:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_7rem_9rem]'
 
 // Status final (PR #92): tidak ada aksi lanjutan. Laporan dengan status ini
 // keluar dari Antrian dan pindah ke Riwayat.
@@ -621,14 +621,18 @@ export function VerifikasiPage({ user }: { user: User }) {
                   <KepalaDaftar urut={urut} onUrut={ubahUrut} />
 
                   <ul className="divide-y divide-[#efe9d8]">
-                    {tampak.map((item) => (
+                    {tampak.map((item, itemIndex) => (
                       <li
                         key={item.id}
                         className={cn(
-                          'relative grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5 px-4 py-3 hover:bg-[#faf3e5]',
+                          'relative grid grid-cols-[2.5rem_3.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5 px-4 py-3 hover:bg-[#faf3e5]',
                           KOLOM,
                         )}
                       >
+                        {/* Nomor urut: halamanEfektif * perHalaman + index + 1. */}
+                        <div className="relative z-10 row-span-3 text-center text-[#5f655d] md:row-span-1">
+                          {halamanEfektif * perHalaman + itemIndex + 1}
+                        </div>
                         {/* z-10 supaya foto tetap bisa diklik walau seluruh
                             baris menjadi area klik untuk membuka detail. */}
                         <div className="relative z-10 row-span-3 md:row-span-1">
@@ -745,6 +749,7 @@ function KepalaDaftar({
         KOLOM,
       )}
     >
+      <span className="text-xs font-semibold text-[#5f655d]">No</span>
       <span className="text-xs font-semibold text-[#5f655d]">Foto</span>
       <KolomUrut kunci="judul" urut={urut} onUrut={onUrut}>
         Judul
