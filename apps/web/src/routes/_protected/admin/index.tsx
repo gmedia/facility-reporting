@@ -274,6 +274,10 @@ function AdminUsersPage() {
                           >
                             Edit
                           </Button>
+                          {/* Label & gaya mengikuti AKSI yang akan dijalankan,
+                              bukan status barisnya: akun aktif ditawari
+                              "Nonaktifkan" (merah), akun nonaktif ditawari
+                              "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
                           <Button
                             type="button"
                             size="sm"
