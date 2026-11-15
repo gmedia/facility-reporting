@@ -109,6 +109,17 @@ const FIELD_SERVER: ReadonlyArray<keyof FormValues> = [
 
 const SKALA_NILAI = [1, 2, 3, 4, 5] as const
 
+// Arah skala yang ditampilkan di bawah setiap tombol angka, supaya
+// mahasiswa tidak menebak artinya. Sama dengan petunjuk di samping kanan
+// halaman (1–2 Rendah, 3 Sedang, 4–5 Tinggi).
+const NILAI_ARAH: Record<number, string> = {
+  1: 'Rendah',
+  2: 'Rendah',
+  3: 'Sedang',
+  4: 'Tinggi',
+  5: 'Tinggi',
+}
+
 // Kalimat penjelasan sengaja pendek (satu baris) supaya tombol angka di
 // kedua kolom sejajar.
 const NILAI_FIELDS = [
@@ -156,7 +167,10 @@ function SkalaNilai({
       className="grid grid-cols-5 gap-1.5"
     >
       {SKALA_NILAI.map((n) => (
-        <label key={n} className="cursor-pointer">
+        <label
+          key={n}
+          className="flex cursor-pointer flex-col items-center gap-0.5"
+        >
           <input
             type="radio"
             name={name}
@@ -169,6 +183,9 @@ function SkalaNilai({
           <span className="hover:bg-muted grid h-10 place-items-center rounded-xl border text-sm font-medium transition-colors peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50">
             {n}
           </span>
+          <p className="text-[10px] leading-none text-neutral-500">
+            {NILAI_ARAH[n]}
+          </p>
         </label>
       ))}
     </div>

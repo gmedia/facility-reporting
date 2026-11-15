@@ -156,9 +156,14 @@ async function isiForm(user: UserEvent) {
 
   // defaultValues skala SMART sekarang 0 — harus dipilih eksplisit agar
   // form lolos validasi .min(1) (lihat laporan-form.tsx defaultValues).
+  // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
+  // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
   const pilihNilai = async (label: string, nilai: number) => {
     const rg = screen.getByRole('radiogroup', { name: label })
-    await user.click(within(rg).getByRole('radio', { name: String(nilai) }))
+    const radio = within(rg)
+      .getAllByRole('radio')
+      .find((r) => (r as HTMLInputElement).value === String(nilai))
+    await user.click(radio as Element)
   }
   await pilihNilai('Nilai Kerusakan', 3)
   await pilihNilai('Nilai Risiko', 3)

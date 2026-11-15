@@ -177,7 +177,12 @@ describe('form laporan /lapor', () => {
     // Pilih nilai SMART: 3, 4, 2, 5
     const pilihNilai = async (labelRadiogroup: string, nilai: number) => {
       const rg = screen.getByRole('radiogroup', { name: labelRadiogroup })
-      await user.click(within(rg).getByRole('radio', { name: String(nilai) }))
+      // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
+      // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
+      const radio = within(rg)
+        .getAllByRole('radio')
+        .find((r) => (r as HTMLInputElement).value === String(nilai))
+      await user.click(radio as Element)
     }
 
     await pilihNilai('Nilai Kerusakan', 3)
