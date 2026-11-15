@@ -247,9 +247,7 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
 
     fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
-    expect(
-      await screen.findByText('Aktifkan akun admin?'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Aktifkan akun admin?')).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Ya, Aktifkan' }),
     ).toBeInTheDocument()
