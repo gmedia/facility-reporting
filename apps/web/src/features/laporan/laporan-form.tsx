@@ -180,7 +180,7 @@ function SkalaNilai({
             onBlur={onBlur}
             className="peer sr-only"
           />
-          <span className="hover:bg-muted grid h-10 place-items-center rounded-xl border text-sm font-medium transition-colors peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50">
+          <span className="grid size-9 place-items-center rounded-full border border-neutral-200 text-xs font-medium transition-colors peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50">
             {n}
           </span>
           <p className="text-[10px] leading-none text-neutral-500">
