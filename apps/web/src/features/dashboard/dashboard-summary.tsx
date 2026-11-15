@@ -264,54 +264,216 @@ export function PrioritasCard({
   )
 }
 
-export function LaporanHarianCard({ harian }: { harian: BarHarian[] }) {
-  const maxHarian = Math.max(1, ...harian.map((item) => item.jumlah))
+// ------------------------------------------------------------------
+// Grafik "Laporan per hari" (garis + area, 7 hari terakhir)
+// ------------------------------------------------------------------
+
+// Ukuran kanvas grafik (viewBox). Tinggi tampil diatur CSS (h-24), garis
+// ikut melebar karena preserveAspectRatio="none"; titiknya HTML biasa
+// supaya tetap bulat.
+const LEBAR = 700
+const TINGGI = 96
+const ATAS = 34 // y titik tertinggi, menyisakan ruang buat tooltip
+const DASAR = 84 // y garis dasar (nol laporan)
+
+type Titik = { x: number; y: number }
+
+// Kurva halus tanpa overshoot: tiap segmen melengkung S antar dua titik.
+function buatGaris(titik: Titik[]): string {
+  let d = ''
+  let prev: Titik | null = null
+  for (const t of titik) {
+    if (!prev) {
+      d = `M${t.x} ${t.y}`
+    } else {
+      const m = (prev.x + t.x) / 2
+      d += ` C${m} ${prev.y} ${m} ${t.y} ${t.x} ${t.y}`
+    }
+    prev = t
+  }
+  return d
+}
+
+// Dua kolom terkiri/terkanan tooltipnya ditempelkan ke tepi supaya tidak
+// terpotong keluar kartu.
+function posisiTooltip(i: number, n: number): string {
+  if (i < 2) return 'left-0'
+  if (i >= n - 2) return 'right-0'
+  return 'left-1/2 -translate-x-1/2'
+}
+
+export function LaporanHarianCard({
+  harian,
+  terpilih = null,
+  onPilih,
+}: {
+  harian: BarHarian[]
+  // Indeks hari yang sedang dipilih (opsional, buat filter).
+  terpilih?: number | null
+  // Kalau diisi, titik bisa diklik. Klik lagi pada yang sama = lepas.
+  onPilih?: (indeks: number | null) => void
+}) {
+  const n = harian.length
   const total = harian.reduce((acc, item) => acc + item.jumlah, 0)
-  const puncak = harian.reduce<BarHarian | null>(
-    (acc, item) => (!acc || item.jumlah > acc.jumlah ? item : acc),
-    null,
-  )
+  const maks = Math.max(1, ...harian.map((item) => item.jumlah))
+
+  const data = harian.map((bar, i) => ({
+    bar,
+    x: ((i + 0.5) / n) * LEBAR,
+    y: DASAR - (bar.jumlah / maks) * (DASAR - ATAS),
+  }))
+  const garis = buatGaris(data)
+  const pertama = data[0]
+  const terakhir = data[data.length - 1]
+  const area =
+    pertama && terakhir
+      ? `${garis} L${terakhir.x} ${DASAR} L${pertama.x} ${DASAR} Z`
+      : ''
 
   return (
-    <section className={KARTU}>
+    <section className={cn(KARTU, 'py-4')}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Laporan per hari</h2>
         <span className={CHIP}>{periodeHarian(harian)}</span>
       </div>
-      <p className="mt-2 text-sm text-neutral-500">
-        {total === 0 || !puncak
-          ? 'Belum ada laporan dalam 7 hari terakhir.'
-          : `${total} laporan dalam 7 hari. Paling ramai ${puncak.ariaLabel} dengan ${puncak.jumlah} laporan.`}
-      </p>
-      <div className="mt-6 flex items-end justify-between gap-2 sm:gap-4">
-        {harian.map((bar) => (
-          <div
-            key={bar.ariaLabel}
-            className="group flex flex-1 flex-col items-center gap-2"
-          >
-            <span
-              className={cn(
-                'text-xs font-semibold text-emerald-800 transition-opacity',
-                bar.sorot ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-              )}
-            >
-              {bar.jumlah}
-            </span>
-            <div
-              role="img"
-              aria-label={`${bar.jumlah} laporan pada ${bar.ariaLabel}`}
-              className={cn(
-                'w-full max-w-10 rounded-xl transition-colors sm:max-w-9',
-                bar.sorot
-                  ? 'bg-[#0f3d2e]'
-                  : 'bg-emerald-100 group-hover:bg-emerald-300',
-              )}
-              style={{ height: `${(bar.jumlah / maxHarian) * 9}rem` }}
-            />
-            <span className="text-sm text-neutral-400">{bar.tanggal}</span>
+
+      {total === 0 || n === 0 ? (
+        <p className="py-3 text-sm text-neutral-500">
+          Belum ada laporan dalam 7 hari terakhir.
+        </p>
+      ) : (
+        <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-end sm:gap-7">
+          <div className="flex shrink-0 items-baseline gap-2 sm:block sm:min-w-[5.5rem] sm:pb-9">
+            <p className="text-4xl leading-none font-bold text-[#0f3d2e]">
+              {total}
+            </p>
+            <p className="text-xs leading-snug text-neutral-500 sm:mt-1.5">
+              laporan
+              <br className="hidden sm:block" /> 7 hari terakhir
+            </p>
           </div>
-        ))}
-      </div>
+
+          <div className="relative min-w-0 flex-1">
+            <svg
+              viewBox={`0 0 ${LEBAR} ${TINGGI}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-24 w-full overflow-visible"
+            >
+              <defs>
+                <linearGradient
+                  id="grad-laporan-harian"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0" stopColor="#1f6b4f" stopOpacity={0.28} />
+                  <stop offset="1" stopColor="#1f6b4f" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <path
+                d={`M0 ${DASAR}H${LEBAR}`}
+                fill="none"
+                stroke="#e4e0d2"
+                strokeDasharray="4 4"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path d={area} fill="url(#grad-laporan-harian)" />
+              <path
+                d={garis}
+                fill="none"
+                stroke="#1f6b4f"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+
+            <div
+              role="group"
+              aria-label="Jumlah laporan per hari"
+              className="relative grid"
+              style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+            >
+              {data.map(({ bar, y }, i) => {
+                const aktif = terpilih === i
+                const nol = bar.jumlah === 0
+                return (
+                  <button
+                    key={bar.ariaLabel}
+                    type="button"
+                    aria-pressed={onPilih ? aktif : undefined}
+                    aria-label={`${bar.jumlah} laporan pada ${bar.ariaLabel}`}
+                    onClick={() => onPilih?.(aktif ? null : i)}
+                    className={cn(
+                      'group relative rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35',
+                      onPilih ? 'cursor-pointer' : 'cursor-default',
+                    )}
+                  >
+                    <span className="relative block h-24">
+                      {/* garis bantu vertikal */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y }}
+                        className={cn(
+                          'absolute bottom-3 left-1/2 border-l-[1.5px] border-dashed border-[#1f6b4f] opacity-0 transition-opacity group-hover:opacity-55 group-focus-visible:opacity-55',
+                          aktif && 'opacity-55',
+                        )}
+                      />
+                      {/* titik data */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y }}
+                        className={cn(
+                          'absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-transform group-hover:scale-125 group-focus-visible:scale-125',
+                          nol
+                            ? 'size-[7px] border-2 border-emerald-100 bg-white'
+                            : bar.sorot
+                              ? 'size-3.5 border-[2.5px] border-[#0f3d2e] bg-[#0f3d2e]'
+                              : 'size-[11px] border-[2.5px] border-[#1f6b4f] bg-white group-hover:border-[#0f3d2e]',
+                          aktif && 'scale-125 border-[#0f3d2e] bg-[#0f3d2e]',
+                        )}
+                      />
+                      {/* tooltip */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y - 12 }}
+                        className={cn(
+                          'pointer-events-none absolute z-10 -translate-y-full rounded-lg bg-[#1d2b26] px-2.5 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+                          posisiTooltip(i, n),
+                          aktif && 'opacity-100',
+                        )}
+                      >
+                        {bar.hari}, {bar.tanggal} {bar.bulan} · {bar.jumlah}{' '}
+                        laporan
+                      </span>
+                    </span>
+
+                    <span
+                      className={cn(
+                        'mt-0.5 block text-center text-xs leading-tight text-neutral-400',
+                        bar.sorot && 'font-semibold text-[#0f3d2e]',
+                      )}
+                    >
+                      {bar.sorot ? 'Hari ini' : bar.hari}
+                      <span
+                        className={cn(
+                          'block text-[13px] text-neutral-700',
+                          bar.sorot && 'text-[#0f3d2e]',
+                        )}
+                      >
+                        {bar.tanggal}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

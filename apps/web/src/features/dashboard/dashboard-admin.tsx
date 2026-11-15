@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
   Ban,
   Clock,
   ClipboardList,
@@ -13,6 +16,13 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/features/auth/auth-query'
 import { DashboardActions } from '@/features/dashboard/dashboard-actions'
@@ -26,10 +36,12 @@ import {
 } from '@/features/dashboard/dashboard-utils'
 import {
   KATEGORI_LABEL,
+  PRIORITAS_LABEL,
   errorMessage,
   useLaporanList,
   type Laporan,
   type LaporanKategori,
+  type PrioritasKategori,
 } from '@/features/laporan/laporan-query'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import { StatusBadge } from '@/features/laporan/status-badge'
@@ -39,8 +51,70 @@ import { cn } from '@/lib/utils'
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-// Jumlah laporan yang ditampilkan di kartu "Laporan terbaru".
-const JUMLAH_TERBARU = 3
+// Lebar kolom daftar laporan: No | Foto | Judul | Prioritas | Status.
+// Dipakai bersama oleh baris header dan baris data supaya selalu sejajar.
+const KOLOM_DESKTOP = 'md:grid-cols-[40px_56px_minmax(0,1fr)_110px_120px]'
+
+// Pilihan jumlah baris per halaman. Default 5.
+const UKURAN_HALAMAN = [5, 10, 20]
+
+// Urutan prioritas dari yang paling mendesak. Label di luar tiga ini
+// (kalau ada) ditaruh paling belakang.
+// Sengaja tidak di-export: file .tsx cuma boleh export komponen supaya
+// react-refresh tidak kasih warning baru.
+const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
+
+function urutanLabel(label: string): number {
+  const index = URUTAN_LABEL.indexOf(label.toLowerCase())
+  return index === -1 ? URUTAN_LABEL.length : index
+}
+
+function rankPrioritas(kategori: string | null | undefined): number {
+  if (!kategori) return URUTAN_LABEL.length
+  return urutanLabel(PRIORITAS_LABEL[kategori as PrioritasKategori] ?? kategori)
+}
+
+// Urutan status mengikuti alur kerja laporan. Status yang tidak ada di
+// daftar ini ditaruh paling belakang. Sesuaikan kalau nama status di
+// backend berbeda.
+const STATUS_URUTAN = [
+  'menunggu_verifikasi',
+  'terverifikasi',
+  'diproses',
+  'selesai',
+  'ditolak',
+]
+
+function rankStatus(status: string): number {
+  const index = STATUS_URUTAN.indexOf(status)
+  return index === -1 ? STATUS_URUTAN.length : index
+}
+
+type KolomUrut = 'judul' | 'prioritas' | 'status'
+type ArahUrut = 1 | -1
+
+// Nomor halaman yang ditampilkan di pagination. Kalau halamannya banyak,
+// bagian tengah diringkas dengan '…' (contoh: 1 … 4 5 6 … 12).
+function daftarHalaman(sekarang: number, total: number): Array<number | '…'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+
+  const set = new Set<number>([1, total, sekarang, sekarang - 1, sekarang + 1])
+  if (sekarang <= 3) [2, 3, 4].forEach((n) => set.add(n))
+  if (sekarang >= total - 2) {
+    ;[total - 1, total - 2, total - 3].forEach((n) => set.add(n))
+  }
+
+  const urut = [...set]
+    .filter((n) => n >= 1 && n <= total)
+    .sort((a, b) => a - b)
+
+  const hasil: Array<number | '…'> = []
+  urut.forEach((n, i) => {
+    if (i > 0 && n - (urut[i - 1] ?? 0) > 1) hasil.push('…')
+    hasil.push(n)
+  })
+  return hasil
+}
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
 // "laporan/abc.jpg"), bukan URL lengkap. Logikanya sama dengan fotoUrl di
@@ -132,6 +206,13 @@ function DashboardContent({
 }) {
   const ringkasan = hitungRingkasan(laporan)
 
+  // Semua laporan, diurutkan dari yang terbaru. Diurutkan di sini (bukan
+  // memakai ringkasan.antrian) supaya daftar ini tidak bergantung pada
+  // aturan filter di hitungRingkasan.
+  const semuaLaporan = [...laporan].sort((a, b) =>
+    (b.created_at ?? '').localeCompare(a.created_at ?? ''),
+  )
+
   return (
     <>
       <HeroAntrian ringkasan={ringkasan} />
@@ -171,11 +252,7 @@ function DashboardContent({
         />
       </section>
 
-      <LaporanTerbaru
-        // `antrian` sudah diurutkan dari yang terbaru oleh hitungRingkasan.
-        laporan={ringkasan.antrian.slice(0, JUMLAH_TERBARU)}
-        onBukaFoto={onBukaFoto}
-      />
+      <LaporanTerbaru laporan={semuaLaporan} onBukaFoto={onBukaFoto} />
     </>
   )
 }
@@ -300,6 +377,76 @@ function StatKartu({
   )
 }
 
+// Tombol judul kolom yang bisa diklik untuk mengurutkan.
+function KolomUrut({
+  label,
+  aktif,
+  arah,
+  onClick,
+}: {
+  label: string
+  aktif: boolean
+  arah: ArahUrut
+  onClick: () => void
+}) {
+  const Icon = !aktif ? ArrowUpDown : arah === 1 ? ArrowUp : ArrowDown
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Urutkan berdasarkan ${label}`}
+      className={cn(
+        'inline-flex items-center gap-1.5 transition-colors hover:text-neutral-900',
+        aktif && 'text-neutral-900',
+      )}
+    >
+      {label}
+      <Icon
+        aria-hidden="true"
+        className={cn('size-3.5', aktif ? 'opacity-100' : 'opacity-50')}
+      />
+    </button>
+  )
+}
+
+// Tombol bulat-persegi di pagination (« ‹ 1 2 3 › »).
+function TombolHalaman({
+  label,
+  ariaLabel,
+  onClick,
+  disabled,
+  aktif,
+}: {
+  label: string
+  ariaLabel: string
+  onClick: () => void
+  disabled?: boolean
+  aktif?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-current={aktif ? 'page' : undefined}
+      className={cn(
+        'h-10 min-w-10 rounded-xl border border-[#efe9d8] bg-white px-2 text-sm transition-colors',
+        'hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-white',
+        aktif &&
+          'border-[#0f3d2e] bg-[#0f3d2e] font-bold text-white hover:bg-[#0f3d2e]',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+// Menampilkan semua laporan terbaru dengan header kolom yang bisa
+// diurutkan (Judul, Prioritas, Status) dan pagination. Klik header
+// pertama: naik, kedua: turun, ketiga: kembali ke urutan terbaru.
+// Setiap kali urutan atau jumlah baris berubah, halaman kembali ke 1.
 function LaporanTerbaru({
   laporan,
   onBukaFoto,
@@ -307,23 +454,59 @@ function LaporanTerbaru({
   laporan: Laporan[]
   onBukaFoto: (src: string) => void
 }) {
+  const [kolom, setKolom] = useState<KolomUrut | null>(null)
+  const [arah, setArah] = useState<ArahUrut>(1)
+  const [halaman, setHalaman] = useState(1)
+  const [ukuran, setUkuran] = useState(UKURAN_HALAMAN[0])
+
+  function toggleUrut(target: KolomUrut) {
+    if (kolom !== target) {
+      setKolom(target)
+      setArah(1)
+    } else if (arah === 1) {
+      setArah(-1)
+    } else {
+      setKolom(null)
+      setArah(1)
+    }
+    setHalaman(1)
+  }
+
+  const urut = kolom
+    ? [...laporan].sort((a, b) => {
+        if (kolom === 'judul') {
+          return arah * a.deskripsi.localeCompare(b.deskripsi, 'id')
+        }
+        if (kolom === 'prioritas') {
+          return (
+            arah *
+            (rankPrioritas(a.prioritas_kategori) -
+              rankPrioritas(b.prioritas_kategori))
+          )
+        }
+        return arah * (rankStatus(a.status) - rankStatus(b.status))
+      })
+    : laporan
+
+  // Halaman dijaga supaya tidak melewati total (misal data berkurang
+  // setelah refetch).
+  const totalHalaman = Math.max(1, Math.ceil(urut.length / (ukuran ?? 5)))
+  const halamanAktif = Math.min(halaman, totalHalaman)
+  const tampil = urut.slice(
+    (halamanAktif - 1) * (ukuran ?? 5),
+    halamanAktif * (ukuran ?? 5),
+  )
+
+  const keterangan =
+    laporan.length === 0
+      ? 'Belum ada laporan masuk'
+      : `Menampilkan ${laporan.length} laporan`
+
   return (
     <section className={cn('p-6', CARD_CLASS)}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold">Laporan terbaru</h2>
-          <p className="text-sm text-neutral-500">
-            Menampilkan {JUMLAH_TERBARU} laporan terakhir
-          </p>
-        </div>
-        <Link
-          to="/verifikasi"
-          search={{ filter: 'semua' }}
-          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[#1f6b4f] hover:underline focus-visible:outline-none"
-        >
-          Lihat semua
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
+      <div className="min-w-0">
+        <h2 className="text-base font-semibold">Laporan terbaru</h2>
+        <p className="text-sm text-neutral-500">{keterangan}</p>
       </div>
 
       {laporan.length === 0 ? (
@@ -331,36 +514,159 @@ function LaporanTerbaru({
           Belum ada laporan masuk.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-neutral-100">
-          {laporan.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 py-3">
-              <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate font-medium">{item.deskripsi}</p>
-                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+        <>
+          {/* Header kolom: hanya tampil di layar md ke atas. */}
+          <div
+            className={cn(
+              'mt-4 hidden items-center gap-x-4 rounded-xl bg-[#faf7ee] px-3 py-2.5 text-xs font-semibold text-neutral-500 md:grid',
+              KOLOM_DESKTOP,
+            )}
+          >
+            <span className="text-xs font-semibold text-neutral-500">No</span>
+            <span>Foto</span>
+            <span>
+              <KolomUrut
+                label="Judul"
+                aktif={kolom === 'judul'}
+                arah={arah}
+                onClick={() => toggleUrut('judul')}
+              />
+            </span>
+            <span>
+              <KolomUrut
+                label="Prioritas"
+                aktif={kolom === 'prioritas'}
+                arah={arah}
+                onClick={() => toggleUrut('prioritas')}
+              />
+            </span>
+            <span>
+              <KolomUrut
+                label="Status"
+                aktif={kolom === 'status'}
+                arah={arah}
+                onClick={() => toggleUrut('status')}
+              />
+            </span>
+          </div>
+
+          <ul className="mt-1 divide-y divide-neutral-100">
+            {tampil.map((item, itemIndex) => (
+              <li
+                key={item.id}
+                className={cn(
+                  'grid grid-cols-[40px_56px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:gap-x-4',
+                  KOLOM_DESKTOP,
+                )}
+              >
+                {/* Nomor urut: (halaman-1) * ukuran + index + 1. */}
+                <div className="relative z-10 text-center text-xs font-medium text-neutral-500 md:row-span-1">
+                  {(halamanAktif - 1) * (ukuran ?? 5) + itemIndex + 1}
                 </div>
-                <p className="mt-0.5 truncate text-xs text-neutral-500">
-                  {kategoriLabel(item.kategori)} · {item.lokasi}
+                <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
+
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{item.deskripsi}</p>
+                  <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
+                    {formatTanggal(item.created_at)}
+                  </p>
                   {item.pelapor && (
-                    <>
-                      {' · oleh '}
+                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                      Pelapor:{' '}
                       <span className="font-semibold text-[#0f3d2e]">
                         {item.pelapor.name}
                       </span>
-                    </>
+                    </p>
                   )}
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <StatusBadge status={item.status} />
-                <span className="text-xs text-neutral-400">
-                  {formatTanggal(item.created_at)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </div>
+
+                <div className="col-start-2 md:col-start-auto">
+                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+                </div>
+                <div className="col-start-2 md:col-start-auto">
+                  <StatusBadge status={item.status} />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Pagination */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-3 border-t border-[#efe9d8] pt-4 text-sm md:justify-between">
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(ukuran)}
+                onValueChange={(value) => {
+                  setUkuran(Number(value ?? UKURAN_HALAMAN[0]))
+                  setHalaman(1)
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Jumlah baris per halaman"
+                  className="w-[76px] shrink-0"
+                >
+                  <SelectValue>{ukuran}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {UKURAN_HALAMAN.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span>Jumlah baris per halaman</span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <span className="mr-2 font-medium">
+                Halaman {halamanAktif} dari {totalHalaman}
+              </span>
+
+              <TombolHalaman
+                label="«"
+                ariaLabel="Halaman pertama"
+                onClick={() => setHalaman(1)}
+                disabled={halamanAktif === 1}
+              />
+              <TombolHalaman
+                label="‹"
+                ariaLabel="Halaman sebelumnya"
+                onClick={() => setHalaman(halamanAktif - 1)}
+                disabled={halamanAktif === 1}
+              />
+
+              {daftarHalaman(halamanAktif, totalHalaman).map((n, i) =>
+                n === '…' ? (
+                  <span key={`titik-${i}`} className="px-1 text-neutral-400">
+                    …
+                  </span>
+                ) : (
+                  <TombolHalaman
+                    key={n}
+                    label={String(n)}
+                    ariaLabel={`Halaman ${n}`}
+                    onClick={() => setHalaman(n)}
+                    aktif={n === halamanAktif}
+                  />
+                ),
+              )}
+
+              <TombolHalaman
+                label="›"
+                ariaLabel="Halaman berikutnya"
+                onClick={() => setHalaman(halamanAktif + 1)}
+                disabled={halamanAktif === totalHalaman}
+              />
+              <TombolHalaman
+                label="»"
+                ariaLabel="Halaman terakhir"
+                onClick={() => setHalaman(totalHalaman)}
+                disabled={halamanAktif === totalHalaman}
+              />
+            </div>
+          </div>
+        </>
       )}
     </section>
   )

@@ -65,6 +65,25 @@ const formSchema = z.object({
     .custom<FileList>()
     .optional()
     .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
+  // Skala SMART 1–5, wajib diisi pelapor (backend mewajibkannya).
+  // z.coerce.number() tetap dipakai sebagai pengaman, walaupun UI-nya
+  // sekarang tombol pilihan 1–5 (bukan input yang bisa diketik).
+  nilai_kerusakan: z.coerce
+    .number()
+    .min(1, 'Nilai kerusakan wajib diisi (1–5)')
+    .max(5, 'Nilai kerusakan maksimal 5'),
+  nilai_risiko: z.coerce
+    .number()
+    .min(1, 'Nilai risiko wajib diisi (1–5)')
+    .max(5, 'Nilai risiko maksimal 5'),
+  nilai_dampak: z.coerce
+    .number()
+    .min(1, 'Nilai dampak wajib diisi (1–5)')
+    .max(5, 'Nilai dampak maksimal 5'),
+  nilai_frekuensi: z.coerce
+    .number()
+    .min(1, 'Nilai frekuensi wajib diisi (1–5)')
+    .max(5, 'Nilai frekuensi maksimal 5'),
 })
 
 // Beda tipenya, dan ini penting:
@@ -82,7 +101,96 @@ const FIELD_SERVER: ReadonlyArray<keyof FormValues> = [
   'lokasi',
   'deskripsi',
   'foto',
+  'nilai_kerusakan',
+  'nilai_risiko',
+  'nilai_dampak',
+  'nilai_frekuensi',
 ]
+
+const SKALA_NILAI = [1, 2, 3, 4, 5] as const
+
+// Arah skala yang ditampilkan di bawah setiap tombol angka, supaya
+// mahasiswa tidak menebak artinya. Sama dengan petunjuk di samping kanan
+// halaman (1–2 Rendah, 3 Sedang, 4–5 Tinggi).
+const NILAI_ARAH: Record<number, string> = {
+  1: 'Rendah',
+  2: 'Rendah',
+  3: 'Sedang',
+  4: 'Tinggi',
+  5: 'Tinggi',
+}
+
+// Kalimat penjelasan sengaja pendek (satu baris) supaya tombol angka di
+// kedua kolom sejajar.
+const NILAI_FIELDS = [
+  {
+    name: 'nilai_kerusakan',
+    label: 'Nilai Kerusakan',
+    hint: 'Seberapa parah kondisinya.',
+  },
+  {
+    name: 'nilai_risiko',
+    label: 'Nilai Risiko',
+    hint: 'Seberapa berbahaya jika dibiarkan.',
+  },
+  {
+    name: 'nilai_dampak',
+    label: 'Nilai Dampak',
+    hint: 'Seberapa banyak yang terganggu.',
+  },
+  {
+    name: 'nilai_frekuensi',
+    label: 'Nilai Frekuensi',
+    hint: 'Seberapa sering terjadi.',
+  },
+] as const
+
+// Pilihan 1–5 berupa radio asli yang disembunyikan secara visual, jadi
+// keyboard (tab + panah) dan screen reader tetap jalan tanpa kode tambahan.
+// Tidak di-export, sama seperti LOKASI_VALUES (aturan react-refresh).
+function SkalaNilai({
+  name,
+  value,
+  onChange,
+  onBlur,
+}: {
+  name: string
+  value: number
+  onChange: (value: number) => void
+  onBlur: () => void
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-labelledby={`${name}-label`}
+      aria-describedby={`${name}-hint`}
+      className="grid grid-cols-5 gap-1.5"
+    >
+      {SKALA_NILAI.map((n) => (
+        <label
+          key={n}
+          className="flex cursor-pointer flex-col items-center gap-0.5"
+        >
+          <input
+            type="radio"
+            name={name}
+            value={n}
+            checked={value === n}
+            onChange={() => onChange(n)}
+            onBlur={onBlur}
+            className="peer sr-only"
+          />
+          <span className="grid size-9 place-items-center rounded-full border border-neutral-200 text-xs font-medium transition-colors peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/50">
+            {n}
+          </span>
+          <p className="text-[10px] leading-none text-neutral-500">
+            {NILAI_ARAH[n]}
+          </p>
+        </label>
+      ))}
+    </div>
+  )
+}
 
 export function LaporanForm() {
   const navigate = useNavigate()
@@ -95,7 +203,16 @@ export function LaporanForm() {
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { kategori: '', lokasi: '', deskripsi: '', foto: undefined },
+    defaultValues: {
+      kategori: '',
+      lokasi: '',
+      deskripsi: '',
+      foto: undefined,
+      nilai_kerusakan: 0,
+      nilai_risiko: 0,
+      nilai_dampak: 0,
+      nilai_frekuensi: 0,
+    },
   })
 
   const onSubmit = handleSubmit(async (values) => {
@@ -236,6 +353,38 @@ export function LaporanForm() {
           </Field>
         )}
       />
+
+      {/* Skala SMART: pelapor memilih 1–5 lewat tombol, tidak mengetik.
+          Backend menghitung skor prioritas dari keempat nilai ini. */}
+      <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
+        {NILAI_FIELDS.map((item) => (
+          <Controller
+            key={item.name}
+            control={control}
+            name={item.name}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel id={`${item.name}-label`}>{item.label}</FieldLabel>
+                <p
+                  id={`${item.name}-hint`}
+                  className="text-muted-foreground -mt-1 text-xs leading-snug sm:min-h-4"
+                >
+                  {item.hint}
+                </p>
+                <SkalaNilai
+                  name={item.name}
+                  value={Number(field.value)}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                />
+                <FieldError
+                  errors={fieldState.error ? [fieldState.error] : undefined}
+                />
+              </Field>
+            )}
+          />
+        ))}
+      </div>
 
       {/* Tombol aksi utama diganti hijau tua, bukan warna --primary bawaan
           tema (hitam netral): di /lapor semua aksi penting berada di satu

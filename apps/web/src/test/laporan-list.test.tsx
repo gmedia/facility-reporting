@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -110,7 +111,7 @@ beforeEach(() => {
   vi.mocked(api.GET).mockResolvedValue(ok({ data: satuLaporan }))
   vi.mocked(api.PATCH).mockResolvedValue(
     ok({
-      data: { ...satuLaporan[0], status: 'selesai', updated_at: null },
+      data: { ...satuLaporan[0], status: 'diproses', updated_at: null },
     }),
   )
 })
@@ -177,7 +178,7 @@ describe('halaman /verifikasi', () => {
             kategori: 'furnitur',
             lokasi: 'kelas a',
             deskripsi: 'meja rusak',
-            status: 'selesai',
+            status: 'diproses',
           },
         ],
       }),
@@ -186,17 +187,19 @@ describe('halaman /verifikasi', () => {
 
     const daftar = await getDaftar()
     await daftar.findByText('lampu mati')
-    const filterGroup = screen.getByRole('group', { name: 'Filter status' })
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
 
-    fireEvent.change(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-      { target: { value: 'selesai' } },
-    )
-    expect(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-    ).toHaveValue('selesai')
-    expect(daftar.getByText('meja rusak')).toBeInTheDocument()
-    expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
+    // Filter hanya menampilkan: Semua status, Menunggu, Terverifikasi, Diproses
+    // Selesai dan Ditolak tidak pernah ditampilkan dalam filter chip
+    const btnMenunggu = await within(filterGroup).findByRole('button', {
+      name: /Menunggu/,
+    })
+    fireEvent.click(btnMenunggu)
+    // Setelah filter Menunggu, hanya laporan dengan status menunggu_verifikasi yang tampil
+    expect(daftar.getByText('lampu mati')).toBeInTheDocument()
+    expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
     expect(api.GET).toHaveBeenCalledWith('/reports')
   })
 
@@ -216,7 +219,7 @@ describe('halaman /verifikasi', () => {
     await daftar.findByText('lampu mati')
     fireEvent.click(daftar.getByText('lampu mati'))
 
-    // "Tandai selesai" di panel detail hanya membuka dialog foto bukti.
+    // Buka detail panel lalu cari button di dalam dialog
     fireEvent.click(
       await screen.findByRole('button', { name: 'Tandai selesai' }),
     )
@@ -252,11 +255,16 @@ describe('halaman /verifikasi', () => {
       ok({ data: { ...satuLaporan[0], status: 'valid' } }),
     )
     renderAt('/verifikasi')
+    const user = userEvent.setup()
 
     const daftar = await getDaftar()
     await daftar.findByText('lampu mati')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Verifikasi' }))
+    // Klik baris laporan untuk membuka detail dialog.
+    fireEvent.click(daftar.getByText('lampu mati'))
+
+    // Klik tombol "Verifikasi" di dalam dialog detail.
+    await user.click(await screen.findByRole('button', { name: 'Verifikasi' }))
 
     await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(1))
     expect(api.POST).not.toHaveBeenCalled()
@@ -291,7 +299,7 @@ describe('halaman /verifikasi', () => {
             kategori: 'furnitur',
             lokasi: 'kelas a',
             deskripsi: 'meja rusak',
-            status: 'selesai',
+            status: 'diproses',
           },
         ],
       }),
@@ -300,30 +308,31 @@ describe('halaman /verifikasi', () => {
 
     const daftar = await getDaftar()
     await daftar.findByText('lampu mati')
-    const filterGroup = screen.getByRole('group', { name: 'Filter status' })
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
 
     // Semua pengecekan lewat `daftar`, karena judul laporan terpilih juga
     // tampil di panel detail.
-    fireEvent.change(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-      { target: { value: 'menunggu_verifikasi' } },
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Menunggu/ }),
     )
     expect(daftar.getByText('lampu mati')).toBeInTheDocument()
     expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
 
-    fireEvent.change(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-      { target: { value: 'selesai' } },
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Terverifikasi/ }),
     )
-    expect(daftar.getByText('meja rusak')).toBeInTheDocument()
+    // Terverifikasi has count 0, so empty state should appear
     expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
+    expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
 
-    fireEvent.change(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-      { target: { value: 'semua' } },
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Semua status/ }),
     )
-    expect(daftar.getByText('lampu mati')).toBeInTheDocument()
-    expect(daftar.getByText('meja rusak')).toBeInTheDocument()
+    const daftar2 = await getDaftar()
+    expect(await daftar2.findByText('lampu mati')).toBeInTheDocument()
+    expect(await daftar2.findByText('meja rusak')).toBeInTheDocument()
   })
 
   it('filter tanpa hasil: empty state mengikuti filter aktif', async () => {
@@ -331,11 +340,12 @@ describe('halaman /verifikasi', () => {
 
     const daftar = await getDaftar()
     await daftar.findByText('lampu mati')
-    const filterGroup = screen.getByRole('group', { name: 'Filter status' })
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
 
-    fireEvent.change(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-      { target: { value: 'valid' } },
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Terverifikasi/ }),
     )
 
     expect(
@@ -344,11 +354,8 @@ describe('halaman /verifikasi', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(
-      within(filterGroup).getByRole('combobox', { name: 'Status' }),
-    ).toHaveValue('valid')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset filter' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset filter' }))
     expect(await daftar.findByText('lampu mati')).toBeInTheDocument()
   })
 
@@ -377,7 +384,7 @@ describe('halaman /verifikasi', () => {
     renderAt('/verifikasi')
 
     expect(
-      await screen.findByText('Belum ada laporan masuk.'),
+      await screen.findByText(/Belum ada laporan di antrian/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })

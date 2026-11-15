@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ImageIcon, Search, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Bell,
+  ImageIcon,
+  Maximize2,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -20,6 +29,7 @@ import {
   FOTO_MIME_IZIN,
   KATEGORI_LABEL,
   KATEGORI_VALUES,
+  PRIORITAS_LABEL,
   STATUS_LABEL,
   STATUS_VALUES,
   errorMessage,
@@ -30,15 +40,48 @@ import {
   type LaporanKategori,
   type LaporanStatus,
   type Pelapor,
+  type PrioritasKategori,
 } from '@/features/laporan/laporan-query'
+import { StatusStepper } from '@/features/laporan/status-stepper'
+import { VerifikasiFilter } from '@/features/laporan/verifikasi-filter'
+import { VerifikasiPager } from '@/features/laporan/verifikasi-pager'
 import { cn } from '@/lib/utils'
 
 type StatusFilter = 'semua' | LaporanStatus
+type Tab = 'antrian' | 'riwayat'
+type KunciUrut = 'judul' | 'prioritas' | 'status'
+type Urut = { kunci: KunciUrut; arah: 1 | -1 } | null
+
+const PER_HALAMAN_AWAL = 10
+
+// Kolom daftar: foto | judul | prioritas | status. Dipakai bersama oleh
+// baris header dan baris data supaya kolomnya selalu sejajar.
+const KOLOM = 'md:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_7rem_9rem]'
+
+// Status final (PR #92): tidak ada aksi lanjutan. Laporan dengan status ini
+// keluar dari Antrian dan pindah ke Riwayat.
+const STATUS_FINAL: ReadonlySet<string> = new Set(['selesai', 'ditolak'])
+
+function statusFinal(status: string): boolean {
+  return STATUS_FINAL.has(status)
+}
+
+// Urutan status mengikuti alur verifikasi (dipakai saat kolom Status diurutkan).
+const URUTAN_STATUS: ReadonlyArray<LaporanStatus> = [
+  'menunggu_verifikasi',
+  'valid',
+  'diproses',
+  'selesai',
+  'ditolak',
+]
 
 // Urutan filter ngikutin alur verifikasi, bukan urutan enum backend.
 // "Terverifikasi" sengaja dipakai buat status `valid` biar bahasa UI-nya
 // sama dengan roadmap; badge status tetap pakai label asli `Valid`.
-// Label 'Status' dipakai sebagai teks awal dropdown (artinya: semua status).
+// Entri 'semua' tidak ditampilkan sebagai chip (filter dilepas dengan
+// klik chip yang aktif atau tombol Reset), tapi nilainya tetap dipakai
+// oleh tipe StatusFilter. 'selesai' dan 'ditolak' tidak dipakai di tab
+// Antrian karena laporan dengan status itu pindah ke tab Riwayat.
 const FILTERS: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: 'semua', label: 'Status' },
   { value: 'menunggu_verifikasi', label: 'Menunggu' },
@@ -71,8 +114,24 @@ const AKSI: Partial<
   valid: [{ label: 'Mulai proses', ke: 'diproses' }],
   diproses: [{ label: 'Tandai selesai', ke: 'selesai' }],
   // `ditolak` dan `selesai` adalah status final (PR #92): tidak ada aksi
-  // perubahan status lagi, jadi tidak dimasukkan di sini.
+  // perubahan status lagi, jadi tidak dimasukkan di sini. Itu sebabnya
+  // laporan di tab Riwayat tidak bisa dibuka kembali.
 }
+
+// Pilihan filter prioritas diambil dari PRIORITAS_LABEL (sumber yang sama
+// dengan badge), jadi nilainya pasti cocok dengan data. Diurutkan dari yang
+// paling mendesak: Tinggi, Sedang, Rendah. Label di luar tiga itu (kalau
+// ada) ditaruh paling belakang.
+const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
+
+function urutanLabel(label: string): number {
+  const index = URUTAN_LABEL.indexOf(label.toLowerCase())
+  return index === -1 ? URUTAN_LABEL.length : index
+}
+
+const PRIORITAS_OPSI = (
+  Object.entries(PRIORITAS_LABEL) as Array<[PrioritasKategori, string]>
+).sort((a, b) => urutanLabel(a[1]) - urutanLabel(b[1]))
 
 const CARD = 'rounded-[26px] border-[1.5px] border-[#efe9d8] bg-white p-6'
 
@@ -85,6 +144,21 @@ function kategoriLabel(kategori: string): string {
 function waktu(item: Laporan): number {
   const t = item.created_at ? new Date(item.created_at).getTime() : 0
   return Number.isNaN(t) ? 0 : t
+}
+
+// Laporan tanpa prioritas (null) selalu jatuh paling belakang.
+function rankPrioritas(item: Laporan): number {
+  if (item.prioritas_kategori == null) return URUTAN_LABEL.length + 1
+  return urutanLabel(PRIORITAS_LABEL[item.prioritas_kategori] ?? '')
+}
+
+function bandingkan(kunci: KunciUrut, a: Laporan, b: Laporan): number {
+  if (kunci === 'judul') return a.deskripsi.localeCompare(b.deskripsi, 'id')
+  if (kunci === 'prioritas') return rankPrioritas(a) - rankPrioritas(b)
+  return (
+    URUTAN_STATUS.indexOf(a.status as LaporanStatus) -
+    URUTAN_STATUS.indexOf(b.status as LaporanStatus)
+  )
 }
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
@@ -116,11 +190,22 @@ function labelGedung(kunci: string): string {
 export function VerifikasiPage({ user }: { user: User }) {
   const list = useLaporanList()
   const update = useUpdateLaporanStatus()
+  const [tab, setTab] = useState<Tab>('antrian')
   const [filter, setFilter] = useState<StatusFilter>('semua')
   const [cari, setCari] = useState('')
   const [kategori, setKategori] = useState<'semua' | LaporanKategori>('semua')
+  const [prioritas, setPrioritas] = useState<string>('semua')
   const [gedung, setGedung] = useState<string>('semua')
-  // id laporan yang sedang dilihat di panel detail.
+  // Awal hari (timestamp) yang dipilih dari grafik; null = semua tanggal.
+  const [tanggal, setTanggal] = useState<number | null>(null)
+  // Urutan kolom (klik header): null = urutan bawaan (terbaru di atas).
+  const [urut, setUrut] = useState<Urut>(null)
+  // Pagination klien. Halaman 0-based. Reset ke 0 dilakukan di handler yang
+  // sama dengan perubahan filter (bukan lewat efek).
+  const [halaman, setHalaman] = useState(0)
+  const [perHalaman, setPerHalaman] = useState(PER_HALAMAN_AWAL)
+  const daftarRef = useRef<HTMLElement>(null)
+  // id laporan yang detailnya sedang dibuka di popup; null = popup tertutup.
   const [pilihId, setPilihId] = useState<number | null>(null)
   const [fotoBesar, setFotoBesar] = useState<string | null>(null)
   // id laporan yang sedang akan ditolak (dialog alasan terbuka).
@@ -154,13 +239,37 @@ export function VerifikasiPage({ user }: { user: User }) {
       )
     : undefined
 
-  // Yang paling baru di atas. Kalau waktunya sama persis, ID yang lebih
-  // besar didahulukan. Pencarian juga mencakup nama dan NIM pelapor.
+  // Laporan selesai dan ditolak tidak lagi di Antrian; mereka pindah ke
+  // Riwayat.
+  const antrianAktif = ringkasan.antrian.filter(
+    (item) => !statusFinal(item.status),
+  )
+  const riwayatFinal = laporan.filter((item) => statusFinal(item.status))
+  const jumlahAntrian = antrianAktif.length
+  const jumlahRiwayat = riwayatFinal.length
+
+  // Bawaan: yang paling baru di atas; kalau waktunya sama persis, ID yang
+  // lebih besar didahulukan. Kalau kolom diurutkan lewat header, urutan
+  // kolom dipakai dulu dan urutan bawaan jadi pembanding kedua. Pencarian
+  // juga mencakup nama dan NIM pelapor.
   const kata = cari.trim().toLowerCase()
-  const antrianUrut = ringkasan.antrian
-    .filter((item) => filter === 'semua' || item.status === filter)
+  const hasil = (tab === 'antrian' ? antrianAktif : riwayatFinal)
+    .filter(
+      (item) =>
+        tab === 'riwayat' || filter === 'semua' || item.status === filter,
+    )
     .filter((item) => kategori === 'semua' || item.kategori === kategori)
+    .filter(
+      (item) => prioritas === 'semua' || item.prioritas_kategori === prioritas,
+    )
     .filter((item) => gedung === 'semua' || kunciGedung(item.lokasi) === gedung)
+    .filter((item) => {
+      if (tanggal === null) return true
+      const akhir = new Date(tanggal)
+      akhir.setDate(akhir.getDate() + 1)
+      const t = waktu(item)
+      return t >= tanggal && t < akhir.getTime()
+    })
     .filter(
       (item) =>
         !kata ||
@@ -169,20 +278,106 @@ export function VerifikasiPage({ user }: { user: User }) {
           .includes(kata),
     )
     .sort((a, b) => {
+      if (urut) {
+        const selisihKolom = urut.arah * bandingkan(urut.kunci, a, b)
+        if (selisihKolom !== 0) return selisihKolom
+      }
       const selisih = waktu(b) - waktu(a)
       return selisih !== 0 ? selisih : b.id - a.id
     })
 
-  // Kalau laporan yang dipilih hilang dari daftar (karena filter),
-  // otomatis jatuh ke laporan teratas.
+  const adaHasil = hasil.length > 0
+
+  // Pagination: halaman dijepit saat render supaya aman kalau filter
+  // memperkecil jumlah halaman.
+  const totalHalaman = Math.max(Math.ceil(hasil.length / perHalaman), 1)
+  const halamanEfektif = Math.min(halaman, totalHalaman - 1)
+  const tampak = hasil.slice(
+    halamanEfektif * perHalaman,
+    (halamanEfektif + 1) * perHalaman,
+  )
+
+  const pindahHalaman = (h: number) => {
+    setHalaman(h)
+    // Balik ke atas daftar supaya halaman barunya kelihatan. Opsional
+    // chaining karena scrollIntoView tidak ada di jsdom.
+    daftarRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }
+
+  const ubahPerHalaman = (jumlah: number) => {
+    setPerHalaman(jumlah)
+    setHalaman(0)
+  }
+
+  // Klik header kolom: naik → turun → kembali ke urutan bawaan.
+  const ubahUrut = (kunci: KunciUrut) => {
+    setUrut((sekarang) => {
+      if (sekarang?.kunci !== kunci) return { kunci, arah: 1 }
+      if (sekarang.arah === 1) return { kunci, arah: -1 }
+      return null
+    })
+    setHalaman(0)
+  }
+
+  // Setiap perubahan filter mengembalikan daftar ke halaman pertama.
+  const ubahCari = (nilai: string) => {
+    setCari(nilai)
+    setHalaman(0)
+  }
+  const ubahTanggal = (nilai: number | null) => {
+    setTanggal(nilai)
+    setHalaman(0)
+  }
+  const pindahTab = (baru: Tab) => {
+    if (baru === tab) return
+    setTab(baru)
+    // Filter status khusus Antrian, jadi dilepas saat pindah tab.
+    setFilter('semua')
+    setHalaman(0)
+  }
+
+  // Laporan yang detailnya sedang dibuka. Dicari dari seluruh laporan (bukan
+  // dari hasil filter), jadi popup tidak ikut tertutup kalau status berubah
+  // dan laporannya pindah tab atau keluar dari filter yang aktif.
   const terpilih =
-    antrianUrut.find((item) => item.id === pilihId) ?? antrianUrut[0]
+    pilihId === null ? undefined : laporan.find((item) => item.id === pilihId)
+
+  // Notifikasi: semua laporan prioritas tertinggi yang masih aktif, tidak
+  // terpengaruh filter daftar. Dicocokkan lewat label (sumber yang sama
+  // dengan badge) supaya tidak bergantung pada nilai enum.
+  const perluPerhatian = ringkasan.antrian
+    .filter(
+      (item) =>
+        !statusFinal(item.status) &&
+        item.prioritas_kategori != null &&
+        PRIORITAS_LABEL[item.prioritas_kategori]?.toLowerCase() === 'tinggi',
+    )
+    .sort((a, b) => {
+      const selisih = waktu(b) - waktu(a)
+      return selisih !== 0 ? selisih : b.id - a.id
+    })
+
+  // Hari yang dipilih dari grafik (untuk label chip dan penanda di grafik).
+  const indeksHari =
+    tanggal === null ? null : harian.findIndex((b) => b.awal === tanggal)
+  const hariDipilih = indeksHari !== null ? harian[indeksHari] : undefined
 
   const resetFilter = () => {
     setFilter('semua')
     setKategori('semua')
+    setPrioritas('semua')
     setGedung('semua')
     setCari('')
+    setTanggal(null)
+    setHalaman(0)
+  }
+
+  // Dari notifikasi: pindah ke Antrian dan filter dilepas dulu supaya daftar
+  // kembali utuh, lalu popup detail laporan yang diklik dibuka.
+  const bukaDariNotifikasi = (id: number) => {
+    setTab('antrian')
+    resetFilter()
+    setPilihId(id)
   }
 
   // Mengembalikan true kalau berhasil, supaya dialog tahu kapan
@@ -232,19 +427,64 @@ export function VerifikasiPage({ user }: { user: User }) {
     if (berhasil) setBuktiId(null)
   }
 
+  // Esc di popup detail hanya menutup popup itu sendiri kalau tidak ada
+  // dialog atau lightbox lain yang sedang terbuka di atasnya.
+  const detailBolehEsc =
+    tolakId === null && buktiId === null && fotoBesar === null
+
+  // Grup filter status hanya ada di tab Antrian dan tanpa opsi status final.
+  const grupStatus =
+    tab === 'antrian'
+      ? [
+          {
+            key: 'status',
+            judul: 'Status',
+            nilai: filter as string,
+            onPilih: (v: string) => {
+              setFilter(v as StatusFilter)
+              setHalaman(0)
+            },
+            opsi: [
+              {
+                value: 'semua',
+                label: 'Semua status',
+                jumlah: jumlahAntrian,
+              },
+              ...FILTERS.filter(
+                (f) => f.value !== 'semua' && !statusFinal(f.value as string),
+              ).map((f) => ({
+                value: f.value as string,
+                label: f.label,
+                jumlah: counts?.[f.value as LaporanStatus] ?? 0,
+              })),
+            ],
+          },
+        ]
+      : []
+
   return (
     <DashboardShell
       user={user}
       menunggu={counts?.menunggu_verifikasi}
       header={
-        <div className="min-w-0 leading-tight">
-          <h1 className="truncate text-xl font-bold tracking-tight">
-            Verifikasi
-          </h1>
-          <p className="truncate text-sm text-[#8a8f87]">
-            Antrian laporan ·{' '}
-            {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
-          </p>
+        <div className="flex w-full min-w-0 items-center justify-between gap-4">
+          <div className="min-w-0 leading-tight">
+            <h1 className="truncate text-xl font-bold tracking-tight">
+              Verifikasi
+            </h1>
+            <p className="truncate text-sm text-[#8a8f87]">
+              {tab === 'antrian'
+                ? 'Antrian laporan'
+                : 'Riwayat laporan selesai'}{' '}
+              · {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
+            </p>
+          </div>
+
+          <NotifikasiPrioritas
+            items={perluPerhatian}
+            aktifId={terpilih?.id}
+            onPilih={bukaDariNotifikasi}
+          />
         </div>
       }
     >
@@ -258,154 +498,215 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
+            {/* Tab: Antrian laporan / Riwayat laporan. */}
             <div
-              role="group"
-              aria-label="Filter status"
-              className="flex flex-wrap gap-3"
+              role="tablist"
+              aria-label="Jenis daftar laporan"
+              className="flex gap-1 border-b border-[#efe9d8]"
             >
-              <select
-                aria-label="Status"
-                value={filter}
-                onChange={(event) =>
-                  setFilter(event.target.value as StatusFilter)
-                }
-                className={cn(
-                  'h-10 rounded-xl border-[1.5px] bg-white px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20',
-                  filter === 'semua' ? 'border-[#efe9d8]' : 'border-[#1f6b4f]',
-                )}
+              <TabTombol
+                aktif={tab === 'antrian'}
+                jumlah={jumlahAntrian}
+                onClick={() => pindahTab('antrian')}
               >
-                {FILTERS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.value === 'semua'
-                      ? item.label
-                      : `${item.label} (${counts?.[item.value as LaporanStatus] ?? 0})`}
-                  </option>
-                ))}
-              </select>
-              <label className="relative min-w-[14rem] flex-1">
-                <span className="sr-only">Cari laporan</span>
-                <Search
-                  aria-hidden="true"
-                  className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8a8f87]"
-                />
-                <input
-                  type="search"
-                  value={cari}
-                  onChange={(event) => setCari(event.target.value)}
-                  placeholder="Cari deskripsi, lokasi, atau pelapor…"
-                  className="h-10 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white pr-3 pl-10 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-                />
-              </label>
-              <select
-                aria-label="Kategori"
-                value={kategori}
-                onChange={(event) =>
-                  setKategori(event.target.value as 'semua' | LaporanKategori)
-                }
-                className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+                Antrian laporan
+              </TabTombol>
+              <TabTombol
+                aktif={tab === 'riwayat'}
+                jumlah={jumlahRiwayat}
+                onClick={() => pindahTab('riwayat')}
               >
-                <option value="semua">Semua kategori</option>
-                {KATEGORI_VALUES.map((k) => (
-                  <option key={k} value={k}>
-                    {KATEGORI_LABEL[k]}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="Gedung"
-                value={gedung}
-                onChange={(event) => setGedung(event.target.value)}
-                className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-              >
-                <option value="semua">Semua gedung</option>
-                {opsiGedung.map((k) => (
-                  <option key={k} value={k}>
-                    {labelGedung(k)}
-                  </option>
-                ))}
-              </select>
+                Riwayat laporan selesai
+              </TabTombol>
             </div>
 
-            <div className="grid items-start gap-6 xl:grid-cols-[1.5fr_1fr]">
-              <section
-                aria-label="Daftar laporan"
-                className={cn(CARD, 'min-w-0 overflow-hidden p-0')}
-              >
-                {antrianUrut.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-                    <p className="text-sm text-[#8a8f87]">
-                      {laporan.length === 0
-                        ? 'Belum ada laporan masuk.'
-                        : 'Tidak ada laporan yang cocok. Ubah filter atau kata kunci.'}
-                    </p>
-                    {laporan.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={resetFilter}
-                      >
-                        Reset filter
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <ul className="max-h-[34rem] divide-y divide-[#efe9d8] overflow-y-auto">
-                    {antrianUrut.map((item) => {
-                      const aktif = item.id === terpilih?.id
-                      return (
-                        <li
-                          key={item.id}
-                          className={cn(
-                            'flex items-center gap-3 px-4 py-3',
-                            aktif
-                              ? 'bg-[#e0f1e8] shadow-[inset_3px_0_0_#1f6b4f]'
-                              : 'hover:bg-[#faf3e5]',
-                          )}
-                        >
-                          <FotoThumb foto={item.foto} onBuka={setFotoBesar} />
-                          <button
-                            type="button"
-                            aria-current={aktif ? 'true' : undefined}
-                            onClick={() => setPilihId(item.id)}
-                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left focus-visible:outline-none"
-                          >
-                            <span className="min-w-0">
-                              <span className="block truncate font-medium text-[#1d2b26]">
-                                {item.deskripsi}
-                              </span>
-                              <span className="mt-0.5 block truncate text-xs text-[#8a8f87]">
-                                {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
-                                {formatTanggal(item.created_at)}
-                              </span>
-                              {item.pelapor && (
-                                <span className="mt-0.5 block truncate text-xs text-[#5f655d]">
-                                  Pelapor: {item.pelapor.name}
-                                </span>
-                              )}
-                            </span>
-                            <StatusPill status={item.status} />
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </section>
-
-              <DetailPanel
-                key={terpilih?.id ?? 'kosong'}
-                item={terpilih}
-                disabled={update.isPending}
-                onUbah={pilihStatus}
-                onBuka={setFotoBesar}
+            {/* Search + filter ikut ter-scroll bersama halaman (tidak sticky). */}
+            <div>
+              <VerifikasiFilter
+                cari={cari}
+                onCari={ubahCari}
+                jumlah={hasil.length}
+                onReset={resetFilter}
+                grup={[
+                  ...grupStatus,
+                  {
+                    key: 'kategori',
+                    judul: 'Kategori',
+                    nilai: kategori,
+                    onPilih: (v) => {
+                      setKategori(v as 'semua' | LaporanKategori)
+                      setHalaman(0)
+                    },
+                    opsi: KATEGORI_VALUES.map((k) => ({
+                      value: k,
+                      label: KATEGORI_LABEL[k],
+                    })),
+                  },
+                  {
+                    key: 'prioritas',
+                    judul: 'Prioritas',
+                    nilai: prioritas,
+                    onPilih: (v) => {
+                      setPrioritas(v)
+                      setHalaman(0)
+                    },
+                    opsi: PRIORITAS_OPSI.map(([value, label]) => ({
+                      value,
+                      label,
+                    })),
+                  },
+                  {
+                    key: 'gedung',
+                    judul: 'Gedung',
+                    nilai: gedung,
+                    onPilih: (v) => {
+                      setGedung(v)
+                      setHalaman(0)
+                    },
+                    opsi: opsiGedung.map((k) => ({
+                      value: k,
+                      label: labelGedung(k),
+                    })),
+                  },
+                ]}
               />
             </div>
 
-            <LaporanHarianCard harian={harian} />
+            {hariDipilih && (
+              <div className="-mt-2 flex items-center gap-2 text-sm text-[#8a8f87]">
+                Tanggal:
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#e0f1e8] py-0.5 pr-1 pl-2.5 text-xs font-medium text-[#1f6b4f]">
+                  {hariDipilih.hari}, {hariDipilih.tanggal} {hariDipilih.bulan}
+                  <button
+                    type="button"
+                    aria-label="Hapus filter tanggal"
+                    onClick={() => ubahTanggal(null)}
+                    className="grid size-4.5 place-items-center rounded-full outline-none hover:bg-[#1f6b4f]/15 focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30"
+                  >
+                    <X aria-hidden="true" className="size-3" />
+                  </button>
+                </span>
+              </div>
+            )}
+
+            {/* Daftar laporan selebar halaman. Klik baris untuk membuka
+                popup detail. */}
+            <section
+              ref={daftarRef}
+              aria-label="Daftar laporan"
+              className={cn(CARD, 'min-w-0 scroll-mt-20 overflow-hidden p-0')}
+            >
+              {!adaHasil ? (
+                <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+                  <p className="text-sm text-[#8a8f87]">
+                    {tab === 'riwayat' && jumlahRiwayat === 0
+                      ? 'Belum ada laporan yang selesai atau ditolak.'
+                      : tab === 'antrian' && jumlahAntrian === 0
+                        ? 'Belum ada laporan di antrian.'
+                        : 'Tidak ada laporan yang cocok. Ubah filter atau kata kunci.'}
+                  </p>
+                  {laporan.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={resetFilter}
+                    >
+                      Reset filter
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <KepalaDaftar urut={urut} onUrut={ubahUrut} />
+
+                  <ul className="divide-y divide-[#efe9d8]">
+                    {tampak.map((item, itemIndex) => (
+                      <li
+                        key={item.id}
+                        className={cn(
+                          'relative grid grid-cols-[2.5rem_3.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5 px-4 py-3 hover:bg-[#faf3e5]',
+                          KOLOM,
+                        )}
+                      >
+                        {/* Nomor urut: halamanEfektif * perHalaman + index + 1. */}
+                        <div className="relative z-10 row-span-3 text-center text-[#5f655d] md:row-span-1">
+                          {halamanEfektif * perHalaman + itemIndex + 1}
+                        </div>
+                        {/* z-10 supaya foto tetap bisa diklik walau seluruh
+                            baris menjadi area klik untuk membuka detail. */}
+                        <div className="relative z-10 row-span-3 md:row-span-1">
+                          <FotoThumb foto={item.foto} onBuka={setFotoBesar} />
+                        </div>
+
+                        <button
+                          type="button"
+                          aria-haspopup="dialog"
+                          onClick={() => setPilihId(item.id)}
+                          className="min-w-0 text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+                        >
+                          <span className="block truncate font-medium text-[#1d2b26]">
+                            {item.deskripsi}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-[#8a8f87]">
+                            {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
+                            {formatTanggal(item.created_at)}
+                          </span>
+                          {item.pelapor && (
+                            <span className="mt-0.5 block truncate text-xs text-[#5f655d]">
+                              Pelapor: {item.pelapor.name}
+                            </span>
+                          )}
+                        </button>
+
+                        <div className="col-start-2 md:col-start-auto">
+                          <PrioritasBadge
+                            kategori={item.prioritas_kategori ?? null}
+                          />
+                        </div>
+
+                        <div className="col-start-2 md:col-start-auto">
+                          <StatusPill status={item.status} />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+
+            {adaHasil && (
+              <VerifikasiPager
+                halaman={halamanEfektif}
+                totalHalaman={totalHalaman}
+                perHalaman={perHalaman}
+                onPindah={pindahHalaman}
+                onUbahPerHalaman={ubahPerHalaman}
+              />
+            )}
+
+            <LaporanHarianCard
+              harian={harian}
+              terpilih={indeksHari}
+              onPilih={(i) =>
+                ubahTanggal(i === null ? null : (harian[i]?.awal ?? null))
+              }
+            />
           </>
         )}
       </div>
+
+      {terpilih && (
+        <DetailDialog
+          key={terpilih.id}
+          item={terpilih}
+          disabled={update.isPending}
+          bolehEsc={detailBolehEsc}
+          onUbah={pilihStatus}
+          onBuka={setFotoBesar}
+          onTutup={() => setPilihId(null)}
+        />
+      )}
 
       {fotoBesar && (
         <FotoLightbox src={fotoBesar} onTutup={() => setFotoBesar(null)} />
@@ -432,8 +733,108 @@ export function VerifikasiPage({ user }: { user: User }) {
   )
 }
 
+// Baris judul kolom di atas daftar. Judul, Prioritas, dan Status bisa
+// diurutkan. Disembunyikan di layar kecil (baris data ditumpuk di sana).
+function KepalaDaftar({
+  urut,
+  onUrut,
+}: {
+  urut: Urut
+  onUrut: (kunci: KunciUrut) => void
+}) {
+  return (
+    <div
+      className={cn(
+        'hidden items-center gap-x-3.5 border-b border-[#efe9d8] bg-[#faf7ee] px-4 py-2.5 md:grid',
+        KOLOM,
+      )}
+    >
+      <span className="text-xs font-semibold text-[#5f655d]">No</span>
+      <span className="text-xs font-semibold text-[#5f655d]">Foto</span>
+      <KolomUrut kunci="judul" urut={urut} onUrut={onUrut}>
+        Judul
+      </KolomUrut>
+      <KolomUrut kunci="prioritas" urut={urut} onUrut={onUrut}>
+        Prioritas
+      </KolomUrut>
+      <KolomUrut kunci="status" urut={urut} onUrut={onUrut}>
+        Status
+      </KolomUrut>
+    </div>
+  )
+}
+
+function KolomUrut({
+  kunci,
+  urut,
+  onUrut,
+  children,
+}: {
+  kunci: KunciUrut
+  urut: Urut
+  onUrut: (kunci: KunciUrut) => void
+  children: string
+}) {
+  const aktif = urut?.kunci === kunci
+  const Ikon = !aktif ? ArrowUpDown : urut.arah === 1 ? ArrowUp : ArrowDown
+
+  return (
+    <button
+      type="button"
+      onClick={() => onUrut(kunci)}
+      aria-label={`Urutkan berdasarkan ${children}`}
+      aria-sort={
+        aktif ? (urut.arah === 1 ? 'ascending' : 'descending') : 'none'
+      }
+      className={cn(
+        'inline-flex items-center gap-1.5 justify-self-start rounded-md text-xs font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+        aktif ? 'text-[#1d2b26]' : 'text-[#5f655d] hover:text-[#1d2b26]',
+      )}
+    >
+      {children}
+      <Ikon
+        aria-hidden="true"
+        className={cn('size-3.5', aktif ? 'opacity-100' : 'opacity-55')}
+      />
+    </button>
+  )
+}
+
+// Tombol tab di atas daftar, lengkap dengan jumlah laporan per tab.
+function TabTombol({
+  aktif,
+  jumlah,
+  onClick,
+  children,
+}: {
+  aktif: boolean
+  jumlah: number
+  onClick: () => void
+  children: string
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={aktif}
+      onClick={onClick}
+      className={cn(
+        '-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+        aktif
+          ? 'border-[#1f6b4f] text-[#1d2b26]'
+          : 'border-transparent text-[#8a8f87] hover:text-[#1d2b26]',
+      )}
+    >
+      {children}
+      <span className="rounded-full bg-[#f1f5f3] px-2 py-0.5 text-[11px] tabular-nums">
+        {jumlah}
+      </span>
+    </button>
+  )
+}
+
 // Badge status biasa (tidak bisa diklik). Perubahan status lewat
-// tombol aksi di DetailPanel.
+// tombol aksi di DetailDialog.
 function StatusPill({ status }: { status: string }) {
   const key = status as LaporanStatus
   return (
@@ -448,9 +849,128 @@ function StatusPill({ status }: { status: string }) {
   )
 }
 
-// Foto besar di panel detail. Kalau `foto` null atau gagal dimuat,
-// tampil kotak putus-putus supaya tinggi panel tidak melompat.
-function FotoDetail({
+// Lonceng di header: angka merah = jumlah laporan prioritas tinggi yang
+// masih aktif. Diklik membuka popup daftarnya; memilih salah satu langsung
+// membuka detail laporan itu. Ditutup lewat klik di luar atau Esc.
+function NotifikasiPrioritas({
+  items,
+  aktifId,
+  onPilih,
+}: {
+  items: Laporan[]
+  aktifId: number | undefined
+  onPilih: (id: number) => void
+}) {
+  const [buka, setBuka] = useState(false)
+  const wadah = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!buka) return
+
+    const onKlik = (event: MouseEvent) => {
+      if (!wadah.current?.contains(event.target as Node)) setBuka(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setBuka(false)
+    }
+
+    document.addEventListener('mousedown', onKlik)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onKlik)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [buka])
+
+  const jumlah = items.length
+
+  return (
+    <div ref={wadah} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label={
+          jumlah > 0
+            ? `Notifikasi: ${jumlah} laporan prioritas tinggi`
+            : 'Notifikasi: tidak ada laporan prioritas tinggi'
+        }
+        aria-expanded={buka}
+        aria-haspopup="dialog"
+        onClick={() => setBuka((v) => !v)}
+        className="relative grid size-11 place-items-center rounded-full border-[1.5px] border-[#efe9d8] bg-white text-[#1d2b26] transition hover:bg-[#faf3e5] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35 focus-visible:outline-none"
+      >
+        <Bell aria-hidden="true" className="size-5" />
+        {jumlah > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-700 px-1 text-[11px] font-bold text-white"
+          >
+            {jumlah > 99 ? '99+' : jumlah}
+          </span>
+        )}
+      </button>
+
+      {buka && (
+        <div
+          role="dialog"
+          aria-label="Perlu perhatian"
+          className="absolute top-14 right-0 z-40 w-[21rem] max-w-[calc(100vw-2rem)] rounded-[20px] border-[1.5px] border-[#efe9d8] bg-white p-3.5 shadow-[0_12px_32px_rgba(15,61,46,0.16)]"
+        >
+          <div className="flex items-center justify-between px-2 pb-2">
+            <h2 className="text-[15px] font-bold text-[#1d2b26]">
+              Perlu perhatian
+            </h2>
+            <span className="text-xs text-[#5f655d]">
+              {jumlah} prioritas tinggi
+            </span>
+          </div>
+
+          {jumlah === 0 ? (
+            <p className="px-2 py-4 text-sm text-[#5f655d]">
+              Tidak ada laporan prioritas tinggi yang menunggu.
+            </p>
+          ) : (
+            <ul className="max-h-72 space-y-0.5 overflow-y-auto">
+              {items.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    aria-current={item.id === aktifId ? 'true' : undefined}
+                    onClick={() => {
+                      onPilih(item.id)
+                      setBuka(false)
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-[14px] p-2 text-left transition focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35 focus-visible:outline-none',
+                      item.id === aktifId
+                        ? 'bg-[#e0f1e8]'
+                        : 'hover:bg-[#faf3e5]',
+                    )}
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-red-50 text-red-700">
+                      <AlertTriangle aria-hidden="true" className="size-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-[#1d2b26]">
+                        {item.deskripsi}
+                      </span>
+                      <span className="block truncate text-xs text-[#5f655d]">
+                        Prioritas tinggi · {item.lokasi}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Foto kecil di popup detail. Diklik membuka lightbox. Kalau `foto` null
+// atau gagal dimuat, tampil kotak putus-putus berukuran sama.
+function FotoKecil({
   foto,
   onBuka,
 }: {
@@ -461,8 +981,11 @@ function FotoDetail({
 
   if (!foto || gagal) {
     return (
-      <div className="flex aspect-[16/10] w-full items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-[#f6f7f4] text-neutral-400">
-        <ImageIcon aria-hidden="true" strokeWidth={1.5} className="size-10" />
+      <div
+        title={foto ? 'Foto tidak termuat' : 'Belum ada foto'}
+        className="flex size-26 shrink-0 items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-[#f6f7f4] text-neutral-400"
+      >
+        <ImageIcon aria-hidden="true" strokeWidth={1.5} className="size-8" />
       </div>
     )
   }
@@ -473,147 +996,171 @@ function FotoDetail({
       type="button"
       onClick={() => onBuka(src)}
       aria-label="Perbesar foto laporan"
-      className="block w-full overflow-hidden rounded-2xl border border-[#efe9d8] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35 focus-visible:outline-none"
+      className="group relative size-26 shrink-0 overflow-hidden rounded-2xl border border-[#efe9d8] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35 focus-visible:outline-none"
     >
       <img
         src={src}
         alt="Foto laporan"
         onError={() => setGagal(true)}
-        className="aspect-[16/10] w-full object-cover"
+        className="size-full object-cover"
       />
+      <span className="absolute right-1.5 bottom-1.5 grid size-6 place-items-center rounded-md bg-white/90 text-[#1d2b26] transition group-hover:bg-white">
+        <Maximize2 aria-hidden="true" className="size-3.5" />
+      </span>
     </button>
   )
 }
 
-// Kartu pelapor di panel detail. Backend hanya mengirim `pelapor` untuk
-// admin, jadi kalau kosong tidak ditampilkan sama sekali.
+// Kartu pelapor ringkas di popup detail. Backend hanya mengirim `pelapor`
+// untuk admin, jadi kalau kosong tidak ditampilkan sama sekali.
 function PelaporInfo({ pelapor }: { pelapor: Pelapor | null | undefined }) {
   const [gagal, setGagal] = useState(false)
   if (!pelapor) return null
 
   const inisial = pelapor.name.trim().charAt(0).toUpperCase() || '?'
+  const kontak = [pelapor.email, pelapor.nim ? `NIM ${pelapor.nim}` : null]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <section
       aria-label="Data pelapor"
-      className="mt-5 overflow-hidden rounded-2xl border border-[#efe9d8] bg-[#faf7ee]"
+      className="mt-4 flex items-center gap-3 rounded-2xl border border-[#efe9d8] bg-[#faf7ee] px-3.5 py-2.5"
     >
-      <h3 className="border-b border-[#efe9d8] px-4 py-2.5 text-xs font-semibold tracking-wide text-[#8a8f87] uppercase">
-        Pelapor
-      </h3>
-
-      <div className="flex items-center gap-3.5 px-4 py-3.5">
-        {pelapor.foto && !gagal ? (
-          <img
-            src={fotoUrl(pelapor.foto)}
-            alt={`Foto ${pelapor.name}`}
-            onError={() => setGagal(true)}
-            className="size-12 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-full bg-[#1f6b4f] text-lg font-semibold text-white"
-          >
-            {inisial}
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p
-            title={pelapor.name}
-            className="truncate text-sm font-semibold text-[#1d2b26]"
-          >
-            {pelapor.name}
-          </p>
-          <p
-            title={pelapor.email ?? undefined}
-            className="truncate text-sm text-[#5f655d]"
-          >
-            {pelapor.email}
-          </p>
-          {pelapor.nim && (
-            <span className="mt-1.5 inline-flex rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-[#5f655d] ring-1 ring-[#efe9d8]">
-              NIM {pelapor.nim}
-            </span>
-          )}
+      {pelapor.foto && !gagal ? (
+        <img
+          src={fotoUrl(pelapor.foto)}
+          alt={`Foto ${pelapor.name}`}
+          onError={() => setGagal(true)}
+          className="size-9 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-[#1f6b4f] text-sm font-semibold text-white"
+        >
+          {inisial}
         </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <p
+          title={pelapor.name}
+          className="truncate text-[13px] font-semibold text-[#1d2b26]"
+        >
+          {pelapor.name}
+        </p>
+        {kontak && (
+          <p title={kontak} className="truncate text-xs text-[#5f655d]">
+            {kontak}
+          </p>
+        )}
       </div>
     </section>
   )
 }
 
-// Panel keputusan: admin melihat detail lalu langsung memverifikasi
-// atau menolak tanpa pindah halaman.
-function DetailPanel({
+// Popup detail laporan: admin melihat ringkasannya lalu langsung
+// memverifikasi atau menolak. Ditutup lewat tombol X, klik di luar kotak,
+// atau Esc. Laporan selesai/ditolak tidak punya tombol aksi (status final).
+function DetailDialog({
   item,
   disabled,
+  bolehEsc,
   onUbah,
   onBuka,
+  onTutup,
 }: {
-  item: Laporan | undefined
+  item: Laporan
   disabled: boolean
+  bolehEsc: boolean
   onUbah: (id: number, status: LaporanStatus) => void
   onBuka: (src: string) => void
+  onTutup: () => void
 }) {
-  if (!item) {
-    return (
-      <aside className={cn(CARD, 'text-sm text-[#8a8f87]')}>
-        Pilih laporan untuk melihat detail.
-      </aside>
-    )
-  }
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && bolehEsc) onTutup()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [bolehEsc, onTutup])
 
   const aksi = AKSI[item.status as LaporanStatus] ?? []
 
   return (
-    <aside
-      aria-label="Detail laporan"
-      className={cn(CARD, 'xl:sticky xl:top-24')}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-judul"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onTutup}
     >
-      <FotoDetail foto={item.foto} onBuka={onBuka} />
+      <div
+        className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[26px] border border-neutral-200/70 bg-white p-5 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          aria-label="Tutup detail"
+          onClick={onTutup}
+          className="absolute top-3.5 right-3.5 grid size-8 place-items-center rounded-full bg-[#f6f7f4] text-[#1d2b26] transition hover:bg-[#efe9d8] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35 focus-visible:outline-none"
+        >
+          <X aria-hidden="true" className="size-4" />
+        </button>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <StatusPill status={item.status} />
-        <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
-      </div>
+        <div className="flex items-start gap-3.5 pr-8">
+          <FotoKecil foto={item.foto} onBuka={onBuka} />
 
-      <h2 className="mt-2 text-lg leading-snug font-semibold">
-        {item.deskripsi}
-      </h2>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <StatusPill status={item.status} />
+              <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+            </div>
 
-      <dl className="mt-4 grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1.5 text-sm">
-        <dt className="text-[#8a8f87]">Kategori</dt>
-        <dd>{kategoriLabel(item.kategori)}</dd>
-        <dt className="text-[#8a8f87]">Lokasi</dt>
-        <dd>{item.lokasi}</dd>
-        <dt className="text-[#8a8f87]">Dilaporkan</dt>
-        <dd>{formatTanggal(item.created_at)}</dd>
-      </dl>
-
-      <PelaporInfo pelapor={item.pelapor} />
-
-      {aksi.length > 0 && (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {aksi.map((a) => (
-            <button
-              key={a.ke}
-              type="button"
-              disabled={disabled}
-              onClick={() => onUbah(item.id, a.ke)}
-              className={cn(
-                'inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
-                a.bahaya
-                  ? 'border-[1.5px] border-red-600 text-red-600 hover:bg-red-50'
-                  : 'bg-[#1f6b4f] text-white hover:bg-[#0f3d2e]',
-              )}
+            <h2
+              id="detail-judul"
+              className="mt-2 text-base leading-snug font-semibold text-[#1d2b26]"
             >
-              {a.label}
-            </button>
-          ))}
+              {item.deskripsi}
+            </h2>
+
+            <p className="mt-1 text-[13px] leading-relaxed text-[#5f655d]">
+              {kategoriLabel(item.kategori)} · {item.lokasi}
+              <br />
+              {formatTanggal(item.created_at)}
+            </p>
+          </div>
         </div>
-      )}
-    </aside>
+
+        <PelaporInfo pelapor={item.pelapor} />
+
+        <div className="mt-4">
+          <StatusStepper status={item.status} />
+        </div>
+
+        {aksi.length > 0 && (
+          <div className="mt-4 flex gap-2">
+            {aksi.map((a) => (
+              <button
+                key={a.ke}
+                type="button"
+                disabled={disabled}
+                onClick={() => onUbah(item.id, a.ke)}
+                className={cn(
+                  'inline-flex h-10 flex-1 items-center justify-center rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
+                  a.bahaya
+                    ? 'border-[1.5px] border-red-600 text-red-600 hover:bg-red-50'
+                    : 'bg-[#1f6b4f] text-white hover:bg-[#0f3d2e]',
+                )}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -906,7 +1453,7 @@ function FotoLightbox({ src, onTutup }: { src: string; onTutup: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Foto laporan"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
       onClick={onTutup}
     >
       <button
@@ -932,10 +1479,7 @@ function VerifikasiSkeleton() {
     <div className="flex flex-col gap-5">
       <p className="text-sm text-[#8a8f87]">Memuat laporan…</p>
       <Skeleton className="h-10 rounded-xl" />
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <Skeleton className="h-96 rounded-[26px]" />
-        <Skeleton className="h-96 rounded-[26px]" />
-      </div>
+      <Skeleton className="h-96 rounded-[26px]" />
     </div>
   )
 }
