@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import { BadgeCheck, Clock, ShieldCheck, Wrench } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import type { LaporanStatus } from '@/features/laporan/laporan-query'
-import type { BarHarian, RingkasanDashboard } from './dashboard-utils'
-import { periodeHarian } from './dashboard-utils'
+import type {
+  BarBulanan,
+  BarHarian,
+  RingkasanDashboard,
+} from './dashboard-utils'
+import { periodeBulanan, periodeHarian } from './dashboard-utils'
 import { cn } from '@/lib/utils'
 
 const BULAN = new Intl.DateTimeFormat('id-ID', {
@@ -265,7 +270,7 @@ export function PrioritasCard({
 }
 
 // ------------------------------------------------------------------
-// Grafik "Laporan per hari" (garis + area, 7 hari terakhir)
+// Grafik "Laporan per hari / per bulan" (garis + area, 7 titik terakhir)
 // ------------------------------------------------------------------
 
 // Ukuran kanvas grafik (viewBox). Tinggi tampil diatur CSS (h-24), garis
@@ -302,25 +307,75 @@ function posisiTooltip(i: number, n: number): string {
   return 'left-1/2 -translate-x-1/2'
 }
 
+type ModeGrafik = 'harian' | 'bulanan'
+
+// Bentuk seragam supaya satu grafik bisa menggambar data harian maupun
+// bulanan.
+type TitikGrafik = {
+  key: string
+  label: string // "Sab" / "Mei"
+  sub: string // "14" / "05"
+  tooltip: string
+  aria: string
+  jumlah: number
+  sorot: boolean
+}
+
 export function LaporanHarianCard({
   harian,
+  bulanan,
   terpilih = null,
   onPilih,
 }: {
   harian: BarHarian[]
+  // Opsional. Kalau diisi, muncul tombol Harian / Bulanan.
+  bulanan?: BarBulanan[]
   // Indeks hari yang sedang dipilih (opsional, buat filter).
   terpilih?: number | null
-  // Kalau diisi, titik bisa diklik. Klik lagi pada yang sama = lepas.
+  // Kalau diisi, titik bisa diklik. Hanya aktif di mode Harian.
   onPilih?: (indeks: number | null) => void
 }) {
-  const n = harian.length
-  const total = harian.reduce((acc, item) => acc + item.jumlah, 0)
-  const maks = Math.max(1, ...harian.map((item) => item.jumlah))
+  const [mode, setMode] = useState<ModeGrafik>('harian')
+  const modeAktif: ModeGrafik = bulanan ? mode : 'harian'
+  const harianMode = modeAktif === 'harian'
 
-  const data = harian.map((bar, i) => ({
-    bar,
+  const titik: TitikGrafik[] = harianMode
+    ? harian.map((b) => ({
+        key: b.ariaLabel,
+        label: b.hari,
+        sub: String(b.tanggal),
+        tooltip: `${b.hari}, ${b.tanggal} ${b.bulan} · ${b.jumlah} laporan`,
+        aria: `${b.jumlah} laporan pada ${b.ariaLabel}`,
+        jumlah: b.jumlah,
+        sorot: b.sorot,
+      }))
+    : (bulanan ?? []).map((b) => ({
+        key: b.ariaLabel,
+        label: b.label,
+        sub: String(b.bulan).padStart(2, '0'),
+        tooltip: `${b.ariaLabel} · ${b.jumlah} laporan`,
+        aria: `${b.jumlah} laporan pada ${b.ariaLabel}`,
+        jumlah: b.jumlah,
+        sorot: b.sorot,
+      }))
+
+  const judul = harianMode ? 'Laporan per hari' : 'Laporan per bulan'
+  const rentang = harianMode ? '7 hari terakhir' : '7 bulan terakhir'
+  const periode = harianMode
+    ? periodeHarian(harian)
+    : periodeBulanan(bulanan ?? [])
+  const labelSorot = harianMode ? 'Hari ini' : 'Bulan ini'
+  // Klik titik (filter tanggal) hanya masuk akal di mode Harian.
+  const bisaPilih = harianMode && !!onPilih
+
+  const n = titik.length
+  const total = titik.reduce((acc, item) => acc + item.jumlah, 0)
+  const maks = Math.max(1, ...titik.map((item) => item.jumlah))
+
+  const data = titik.map((t, i) => ({
+    t,
     x: ((i + 0.5) / n) * LEBAR,
-    y: DASAR - (bar.jumlah / maks) * (DASAR - ATAS),
+    y: DASAR - (t.jumlah / maks) * (DASAR - ATAS),
   }))
   const garis = buatGaris(data)
   const pertama = data[0]
@@ -332,14 +387,45 @@ export function LaporanHarianCard({
 
   return (
     <section className={cn(KARTU, 'py-4')}>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Laporan per hari</h2>
-        <span className={CHIP}>{periodeHarian(harian)}</span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">{judul}</h2>
+
+        <div className="flex items-center gap-2">
+          {bulanan && (
+            <div
+              role="tablist"
+              aria-label="Rentang laporan"
+              className="inline-flex rounded-full bg-neutral-100 p-[3px]"
+            >
+              {(['harian', 'bulanan'] as const).map((m) => {
+                const aktif = modeAktif === m
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    role="tab"
+                    aria-selected={aktif}
+                    onClick={() => setMode(m)}
+                    className={cn(
+                      'rounded-full px-3.5 py-1 text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35',
+                      aktif
+                        ? 'bg-[#0f3d2e] font-medium text-white'
+                        : 'text-neutral-500 hover:text-neutral-800',
+                    )}
+                  >
+                    {m === 'harian' ? 'Harian' : 'Bulanan'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          <span className={CHIP}>{periode}</span>
+        </div>
       </div>
 
       {total === 0 || n === 0 ? (
         <p className="py-3 text-sm text-neutral-500">
-          Belum ada laporan dalam 7 hari terakhir.
+          Belum ada laporan dalam {rentang}.
         </p>
       ) : (
         <div className="mt-4 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:items-end sm:gap-7">
@@ -349,7 +435,7 @@ export function LaporanHarianCard({
             </p>
             <p className="text-xs leading-snug text-neutral-500 sm:mt-1.5">
               laporan
-              <br className="hidden sm:block" /> 7 hari terakhir
+              <br className="hidden sm:block" /> {rentang}
             </p>
           </div>
 
@@ -393,23 +479,25 @@ export function LaporanHarianCard({
 
             <div
               role="group"
-              aria-label="Jumlah laporan per hari"
+              aria-label={`Jumlah laporan per ${harianMode ? 'hari' : 'bulan'}`}
               className="relative grid"
               style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
             >
-              {data.map(({ bar, y }, i) => {
-                const aktif = terpilih === i
-                const nol = bar.jumlah === 0
+              {data.map(({ t, y }, i) => {
+                const aktif = harianMode && terpilih === i
+                const nol = t.jumlah === 0
                 return (
                   <button
-                    key={bar.ariaLabel}
+                    key={t.key}
                     type="button"
-                    aria-pressed={onPilih ? aktif : undefined}
-                    aria-label={`${bar.jumlah} laporan pada ${bar.ariaLabel}`}
-                    onClick={() => onPilih?.(aktif ? null : i)}
+                    aria-pressed={bisaPilih ? aktif : undefined}
+                    aria-label={t.aria}
+                    onClick={() => {
+                      if (bisaPilih) onPilih(aktif ? null : i)
+                    }}
                     className={cn(
                       'group relative rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35',
-                      onPilih ? 'cursor-pointer' : 'cursor-default',
+                      bisaPilih ? 'cursor-pointer' : 'cursor-default',
                     )}
                   >
                     <span className="relative block h-24">
@@ -430,7 +518,7 @@ export function LaporanHarianCard({
                           'absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-transform group-hover:scale-125 group-focus-visible:scale-125',
                           nol
                             ? 'size-[7px] border-2 border-emerald-100 bg-white'
-                            : bar.sorot
+                            : t.sorot
                               ? 'size-3.5 border-[2.5px] border-[#0f3d2e] bg-[#0f3d2e]'
                               : 'size-[11px] border-[2.5px] border-[#1f6b4f] bg-white group-hover:border-[#0f3d2e]',
                           aktif && 'scale-125 border-[#0f3d2e] bg-[#0f3d2e]',
@@ -446,25 +534,24 @@ export function LaporanHarianCard({
                           aktif && 'opacity-100',
                         )}
                       >
-                        {bar.hari}, {bar.tanggal} {bar.bulan} · {bar.jumlah}{' '}
-                        laporan
+                        {t.tooltip}
                       </span>
                     </span>
 
                     <span
                       className={cn(
                         'mt-0.5 block text-center text-xs leading-tight text-neutral-400',
-                        bar.sorot && 'font-semibold text-[#0f3d2e]',
+                        t.sorot && 'font-semibold text-[#0f3d2e]',
                       )}
                     >
-                      {bar.sorot ? 'Hari ini' : bar.hari}
+                      {t.sorot ? labelSorot : t.label}
                       <span
                         className={cn(
                           'block text-[13px] text-neutral-700',
-                          bar.sorot && 'text-[#0f3d2e]',
+                          t.sorot && 'text-[#0f3d2e]',
                         )}
                       >
-                        {bar.tanggal}
+                        {t.sub}
                       </span>
                     </span>
                   </button>

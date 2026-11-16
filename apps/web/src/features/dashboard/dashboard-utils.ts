@@ -29,6 +29,14 @@ export type BarHarian = {
   sorot: boolean
 }
 
+export type BarBulanan = {
+  bulan: number // 1–12
+  label: string // "Mei", "Jun", ...
+  ariaLabel: string // "Mei 2026"
+  jumlah: number
+  sorot: boolean // bulan ini
+}
+
 export function readFilter(search: unknown): AntrianFilter {
   const raw = (search as { filter?: unknown } | null | undefined)?.filter
   return raw === 'menunggu' || raw === 'terverifikasi' ? raw : 'semua'
@@ -124,6 +132,58 @@ export function periodeHarian(hari: BarHarian[]): string {
     return `${pertama.tanggal}–${terakhir.tanggal} ${terakhir.bulan}`
   }
   return `${pertama.tanggal} ${pertama.bulan} – ${terakhir.tanggal} ${terakhir.bulan}`
+}
+
+// Tujuh bulan terakhir, termasuk bulan ini. Dipakai buat grafik bulanan.
+export function laporanPerBulan(
+  laporan: Laporan[],
+  now = new Date(),
+): BarBulanan[] {
+  const bulan = Array.from({ length: 7 }, (_, index) => {
+    return new Date(now.getFullYear(), now.getMonth() - (6 - index), 1)
+  })
+
+  return bulan.map((awal) => {
+    const berikut = new Date(awal.getFullYear(), awal.getMonth() + 1, 1)
+
+    const jumlah = laporan.filter((item) => {
+      if (!item.created_at) return false
+      const createdAt = new Date(item.created_at)
+      return createdAt >= awal && createdAt < berikut
+    }).length
+
+    return {
+      bulan: awal.getMonth() + 1,
+      label: new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(awal),
+      ariaLabel: new Intl.DateTimeFormat('id-ID', {
+        month: 'long',
+        year: 'numeric',
+      }).format(awal),
+      jumlah,
+      sorot:
+        awal.getFullYear() === now.getFullYear() &&
+        awal.getMonth() === now.getMonth(),
+    }
+  })
+}
+
+export function periodeBulanan(
+  bulan: BarBulanan[],
+  now = new Date(),
+): string {
+  const pertama = bulan[0]
+  const terakhir = bulan[bulan.length - 1]
+  if (!pertama || !terakhir) return ''
+  const awal = new Date(
+    now.getFullYear(),
+    now.getMonth() - (bulan.length - 1),
+    1,
+  )
+  // Lintas tahun: "Des 2025–Jun 2026". Satu tahun: "Mei–Nov 2026".
+  if (awal.getFullYear() === now.getFullYear()) {
+    return `${pertama.label}–${terakhir.label} ${now.getFullYear()}`
+  }
+  return `${pertama.label} ${awal.getFullYear()}–${terakhir.label} ${now.getFullYear()}`
 }
 
 export function identitas(user: User): string {

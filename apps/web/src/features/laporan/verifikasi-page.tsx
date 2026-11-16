@@ -21,6 +21,7 @@ import { LaporanHarianCard } from '@/features/dashboard/dashboard-summary'
 
 import {
   hitungRingkasan,
+  laporanPerBulan, // BARU
   laporanPerHari,
 } from '@/features/dashboard/dashboard-utils'
 import { FotoInput } from '@/features/laporan/foto-input'
@@ -237,6 +238,7 @@ export function VerifikasiPage({ user }: { user: User }) {
   const laporan = list.data ?? []
   const ringkasan = hitungRingkasan(laporan)
   const harian = laporanPerHari(laporan)
+  const bulanan = laporanPerBulan(laporan) // BARU
 
   // Pilihan gedung diambil dari lokasi yang benar-benar ada di laporan.
   const opsiGedung = useMemo(() => {
@@ -723,6 +725,7 @@ export function VerifikasiPage({ user }: { user: User }) {
 
             <LaporanHarianCard
               harian={harian}
+              bulanan={bulanan} // BARU
               terpilih={indeksHari}
               onPilih={(i) =>
                 ubahTanggal(i === null ? null : (harian[i]?.awal ?? null))
