@@ -1322,7 +1322,7 @@ function BuktiDialog({
   // Pratinjau foto yang dipilih. URL objek (blob:) dihitung langsung dari
   // file, lalu dibersihkan saat file diganti atau dialog ditutup.
   const preview = useMemo(
-    () => (file ? URL.createObjectURL(file) : null),
+    () => (file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null),
     [file],
   )
 

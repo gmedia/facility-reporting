@@ -72,7 +72,10 @@ export function FotoInput({
 
   // Thumbnail kecil untuk foto yang terpilih.
   const thumb = useMemo(
-    () => (pratinjau && value ? URL.createObjectURL(value) : null),
+    () =>
+      pratinjau && value && value.type.startsWith('image/')
+        ? URL.createObjectURL(value)
+        : null,
     [pratinjau, value],
   )
   useEffect(() => {
