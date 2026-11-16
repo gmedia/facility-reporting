@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearch } from '@tanstack/react-router'
 import {
   AlertTriangle,
   ArrowDown,
@@ -47,14 +48,30 @@ import { VerifikasiFilter } from '@/features/laporan/verifikasi-filter'
 import { VerifikasiPager } from '@/features/laporan/verifikasi-pager'
 import { cn } from '@/lib/utils'
 
-type StatusFilter = 'semua' | LaporanStatus
+// 'perlu' = gabungan menunggu verifikasi + terverifikasi.
+type StatusFilter = 'semua' | 'perlu' | LaporanStatus
 type Tab = 'antrian' | 'riwayat'
-type KunciUrut = 'judul' | 'prioritas' | 'status'
-type Urut = { kunci: KunciUrut; arah: 1 | -1 } | null
+// Kolom yang bisa diurutkan: hanya Prioritas dan Status.
+type KunciUrut = 'prioritas' | 'status'
+type Urut = { kunci: KunciUrut; arah: 'asc' | 'desc' } | null
 
 const PER_HALAMAN_AWAL = 10
 
-// Kolom daftar: foto | judul | prioritas | status. Dipakai bersama oleh
+// Nilai ?filter= dari link dashboard -> filter status di halaman ini.
+// 'perlu' = gabungan menunggu verifikasi + terverifikasi (belum dikerjakan).
+const FILTER_URL_KE_STATUS: Record<string, StatusFilter> = {
+  menunggu: 'menunggu_verifikasi',
+  terverifikasi: 'valid',
+  perlu: 'perlu',
+}
+
+// Status yang dihitung sebagai "perlu tindakan".
+const STATUS_PERLU: ReadonlySet<string> = new Set([
+  'menunggu_verifikasi',
+  'valid',
+])
+
+// Kolom daftar: no | foto | judul | prioritas | status. Dipakai bersama oleh
 // baris header dan baris data supaya kolomnya selalu sejajar.
 const KOLOM = 'md:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_7rem_9rem]'
 
@@ -66,14 +83,15 @@ function statusFinal(status: string): boolean {
   return STATUS_FINAL.has(status)
 }
 
-// Urutan status mengikuti alur verifikasi (dipakai saat kolom Status diurutkan).
-const URUTAN_STATUS: ReadonlyArray<LaporanStatus> = [
-  'menunggu_verifikasi',
-  'valid',
-  'diproses',
-  'selesai',
-  'ditolak',
-]
+// Urutan status mengikuti alur verifikasi (dipakai untuk mengurutkan
+// kolom Status).
+const URUTAN_STATUS: Record<string, number> = {
+  menunggu_verifikasi: 1,
+  valid: 2,
+  diproses: 3,
+  selesai: 4,
+  ditolak: 5,
+}
 
 // Urutan filter ngikutin alur verifikasi, bukan urutan enum backend.
 // "Terverifikasi" sengaja dipakai buat status `valid` biar bahasa UI-nya
@@ -146,19 +164,15 @@ function waktu(item: Laporan): number {
   return Number.isNaN(t) ? 0 : t
 }
 
-// Laporan tanpa prioritas (null) selalu jatuh paling belakang.
+// Rank prioritas: Rendah = 1, Sedang = 2, Tinggi = 3. Tanpa prioritas = 0.
 function rankPrioritas(item: Laporan): number {
-  if (item.prioritas_kategori == null) return URUTAN_LABEL.length + 1
-  return urutanLabel(PRIORITAS_LABEL[item.prioritas_kategori] ?? '')
+  if (item.prioritas_kategori == null) return 0
+  const label = PRIORITAS_LABEL[item.prioritas_kategori] ?? ''
+  return URUTAN_LABEL.length - urutanLabel(label)
 }
 
-function bandingkan(kunci: KunciUrut, a: Laporan, b: Laporan): number {
-  if (kunci === 'judul') return a.deskripsi.localeCompare(b.deskripsi, 'id')
-  if (kunci === 'prioritas') return rankPrioritas(a) - rankPrioritas(b)
-  return (
-    URUTAN_STATUS.indexOf(a.status as LaporanStatus) -
-    URUTAN_STATUS.indexOf(b.status as LaporanStatus)
-  )
+function rankStatus(item: Laporan): number {
+  return URUTAN_STATUS[item.status] ?? 0
 }
 
 // `foto` disimpan sebagai path relatif di disk `public` (contoh:
@@ -191,14 +205,21 @@ export function VerifikasiPage({ user }: { user: User }) {
   const list = useLaporanList()
   const update = useUpdateLaporanStatus()
   const [tab, setTab] = useState<Tab>('antrian')
-  const [filter, setFilter] = useState<StatusFilter>('semua')
+  // Baca ?filter= dari URL (dikirim link di dashboard) lalu jadikan
+  // nilai awal filter status.
+  const { filter: filterUrl } = useSearch({ strict: false }) as {
+    filter?: string
+  }
+  const [filter, setFilter] = useState<StatusFilter>(
+    (filterUrl && FILTER_URL_KE_STATUS[filterUrl]) || 'semua',
+  )
   const [cari, setCari] = useState('')
   const [kategori, setKategori] = useState<'semua' | LaporanKategori>('semua')
   const [prioritas, setPrioritas] = useState<string>('semua')
   const [gedung, setGedung] = useState<string>('semua')
   // Awal hari (timestamp) yang dipilih dari grafik; null = semua tanggal.
   const [tanggal, setTanggal] = useState<number | null>(null)
-  // Urutan kolom (klik header): null = urutan bawaan (terbaru di atas).
+  // Urutan kolom. null = urutan bawaan (terbaru di atas).
   const [urut, setUrut] = useState<Urut>(null)
   // Pagination klien. Halaman 0-based. Reset ke 0 dilakukan di handler yang
   // sama dengan perubahan filter (bukan lewat efek).
@@ -248,15 +269,20 @@ export function VerifikasiPage({ user }: { user: User }) {
   const jumlahAntrian = antrianAktif.length
   const jumlahRiwayat = riwayatFinal.length
 
-  // Bawaan: yang paling baru di atas; kalau waktunya sama persis, ID yang
-  // lebih besar didahulukan. Kalau kolom diurutkan lewat header, urutan
-  // kolom dipakai dulu dan urutan bawaan jadi pembanding kedua. Pencarian
-  // juga mencakup nama dan NIM pelapor.
+  // Urutan bawaan: yang paling baru di atas; kalau waktunya sama persis, ID
+  // yang lebih besar didahulukan. Kalau kolom Prioritas/Status diklik,
+  // urutan kolom dipakai lebih dulu dan urutan bawaan jadi pembanding
+  // kedua. Pencarian juga mencakup nama dan NIM pelapor.
   const kata = cari.trim().toLowerCase()
   const hasil = (tab === 'antrian' ? antrianAktif : riwayatFinal)
+    // Filter 'perlu' = menunggu verifikasi + valid.
     .filter(
       (item) =>
-        tab === 'riwayat' || filter === 'semua' || item.status === filter,
+        tab === 'riwayat' ||
+        filter === 'semua' ||
+        (filter === 'perlu'
+          ? STATUS_PERLU.has(item.status)
+          : item.status === filter),
     )
     .filter((item) => kategori === 'semua' || item.kategori === kategori)
     .filter(
@@ -279,9 +305,11 @@ export function VerifikasiPage({ user }: { user: User }) {
     )
     .sort((a, b) => {
       if (urut) {
-        const selisihKolom = urut.arah * bandingkan(urut.kunci, a, b)
-        if (selisihKolom !== 0) return selisihKolom
+        const rank = urut.kunci === 'prioritas' ? rankPrioritas : rankStatus
+        const beda = rank(a) - rank(b)
+        if (beda !== 0) return urut.arah === 'asc' ? beda : -beda
       }
+      // Rank sama (atau tidak ada urutan): terbaru di atas.
       const selisih = waktu(b) - waktu(a)
       return selisih !== 0 ? selisih : b.id - a.id
     })
@@ -309,11 +337,11 @@ export function VerifikasiPage({ user }: { user: User }) {
     setHalaman(0)
   }
 
-  // Klik header kolom: naik → turun → kembali ke urutan bawaan.
+  // Klik 1: naik, klik 2: turun, klik 3: kembali ke urutan bawaan.
   const ubahUrut = (kunci: KunciUrut) => {
     setUrut((sekarang) => {
-      if (sekarang?.kunci !== kunci) return { kunci, arah: 1 }
-      if (sekarang.arah === 1) return { kunci, arah: -1 }
+      if (sekarang?.kunci !== kunci) return { kunci, arah: 'asc' }
+      if (sekarang.arah === 'asc') return { kunci, arah: 'desc' }
       return null
     })
     setHalaman(0)
@@ -369,6 +397,7 @@ export function VerifikasiPage({ user }: { user: User }) {
     setGedung('semua')
     setCari('')
     setTanggal(null)
+    setUrut(null)
     setHalaman(0)
   }
 
@@ -449,6 +478,13 @@ export function VerifikasiPage({ user }: { user: User }) {
                 value: 'semua',
                 label: 'Semua status',
                 jumlah: jumlahAntrian,
+              },
+              // Gabungan menunggu verifikasi + terverifikasi.
+              {
+                value: 'perlu',
+                label: 'Perlu tindakan',
+                jumlah:
+                  (counts?.menunggu_verifikasi ?? 0) + (counts?.valid ?? 0),
               },
               ...FILTERS.filter(
                 (f) => f.value !== 'semua' && !statusFinal(f.value as string),
@@ -543,19 +579,6 @@ export function VerifikasiPage({ user }: { user: User }) {
                     })),
                   },
                   {
-                    key: 'prioritas',
-                    judul: 'Prioritas',
-                    nilai: prioritas,
-                    onPilih: (v) => {
-                      setPrioritas(v)
-                      setHalaman(0)
-                    },
-                    opsi: PRIORITAS_OPSI.map(([value, label]) => ({
-                      value,
-                      label,
-                    })),
-                  },
-                  {
                     key: 'gedung',
                     judul: 'Gedung',
                     nilai: gedung,
@@ -566,6 +589,19 @@ export function VerifikasiPage({ user }: { user: User }) {
                     opsi: opsiGedung.map((k) => ({
                       value: k,
                       label: labelGedung(k),
+                    })),
+                  },
+                  {
+                    key: 'prioritas',
+                    judul: 'Prioritas',
+                    nilai: prioritas,
+                    onPilih: (v) => {
+                      setPrioritas(v)
+                      setHalaman(0)
+                    },
+                    opsi: PRIORITAS_OPSI.map(([value, label]) => ({
+                      value,
+                      label,
                     })),
                   },
                 ]}
@@ -733,8 +769,45 @@ export function VerifikasiPage({ user }: { user: User }) {
   )
 }
 
-// Baris judul kolom di atas daftar. Judul, Prioritas, dan Status bisa
-// diurutkan. Disembunyikan di layar kecil (baris data ditumpuk di sana).
+// Judul kolom yang bisa diklik untuk mengurutkan. Ikon ↑↓ abu-abu saat
+// belum aktif, berubah jadi ↑ atau ↓ hijau saat sedang dipakai.
+function KolomUrut({
+  label,
+  kunci,
+  urut,
+  onUrut,
+}: {
+  label: string
+  kunci: KunciUrut
+  urut: Urut
+  onUrut: (kunci: KunciUrut) => void
+}) {
+  const arah = urut?.kunci === kunci ? urut.arah : null
+  const Ikon =
+    arah === null ? ArrowUpDown : arah === 'asc' ? ArrowUp : ArrowDown
+
+  return (
+    <button
+      type="button"
+      onClick={() => onUrut(kunci)}
+      aria-label={`Urutkan berdasarkan ${label}`}
+      className="inline-flex items-center gap-1 text-left font-semibold transition-colors outline-none hover:text-[#1d2b26] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30"
+    >
+      {label}
+      <Ikon
+        aria-hidden="true"
+        className={cn(
+          'size-3.5',
+          arah === null ? 'text-neutral-400' : 'text-[#1f6b4f]',
+        )}
+      />
+    </button>
+  )
+}
+
+// Baris judul kolom. Hanya Prioritas dan Status yang bisa diurutkan; No,
+// Foto, dan Judul tulisan biasa. Disembunyikan di layar kecil (baris data
+// ditumpuk di sana).
 function KepalaDaftar({
   urut,
   onUrut,
@@ -745,58 +818,21 @@ function KepalaDaftar({
   return (
     <div
       className={cn(
-        'hidden items-center gap-x-3.5 border-b border-[#efe9d8] bg-[#faf7ee] px-4 py-2.5 md:grid',
+        'hidden items-center gap-x-3.5 border-b border-[#efe9d8] bg-[#faf7ee] px-4 py-2.5 text-xs font-semibold text-[#5f655d] md:grid',
         KOLOM,
       )}
     >
-      <span className="text-xs font-semibold text-[#5f655d]">No</span>
-      <span className="text-xs font-semibold text-[#5f655d]">Foto</span>
-      <KolomUrut kunci="judul" urut={urut} onUrut={onUrut}>
-        Judul
-      </KolomUrut>
-      <KolomUrut kunci="prioritas" urut={urut} onUrut={onUrut}>
-        Prioritas
-      </KolomUrut>
-      <KolomUrut kunci="status" urut={urut} onUrut={onUrut}>
-        Status
-      </KolomUrut>
-    </div>
-  )
-}
-
-function KolomUrut({
-  kunci,
-  urut,
-  onUrut,
-  children,
-}: {
-  kunci: KunciUrut
-  urut: Urut
-  onUrut: (kunci: KunciUrut) => void
-  children: string
-}) {
-  const aktif = urut?.kunci === kunci
-  const Ikon = !aktif ? ArrowUpDown : urut.arah === 1 ? ArrowUp : ArrowDown
-
-  return (
-    <button
-      type="button"
-      onClick={() => onUrut(kunci)}
-      aria-label={`Urutkan berdasarkan ${children}`}
-      aria-sort={
-        aktif ? (urut.arah === 1 ? 'ascending' : 'descending') : 'none'
-      }
-      className={cn(
-        'inline-flex items-center gap-1.5 justify-self-start rounded-md text-xs font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
-        aktif ? 'text-[#1d2b26]' : 'text-[#5f655d] hover:text-[#1d2b26]',
-      )}
-    >
-      {children}
-      <Ikon
-        aria-hidden="true"
-        className={cn('size-3.5', aktif ? 'opacity-100' : 'opacity-55')}
+      <span>No</span>
+      <span>Foto</span>
+      <span>Judul</span>
+      <KolomUrut
+        label="Prioritas"
+        kunci="prioritas"
+        urut={urut}
+        onUrut={onUrut}
       />
-    </button>
+      <KolomUrut label="Status" kunci="status" urut={urut} onUrut={onUrut} />
+    </div>
   )
 }
 
