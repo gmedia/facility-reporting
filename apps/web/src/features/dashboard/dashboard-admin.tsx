@@ -41,7 +41,6 @@ import {
   useLaporanList,
   type Laporan,
   type LaporanKategori,
-  type PrioritasKategori,
 } from '@/features/laporan/laporan-query'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import { StatusBadge } from '@/features/laporan/status-badge'
@@ -58,40 +57,39 @@ const KOLOM_DESKTOP = 'md:grid-cols-[40px_56px_minmax(0,1fr)_110px_120px]'
 // Pilihan jumlah baris per halaman. Default 5.
 const UKURAN_HALAMAN = [5, 10, 20]
 
-// Urutan prioritas dari yang paling mendesak. Label di luar tiga ini
-// (kalau ada) ditaruh paling belakang.
-// Sengaja tidak di-export: file .tsx cuma boleh export komponen supaya
-// react-refresh tidak kasih warning baru.
-const URUTAN_LABEL = ['tinggi', 'sedang', 'rendah']
+// Kolom yang bisa diurutkan: hanya Prioritas dan Status.
+type KunciUrut = 'prioritas' | 'status'
+type Urut = { kunci: KunciUrut; arah: 'asc' | 'desc' } | null
 
-function urutanLabel(label: string): number {
-  const index = URUTAN_LABEL.indexOf(label.toLowerCase())
-  return index === -1 ? URUTAN_LABEL.length : index
+// Urutan status mengikuti alur verifikasi.
+const URUTAN_STATUS: Record<string, number> = {
+  menunggu_verifikasi: 1,
+  valid: 2,
+  diproses: 3,
+  selesai: 4,
+  ditolak: 5,
 }
 
-function rankPrioritas(kategori: string | null | undefined): number {
-  if (!kategori) return URUTAN_LABEL.length
-  return urutanLabel(PRIORITAS_LABEL[kategori as PrioritasKategori] ?? kategori)
+// Rank prioritas: Rendah = 1, Sedang = 2, Tinggi = 3. Tanpa prioritas = 0.
+const URUTAN_PRIORITAS = ['rendah', 'sedang', 'tinggi']
+
+function rankPrioritas(item: Laporan): number {
+  if (item.prioritas_kategori == null) return 0
+  const label = PRIORITAS_LABEL[item.prioritas_kategori] ?? ''
+  const index = URUTAN_PRIORITAS.indexOf(label.toLowerCase())
+  return index === -1 ? 0 : index + 1
 }
 
-// Urutan status mengikuti alur kerja laporan. Status yang tidak ada di
-// daftar ini ditaruh paling belakang. Sesuaikan kalau nama status di
-// backend berbeda.
-const STATUS_URUTAN = [
-  'menunggu_verifikasi',
-  'terverifikasi',
-  'diproses',
-  'selesai',
-  'ditolak',
-]
-
-function rankStatus(status: string): number {
-  const index = STATUS_URUTAN.indexOf(status)
-  return index === -1 ? STATUS_URUTAN.length : index
+function rankStatus(item: Laporan): number {
+  return URUTAN_STATUS[item.status] ?? 0
 }
 
-type KolomUrut = 'judul' | 'prioritas' | 'status'
-type ArahUrut = 1 | -1
+// Waktu dibuat dalam milidetik, aman kalau `created_at` kosong atau
+// formatnya tidak valid.
+function waktu(item: Laporan): number {
+  const t = item.created_at ? new Date(item.created_at).getTime() : 0
+  return Number.isNaN(t) ? 0 : t
+}
 
 // Nomor halaman yang ditampilkan di pagination. Kalau halamannya banyak,
 // bagian tengah diringkas dengan '…' (contoh: 1 … 4 5 6 … 12).
@@ -310,7 +308,9 @@ function HeroAntrian({ ringkasan }: { ringkasan: RingkasanDashboard }) {
         {ada && (
           <Link
             to="/verifikasi"
-            search={{ filter: 'menunggu' }}
+            // 'perlu' = gabungan menunggu verifikasi + terverifikasi
+            // (belum dikerjakan), sebelumnya 'menunggu'.
+            search={{ filter: 'perlu' }}
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0f3d2e] transition-colors hover:bg-emerald-50 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
           >
             Cek sekarang
@@ -377,34 +377,37 @@ function StatKartu({
   )
 }
 
-// Tombol judul kolom yang bisa diklik untuk mengurutkan.
+// Judul kolom yang bisa diklik untuk mengurutkan. Ikon ↑↓ abu-abu saat
+// belum aktif, berubah jadi ↑ atau ↓ hijau saat sedang dipakai.
 function KolomUrut({
   label,
-  aktif,
-  arah,
-  onClick,
+  kunci,
+  urut,
+  onUrut,
 }: {
   label: string
-  aktif: boolean
-  arah: ArahUrut
-  onClick: () => void
+  kunci: KunciUrut
+  urut: Urut
+  onUrut: (kunci: KunciUrut) => void
 }) {
-  const Icon = !aktif ? ArrowUpDown : arah === 1 ? ArrowUp : ArrowDown
+  const arah = urut?.kunci === kunci ? urut.arah : null
+  const Ikon =
+    arah === null ? ArrowUpDown : arah === 'asc' ? ArrowUp : ArrowDown
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => onUrut(kunci)}
       aria-label={`Urutkan berdasarkan ${label}`}
-      className={cn(
-        'inline-flex items-center gap-1.5 transition-colors hover:text-neutral-900',
-        aktif && 'text-neutral-900',
-      )}
+      className="inline-flex items-center gap-1 text-left font-semibold transition-colors outline-none hover:text-neutral-800 focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30"
     >
       {label}
-      <Icon
+      <Ikon
         aria-hidden="true"
-        className={cn('size-3.5', aktif ? 'opacity-100' : 'opacity-50')}
+        className={cn(
+          'size-3.5',
+          arah === null ? 'text-neutral-400' : 'text-[#1f6b4f]',
+        )}
       />
     </button>
   )
@@ -443,10 +446,9 @@ function TombolHalaman({
   )
 }
 
-// Menampilkan semua laporan terbaru dengan header kolom yang bisa
-// diurutkan (Judul, Prioritas, Status) dan pagination. Klik header
-// pertama: naik, kedua: turun, ketiga: kembali ke urutan terbaru.
-// Setiap kali urutan atau jumlah baris berubah, halaman kembali ke 1.
+// Menampilkan semua laporan terbaru (urut dari yang terbaru) dengan
+// pagination. Kolom Prioritas dan Status bisa diklik untuk mengurutkan.
+// Setiap kali jumlah baris atau urutan berubah, halaman kembali ke 1.
 function LaporanTerbaru({
   laporan,
   onBukaFoto,
@@ -454,45 +456,38 @@ function LaporanTerbaru({
   laporan: Laporan[]
   onBukaFoto: (src: string) => void
 }) {
-  const [kolom, setKolom] = useState<KolomUrut | null>(null)
-  const [arah, setArah] = useState<ArahUrut>(1)
   const [halaman, setHalaman] = useState(1)
   const [ukuran, setUkuran] = useState(UKURAN_HALAMAN[0])
+  // null = urutan bawaan (terbaru di atas).
+  const [urut, setUrut] = useState<Urut>(null)
 
-  function toggleUrut(target: KolomUrut) {
-    if (kolom !== target) {
-      setKolom(target)
-      setArah(1)
-    } else if (arah === 1) {
-      setArah(-1)
-    } else {
-      setKolom(null)
-      setArah(1)
-    }
+  // Klik 1: naik, klik 2: turun, klik 3: kembali ke urutan bawaan.
+  const ubahUrut = (kunci: KunciUrut) => {
+    setUrut((sekarang) => {
+      if (sekarang?.kunci !== kunci) return { kunci, arah: 'asc' }
+      if (sekarang.arah === 'asc') return { kunci, arah: 'desc' }
+      return null
+    })
     setHalaman(1)
   }
 
-  const urut = kolom
+  // Daftar yang sudah diurutkan. Kalau rank sama (atau belum ada urutan),
+  // yang terbaru di atas.
+  const terurut = urut
     ? [...laporan].sort((a, b) => {
-        if (kolom === 'judul') {
-          return arah * a.deskripsi.localeCompare(b.deskripsi, 'id')
-        }
-        if (kolom === 'prioritas') {
-          return (
-            arah *
-            (rankPrioritas(a.prioritas_kategori) -
-              rankPrioritas(b.prioritas_kategori))
-          )
-        }
-        return arah * (rankStatus(a.status) - rankStatus(b.status))
+        const rank = urut.kunci === 'prioritas' ? rankPrioritas : rankStatus
+        const beda = rank(a) - rank(b)
+        if (beda !== 0) return urut.arah === 'asc' ? beda : -beda
+        const selisih = waktu(b) - waktu(a)
+        return selisih !== 0 ? selisih : b.id - a.id
       })
     : laporan
 
   // Halaman dijaga supaya tidak melewati total (misal data berkurang
   // setelah refetch).
-  const totalHalaman = Math.max(1, Math.ceil(urut.length / (ukuran ?? 5)))
+  const totalHalaman = Math.max(1, Math.ceil(terurut.length / (ukuran ?? 5)))
   const halamanAktif = Math.min(halaman, totalHalaman)
-  const tampil = urut.slice(
+  const tampil = terurut.slice(
     (halamanAktif - 1) * (ukuran ?? 5),
     halamanAktif * (ukuran ?? 5),
   )
@@ -515,39 +510,29 @@ function LaporanTerbaru({
         </p>
       ) : (
         <>
-          {/* Header kolom: hanya tampil di layar md ke atas. */}
+          {/* Header kolom: hanya tampil di layar md ke atas. Hanya
+              Prioritas dan Status yang bisa diklik untuk mengurutkan. */}
           <div
             className={cn(
               'mt-4 hidden items-center gap-x-4 rounded-xl bg-[#faf7ee] px-3 py-2.5 text-xs font-semibold text-neutral-500 md:grid',
               KOLOM_DESKTOP,
             )}
           >
-            <span className="text-xs font-semibold text-neutral-500">No</span>
+            <span>No</span>
             <span>Foto</span>
-            <span>
-              <KolomUrut
-                label="Judul"
-                aktif={kolom === 'judul'}
-                arah={arah}
-                onClick={() => toggleUrut('judul')}
-              />
-            </span>
-            <span>
-              <KolomUrut
-                label="Prioritas"
-                aktif={kolom === 'prioritas'}
-                arah={arah}
-                onClick={() => toggleUrut('prioritas')}
-              />
-            </span>
-            <span>
-              <KolomUrut
-                label="Status"
-                aktif={kolom === 'status'}
-                arah={arah}
-                onClick={() => toggleUrut('status')}
-              />
-            </span>
+            <span>Judul</span>
+            <KolomUrut
+              label="Prioritas"
+              kunci="prioritas"
+              urut={urut}
+              onUrut={ubahUrut}
+            />
+            <KolomUrut
+              label="Status"
+              kunci="status"
+              urut={urut}
+              onUrut={ubahUrut}
+            />
           </div>
 
           <ul className="mt-1 divide-y divide-neutral-100">

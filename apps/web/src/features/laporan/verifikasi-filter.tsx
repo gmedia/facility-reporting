@@ -5,6 +5,22 @@ import { cn } from '@/lib/utils'
 // Nilai "semua" = filter tidak aktif. Sama dengan state di verifikasi-page.
 const SEMUA = 'semua'
 
+// Warna chip prioritas saat dipilih, disamakan dengan badge prioritas di
+// daftar laporan. Dicocokkan lewat label (huruf kecil) supaya tidak
+// bergantung pada nilai enum.
+const WARNA_PRIORITAS: Record<string, string> = {
+  tinggi: 'border-red-300 bg-red-100 text-red-800',
+  sedang: 'border-amber-300 bg-amber-100 text-amber-800',
+  rendah: 'border-emerald-300 bg-emerald-100 text-emerald-800',
+}
+
+// Mengembalikan kelas warna khusus untuk grup Prioritas, atau undefined
+// untuk grup lain (dipakai warna hijau tua bawaan).
+function warnaPrioritas(key: string, label: string): string | undefined {
+  if (key !== 'prioritas') return undefined
+  return WARNA_PRIORITAS[label.toLowerCase()]
+}
+
 export type FilterOpsi = {
   value: string
   label: string
@@ -80,7 +96,7 @@ export function VerifikasiFilter({
             value={cari}
             onChange={(event) => onCari(event.target.value)}
             placeholder="Cari deskripsi, lokasi, atau pelapor…"
-            className="h-10 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white pr-3 pl-10 text-sm transition-colors outline-none hover:border-[#d9d2bd] focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+            className="h-10 w-full rounded-xl border-[1.5px] border-[#efe9d8] bg-white pr-3 pl-10 text-sm transition-colors outline-none hover:border-[#d9d2bd] focus-visible:border-[#0f3d2e] focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/20"
           />
         </label>
 
@@ -92,16 +108,16 @@ export function VerifikasiFilter({
             aria-expanded={buka}
             onClick={() => setBuka((v) => !v)}
             className={cn(
-              'inline-flex h-10 items-center gap-2 rounded-xl border-[1.5px] px-3.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20',
+              'inline-flex h-10 items-center gap-2 rounded-xl border-[1.5px] px-3.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/20',
               aktif.length > 0
-                ? 'border-[#1f6b4f] bg-[#e0f1e8] font-medium text-[#1f6b4f]'
+                ? 'border-[#0f3d2e] bg-[#0f3d2e] font-medium text-white'
                 : 'border-[#efe9d8] bg-white hover:border-[#d9d2bd]',
             )}
           >
             <SlidersHorizontal aria-hidden="true" className="size-4" />
             Filter
             {aktif.length > 0 && (
-              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#1f6b4f] px-1.5 text-xs text-white">
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-white px-1.5 text-xs font-bold text-[#0f3d2e]">
                 {aktif.length}
               </span>
             )}
@@ -125,6 +141,7 @@ export function VerifikasiFilter({
                 <div className="flex flex-wrap gap-2">
                   {g.opsi.map((o) => {
                     const dipilih = g.nilai === o.value
+                    const warna = warnaPrioritas(g.key, o.label)
                     return (
                       <button
                         key={o.value}
@@ -133,15 +150,26 @@ export function VerifikasiFilter({
                         // Klik lagi pada chip yang aktif = lepas filter.
                         onClick={() => g.onPilih(dipilih ? SEMUA : o.value)}
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+                          'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25',
                           dipilih
-                            ? 'border-[#1f6b4f] bg-[#e0f1e8] font-medium text-[#1f6b4f]'
+                            ? (warna ??
+                                'border-[#0f3d2e] bg-[#0f3d2e] text-white') +
+                                ' font-medium'
                             : 'border-[#efe9d8] hover:border-[#d9d2bd] hover:bg-[#faf3e5]',
                         )}
                       >
                         {o.label}
                         {o.jumlah !== undefined && (
-                          <span className="text-xs text-[#8a8f87] tabular-nums">
+                          <span
+                            className={cn(
+                              'text-xs tabular-nums',
+                              dipilih
+                                ? warna
+                                  ? 'opacity-70'
+                                  : 'text-white/70'
+                                : 'text-[#8a8f87]',
+                            )}
+                          >
                             {o.jumlah}
                           </span>
                         )}
@@ -161,7 +189,7 @@ export function VerifikasiFilter({
               onReset()
               setBuka(false)
             }}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-sm text-[#8a8f87] transition-colors outline-none hover:bg-[#e0f1e8] hover:text-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-sm text-[#8a8f87] transition-colors outline-none hover:bg-[#0f3d2e]/10 hover:text-[#0f3d2e] focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/20"
           >
             <X aria-hidden="true" className="size-4" />
             Reset
@@ -174,17 +202,26 @@ export function VerifikasiFilter({
         {aktif.map((g) => {
           const label =
             g.opsi.find((o) => o.value === g.nilai)?.label ?? g.nilai
+          const warna = warnaPrioritas(g.key, label)
           return (
             <span
               key={g.key}
-              className="inline-flex items-center gap-1 rounded-full bg-[#e0f1e8] py-0.5 pr-1 pl-2.5 text-xs font-medium text-[#1f6b4f]"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full py-0.5 pr-1 pl-2.5 text-xs font-medium',
+                warna ? `border ${warna}` : 'bg-[#0f3d2e] text-white',
+              )}
             >
               {label}
               <button
                 type="button"
                 aria-label={`Hapus filter ${g.judul}: ${label}`}
                 onClick={() => g.onPilih(SEMUA)}
-                className="grid size-4.5 place-items-center rounded-full outline-none hover:bg-[#1f6b4f]/15 focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30"
+                className={cn(
+                  'grid size-4.5 place-items-center rounded-full outline-none focus-visible:ring-2',
+                  warna
+                    ? 'hover:bg-black/10 focus-visible:ring-black/20'
+                    : 'hover:bg-white/20 focus-visible:ring-white/50',
+                )}
               >
                 <X aria-hidden="true" className="size-3" />
               </button>
