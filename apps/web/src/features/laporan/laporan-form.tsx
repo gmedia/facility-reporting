@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -14,9 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FotoInput } from './foto-input'
 import {
   BATAS_FOTO_BYTE,
-  FOTO_ACCEPT,
   FOTO_MIME_IZIN,
   KATEGORI_LABEL,
   KATEGORI_VALUES,
@@ -54,7 +53,7 @@ const formSchema = z.object({
     .trim()
     .min(10, 'Deskripsi minimal 10 karakter')
     .max(2000, 'Deskripsi maksimal 2000 karakter'),
-  // validasi ukuran/tipe file ditangani manual di onSubmit
+  // validasi ukuran/tipe file ditangani manual (saat dipilih dan di onSubmit)
   //
   // Fotonya WAJIB (permintaan 26 Okt). Bentuknya tetap `.optional()` +
   // `.refine`, bukan `z.custom` polos, karena `z.input` harus mengizinkan
@@ -200,6 +199,7 @@ export function LaporanForm() {
     control,
     handleSubmit,
     setError,
+    clearErrors,
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
@@ -333,25 +333,53 @@ export function LaporanForm() {
       <Controller
         control={control}
         name="foto"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
-            <Input
-              id="laporan-foto"
-              type="file"
-              accept={FOTO_ACCEPT}
-              required
-              onChange={(event) => field.onChange(event.target.files)}
-              onBlur={field.onBlur}
-            />
-            <p className="text-muted-foreground text-xs">
-              Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
-            </p>
-            <FieldError
-              errors={fieldState.error ? [fieldState.error] : undefined}
-            />
-          </Field>
-        )}
+        render={({ field, fieldState }) => {
+          const terpilih = field.value?.[0] ?? null
+
+          return (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
+              <FotoInput
+                inputId="laporan-foto"
+                value={terpilih}
+                pratinjau
+                disabled={busy}
+                onFile={(file) => {
+                  clearErrors('foto')
+
+                  // null = user menekan "Hapus foto".
+                  if (!file) {
+                    field.onChange(undefined)
+                    return
+                  }
+                  // Cek format dan ukuran saat dipilih, bukan baru saat kirim.
+                  if (!FOTO_MIME_IZIN.includes(file.type)) {
+                    setError('foto', {
+                      message: 'Format foto harus JPG, PNG, atau WebP',
+                    })
+                    return
+                  }
+                  if (file.size > BATAS_FOTO_BYTE) {
+                    setError('foto', { message: 'Ukuran foto maksimal 2 MB' })
+                    return
+                  }
+
+                  // Form menyimpan FileList, jadi File dibungkus lewat
+                  // DataTransfer.
+                  const dt = new DataTransfer()
+                  dt.items.add(file)
+                  field.onChange(dt.files)
+                }}
+              />
+              <p className="text-muted-foreground text-xs">
+                Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
+              </p>
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )
+        }}
       />
 
       {/* Skala SMART: pelapor memilih 1–5 lewat tombol, tidak mengetik.

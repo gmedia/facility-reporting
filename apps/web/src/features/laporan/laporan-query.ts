@@ -14,8 +14,11 @@ export type Pelapor = {
 }
 
 // Intersection supaya aman sebelum dan sesudah types:generate dijalankan.
+// `foto_bukti` = foto bukti penyelesaian yang diunggah admin saat status
+// diubah ke selesai (path relatif di disk public, seperti `foto`).
 export type Laporan = components['schemas']['LaporanResource'] & {
   pelapor?: Pelapor | null
+  foto_bukti?: string | null
 }
 
 // Kunci objek ini = nilai enum di backend. Kalau backend nambah kategori,

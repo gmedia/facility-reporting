@@ -23,10 +23,10 @@ import {
   hitungRingkasan,
   laporanPerHari,
 } from '@/features/dashboard/dashboard-utils'
+import { FotoInput } from '@/features/laporan/foto-input'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import {
   BATAS_FOTO_BYTE,
-  FOTO_ACCEPT,
   FOTO_MIME_IZIN,
   KATEGORI_LABEL,
   KATEGORI_VALUES,
@@ -1288,7 +1288,11 @@ function TolakDialog({
 
 // Dialog foto bukti penyelesaian. Backend mewajibkan foto bukti saat
 // status diubah ke selesai. Format dan batas ukuran disamakan dengan
-// unggahan foto laporan (jpeg/png/webp, maks 2 MB).
+// unggahan foto laporan (jpeg/png/webp, maks 2 MB). Foto bisa dari
+// galeri/file, kamera HP, atau webcam laptop (lewat FotoInput). Setelah
+// foto dipilih, tombol kamera/file hilang; harus "Hapus foto" dulu untuk
+// memilih ulang. Saat webcam menyala, kotak pratinjau disembunyikan supaya
+// hanya ada satu gambar di layar.
 function BuktiDialog({
   id,
   pending,
@@ -1302,6 +1306,7 @@ function BuktiDialog({
 }) {
   const [file, setFile] = useState<File | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
+  const [webcamAktif, setWebcamAktif] = useState(false)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1324,8 +1329,9 @@ function BuktiDialog({
     }
   }, [preview])
 
-  const onPilih = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const dipilih = event.target.files?.[0] ?? null
+  // Menerima File dari galeri, kamera HP, atau webcam laptop.
+  // null = user menekan "Hapus foto".
+  const onPilih = (dipilih: File | null) => {
     setGalat(null)
 
     if (!dipilih) {
@@ -1356,7 +1362,7 @@ function BuktiDialog({
       }}
     >
       <div
-        className="w-full max-w-md rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-xl"
+        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 id="bukti-judul" className="text-lg font-semibold">
@@ -1366,37 +1372,36 @@ function BuktiDialog({
           Unggah foto bukti perbaikan. Foto ini wajib diisi.
         </p>
 
-        <div className="mt-4">
-          {preview ? (
-            <img
-              src={preview}
-              alt="Pratinjau foto bukti"
-              className="aspect-[4/3] w-full rounded-xl border border-neutral-200 object-cover"
-            />
-          ) : (
-            <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-neutral-300 bg-[#f6f7f4] text-neutral-400">
-              <ImageIcon
-                aria-hidden="true"
-                strokeWidth={1.5}
-                className="size-9"
+        {!webcamAktif && (
+          <div className="mt-4">
+            {preview ? (
+              <img
+                src={preview}
+                alt="Pratinjau foto bukti"
+                className="aspect-[4/3] w-full rounded-xl border border-neutral-200 object-cover"
               />
-              <span className="text-xs font-medium">Belum ada foto</span>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-neutral-300 bg-[#f6f7f4] text-neutral-400">
+                <ImageIcon
+                  aria-hidden="true"
+                  strokeWidth={1.5}
+                  className="size-9"
+                />
+                <span className="text-xs font-medium">Belum ada foto</span>
+              </div>
+            )}
+          </div>
+        )}
 
-        <label htmlFor="bukti-foto" className="sr-only">
-          Foto bukti penyelesaian
-        </label>
-        <input
-          id="bukti-foto"
-          type="file"
-          accept={FOTO_ACCEPT}
+        <FotoInput
+          inputId="bukti-foto"
+          value={file}
           disabled={pending}
-          onChange={onPilih}
-          className="mt-3 block w-full cursor-pointer text-sm text-neutral-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3.5 file:py-2 file:text-sm file:font-medium file:text-emerald-800 hover:file:bg-emerald-100"
+          onFile={onPilih}
+          onWebcamAktif={setWebcamAktif}
         />
-        <p className="mt-1 text-xs text-neutral-400">
+
+        <p className="mt-2 text-xs text-neutral-400">
           Format JPG, PNG, atau WebP. Maksimal 2 MB.
         </p>
         {galat && (

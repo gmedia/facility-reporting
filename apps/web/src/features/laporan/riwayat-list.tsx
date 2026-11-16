@@ -717,21 +717,45 @@ function Detail({ laporan }: { laporan: Laporan }) {
     { dt: 'Terakhir diperbarui', dd: tanggal(laporan.updated_at) },
   ]
 
+  // Bukti penyelesaian hanya relevan kalau laporannya sudah selesai.
+  const selesai = laporan.status === 'selesai'
+
   return (
     <div className="rounded-3xl bg-[#f5f7f6] p-4 ring-1 ring-black/5">
       {/* foto kiri, keterangan kanan — permintaan 27 Okt. Mulai `lg`
           karena di bawah itu kolom kanan sempit dan `dl` dua kolomnya jadi
           sesak; di bawah lg foto dulu baru keterangan. */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-        <div>
-          <p className="text-[11px] font-semibold tracking-[0.08em] text-neutral-400 uppercase">
-            Foto
-          </p>
-          <FotoLaporan
-            besar
-            foto={laporan.foto}
-            className="mt-1.5 aspect-[4/3] w-full"
-          />
+        <div className="flex flex-col gap-5">
+          <div>
+            <p className="text-[11px] font-semibold tracking-[0.08em] text-neutral-400 uppercase">
+              Foto
+            </p>
+            <FotoLaporan
+              besar
+              foto={laporan.foto}
+              className="mt-1.5 aspect-[4/3] w-full"
+            />
+          </div>
+
+          {selesai && (
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.08em] text-emerald-700 uppercase">
+                Bukti penyelesaian
+              </p>
+              <FotoLaporan
+                besar
+                foto={laporan.foto_bukti ?? null}
+                alt="Foto bukti penyelesaian"
+                kosong="Belum ada bukti"
+                bisaDibuka
+                className="mt-1.5 aspect-[4/3] w-full"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Foto ini diunggah admin saat laporan ditandai selesai.
+              </p>
+            </div>
+          )}
         </div>
 
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -817,23 +841,34 @@ function fotoUrl(foto: string): string {
 // yang perlu menebak posisinya nanti. `onError` menutup kasus foto
 // sudah ada tapi URL-nya belum bisa dijangkau — bukannya ikon patah,
 // penggunanya tetap lihat kotak slot yang sama.
+//
+// Dipakai juga untuk foto bukti penyelesaian (props `alt`, `kosong`,
+// `bisaDibuka`): foto bukti bisa diklik untuk dibuka penuh di tab baru.
 // ============================================================
 function FotoLaporan({
   foto,
   besar = false,
   className,
+  alt = 'Foto laporan',
+  kosong = 'Belum ada foto',
+  bisaDibuka = false,
 }: {
   foto: string | null
   besar?: boolean
   className?: string
+  alt?: string
+  kosong?: string
+  // true = foto diklik membuka gambar penuh di tab baru.
+  bisaDibuka?: boolean
 }) {
   const [gagal, setGagal] = useState(false)
 
   if (foto && !gagal) {
-    return (
+    const src = fotoUrl(foto)
+    const gambar = (
       <img
-        src={fotoUrl(foto)}
-        alt="Foto laporan"
+        src={src}
+        alt={alt}
         loading="lazy"
         onError={() => setGagal(true)}
         className={cn(
@@ -841,6 +876,20 @@ function FotoLaporan({
           className,
         )}
       />
+    )
+
+    if (!bisaDibuka) return gambar
+
+    return (
+      <a
+        href={src}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Klik untuk membuka foto penuh"
+        className="block"
+      >
+        {gambar}
+      </a>
     )
   }
 
@@ -862,7 +911,7 @@ function FotoLaporan({
           besar ? 'text-xs' : 'text-[10px]',
         )}
       >
-        {foto ? 'Foto tidak termuat' : 'Belum ada foto'}
+        {foto ? 'Foto tidak termuat' : kosong}
       </span>
     </div>
   )
