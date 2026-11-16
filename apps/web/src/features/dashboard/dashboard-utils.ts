@@ -167,10 +167,7 @@ export function laporanPerBulan(
   })
 }
 
-export function periodeBulanan(
-  bulan: BarBulanan[],
-  now = new Date(),
-): string {
+export function periodeBulanan(bulan: BarBulanan[], now = new Date()): string {
   const pertama = bulan[0]
   const terakhir = bulan[bulan.length - 1]
   if (!pertama || !terakhir) return ''
