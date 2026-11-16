@@ -40,6 +40,7 @@ export function FotoInput({
   disabled,
   pratinjau = false,
   onWebcamAktif,
+  ariaLabel = 'Foto',
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
@@ -53,6 +54,8 @@ export function FotoInput({
   // Dipanggil saat webcam menyala/mati, supaya pemanggil bisa
   // menyembunyikan pratinjau miliknya sendiri.
   onWebcamAktif?: (aktif: boolean) => void
+  // Label aksesibilitas untuk input file. Default "Foto".
+  ariaLabel?: string
 }) {
   const galeriRef = useRef<HTMLInputElement>(null)
   const kameraHpRef = useRef<HTMLInputElement>(null)
@@ -241,7 +244,7 @@ export function FotoInput({
         accept={FOTO_ACCEPT}
         className="sr-only"
         tabIndex={-1}
-        aria-label="Foto"
+        aria-label={ariaLabel}
         onChange={(e) => {
           const file = e.target.files?.[0] ?? null
           e.target.value = ''

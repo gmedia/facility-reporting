@@ -1403,6 +1403,7 @@ function BuktiDialog({
           disabled={pending}
           onFile={onPilih}
           onWebcamAktif={setWebcamAktif}
+          ariaLabel="Foto bukti penyelesaian"
         />
 
         <p className="mt-2 text-xs text-neutral-400">
