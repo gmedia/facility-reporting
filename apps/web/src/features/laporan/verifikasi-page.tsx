@@ -579,19 +579,6 @@ export function VerifikasiPage({ user }: { user: User }) {
                     })),
                   },
                   {
-                    key: 'prioritas',
-                    judul: 'Prioritas',
-                    nilai: prioritas,
-                    onPilih: (v) => {
-                      setPrioritas(v)
-                      setHalaman(0)
-                    },
-                    opsi: PRIORITAS_OPSI.map(([value, label]) => ({
-                      value,
-                      label,
-                    })),
-                  },
-                  {
                     key: 'gedung',
                     judul: 'Gedung',
                     nilai: gedung,
@@ -602,6 +589,19 @@ export function VerifikasiPage({ user }: { user: User }) {
                     opsi: opsiGedung.map((k) => ({
                       value: k,
                       label: labelGedung(k),
+                    })),
+                  },
+                  {
+                    key: 'prioritas',
+                    judul: 'Prioritas',
+                    nilai: prioritas,
+                    onPilih: (v) => {
+                      setPrioritas(v)
+                      setHalaman(0)
+                    },
+                    opsi: PRIORITAS_OPSI.map(([value, label]) => ({
+                      value,
+                      label,
                     })),
                   },
                 ]}
