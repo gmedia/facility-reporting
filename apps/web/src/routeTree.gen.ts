@@ -16,6 +16,7 @@ import { Route as ProtectedAdminRouteRouteImport } from './routes/_protected/adm
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
 import { Route as ProtectedPengaturanRouteImport } from './routes/_protected/pengaturan'
+import { Route as ProtectedSemuaLaporanRouteImport } from './routes/_protected/semua-laporan'
 import { Route as ProtectedVerifikasiRouteImport } from './routes/_protected/verifikasi'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 import { Route as ProtectedLaporanSayaRouteImport } from './routes/_protected/laporan/saya'
@@ -54,6 +55,11 @@ const ProtectedPengaturanRoute = ProtectedPengaturanRouteImport.update({
   path: '/pengaturan',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedSemuaLaporanRoute = ProtectedSemuaLaporanRouteImport.update({
+  id: '/semua-laporan',
+  path: '/semua-laporan',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedVerifikasiRoute = ProtectedVerifikasiRouteImport.update({
   id: '/verifikasi',
   path: '/verifikasi',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
   '/pengaturan': typeof ProtectedPengaturanRoute
+  '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin/': typeof ProtectedAdminIndexRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
   '/pengaturan': typeof ProtectedPengaturanRoute
+  '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin': typeof ProtectedAdminIndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/lapor': typeof ProtectedLaporRoute
   '/_protected/pengaturan': typeof ProtectedPengaturanRoute
+  '/_protected/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/_protected/verifikasi': typeof ProtectedVerifikasiRoute
   '/_protected/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/lapor'
     | '/pengaturan'
+    | '/semua-laporan'
     | '/verifikasi'
     | '/laporan/saya'
     | '/admin/'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/lapor'
     | '/pengaturan'
+    | '/semua-laporan'
     | '/verifikasi'
     | '/laporan/saya'
     | '/admin'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/_protected/dashboard'
     | '/_protected/lapor'
     | '/_protected/pengaturan'
+    | '/_protected/semua-laporan'
     | '/_protected/verifikasi'
     | '/_protected/laporan/saya'
     | '/_protected/admin/'
@@ -197,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPengaturanRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/semua-laporan': {
+      id: '/_protected/semua-laporan'
+      path: '/semua-laporan'
+      fullPath: '/semua-laporan'
+      preLoaderRoute: typeof ProtectedSemuaLaporanRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/verifikasi': {
       id: '/_protected/verifikasi'
       path: '/verifikasi'
@@ -237,6 +256,7 @@ interface ProtectedRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedLaporRoute: typeof ProtectedLaporRoute
   ProtectedPengaturanRoute: typeof ProtectedPengaturanRoute
+  ProtectedSemuaLaporanRoute: typeof ProtectedSemuaLaporanRoute
   ProtectedVerifikasiRoute: typeof ProtectedVerifikasiRoute
   ProtectedLaporanSayaRoute: typeof ProtectedLaporanSayaRoute
 }
@@ -246,6 +266,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedLaporRoute: ProtectedLaporRoute,
   ProtectedPengaturanRoute: ProtectedPengaturanRoute,
+  ProtectedSemuaLaporanRoute: ProtectedSemuaLaporanRoute,
   ProtectedVerifikasiRoute: ProtectedVerifikasiRoute,
   ProtectedLaporanSayaRoute: ProtectedLaporanSayaRoute,
 }

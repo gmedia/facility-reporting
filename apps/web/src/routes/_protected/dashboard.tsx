@@ -6,6 +6,7 @@ import { ArrowRight, ClipboardListIcon } from 'lucide-react'
 import type { User } from '@/features/auth/auth-query'
 import { PageHeader } from '@/components/page-header'
 import { DashboardAdmin } from '@/features/dashboard/dashboard-admin'
+import { DashboardSuperAdmin } from '@/features/dashboard/dashboard-super-admin'
 import { DashboardRecent } from '@/features/dashboard/dashboard-recent'
 import {
   readFilter,
@@ -29,7 +30,12 @@ export const Route = createFileRoute('/_protected/dashboard')({
 function DashboardPage() {
   const { user } = Route.useRouteContext()
 
-  if (user.role === 'admin' || user.role === 'super_admin') {
+  // Super admin punya dashboard sendiri (KPI, heatmap, laporan tertahan).
+  if (user.role === 'super_admin') {
+    return <DashboardSuperAdmin user={user} />
+  }
+
+  if (user.role === 'admin') {
     return <DashboardPengelola />
   }
 

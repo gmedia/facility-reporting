@@ -1,5 +1,10 @@
 import type { User } from '@/features/auth/auth-query'
-import type { Laporan, LaporanStatus } from '@/features/laporan/laporan-query'
+import { KATEGORI_VALUES } from '@/features/laporan/laporan-query'
+import type {
+  Laporan,
+  LaporanKategori,
+  LaporanStatus,
+} from '@/features/laporan/laporan-query'
 
 export type AntrianFilter = 'semua' | 'menunggu' | 'terverifikasi'
 
@@ -190,4 +195,86 @@ export function identitas(user: User): string {
       .join(' · ')
   }
   return [user.role, user.email].filter(Boolean).join(' · ')
+}
+
+// ------------------------------------------------------------------
+// Khusus dashboard super admin
+// ------------------------------------------------------------------
+const MS_HARI = 24 * 60 * 60 * 1000
+
+// Selisih hari penuh dari `dari` sampai `ke`. Kosong / tidak valid = 0.
+export function selisihHari(dari?: string | null, ke = new Date()): number {
+  if (!dari) return 0
+  const t = new Date(dari).getTime()
+  if (Number.isNaN(t)) return 0
+  return Math.max(0, Math.floor((ke.getTime() - t) / MS_HARI))
+}
+
+// Gedung diambil dari `lokasi`: "Gedung S, ruang 204" -> "Gedung S".
+// Ganti fungsi ini kalau backend nanti punya field gedung sendiri.
+export function gedungDari(lokasi: string): string {
+  const bagian = lokasi.split(/\s[-–]\s|,/)[0]?.trim()
+  return bagian || 'Lainnya'
+}
+
+export type LaporanTertahan = { laporan: Laporan; hari: number }
+
+// Belum selesai (valid / diproses) dan tidak berubah >= `ambang` hari.
+// Paling lama di urutan pertama.
+export function laporanTertahan(
+  laporan: Laporan[],
+  ambang: number,
+  now = new Date(),
+): LaporanTertahan[] {
+  return laporan
+    .filter((i) => i.status === 'valid' || i.status === 'diproses')
+    .map((i) => ({
+      laporan: i,
+      hari: selisihHari(i.updated_at ?? i.created_at, now),
+    }))
+    .filter((i) => i.hari >= ambang)
+    .sort((a, b) => b.hari - a.hari)
+}
+
+export function hitungKpi(laporan: Laporan[]) {
+  const total = laporan.length
+  const selesai = laporan.filter((i) => i.status === 'selesai')
+
+  // Lama selesai = dari dibuat sampai terakhir diperbarui.
+  const lama = selesai
+    .map((i) => {
+      const a = i.created_at ? new Date(i.created_at).getTime() : NaN
+      const b = i.updated_at ? new Date(i.updated_at).getTime() : NaN
+      return (b - a) / MS_HARI
+    })
+    .filter((n) => Number.isFinite(n) && n >= 0)
+
+  return {
+    total,
+    diproses: laporan.filter((i) => i.status === 'diproses').length,
+    jumlahSelesai: selesai.length,
+    persenSelesai: total === 0 ? 0 : Math.round((selesai.length / total) * 100),
+    rataHari:
+      lama.length === 0 ? null : lama.reduce((a, n) => a + n, 0) / lama.length,
+    tinggiAktif: laporan.filter(
+      (i) =>
+        i.prioritas_kategori === 'tinggi' &&
+        ['menunggu_verifikasi', 'valid', 'diproses'].includes(i.status),
+    ).length,
+  }
+}
+
+export function hitungHeatmap(laporan: Laporan[]) {
+  const gedung = [...new Set(laporan.map((i) => gedungDari(i.lokasi)))].sort()
+
+  const sel = new Map<string, number>()
+  for (const i of laporan) {
+    const key = `${gedungDari(i.lokasi)}|${i.kategori}`
+    sel.set(key, (sel.get(key) ?? 0) + 1)
+  }
+
+  const jumlah = (g: string, k: LaporanKategori) => sel.get(`${g}|${k}`) ?? 0
+  const maks = Math.max(1, ...sel.values())
+
+  return { gedung, kategori: KATEGORI_VALUES, jumlah, maks }
 }

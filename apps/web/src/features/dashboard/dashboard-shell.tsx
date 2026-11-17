@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   Building2,
+  ClipboardList,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -21,7 +22,8 @@ import { cn } from '@/lib/utils'
 
 // Rute yang boleh muncul di sidebar. Union eksplisit supaya Link dapat
 // tipe route yang benar dan menu tidak pernah mengarah ke halaman fiktif.
-type NavTo = '/dashboard' | '/verifikasi' | '/pengaturan' | '/admin'
+type NavTo =
+  '/dashboard' | '/semua-laporan' | '/verifikasi' | '/pengaturan' | '/admin'
 
 interface NavItem {
   label: string
@@ -30,15 +32,20 @@ interface NavItem {
   end?: boolean
 }
 
-const menuUtama: NavItem[] = [
-  {
-    label: 'Dashboard',
-    to: '/dashboard',
-    icon: LayoutDashboard,
-    end: true,
-  },
-  { label: 'Verifikasi', to: '/verifikasi', icon: ShieldCheck },
-]
+const dashboardItem: NavItem = {
+  label: 'Dashboard',
+  to: '/dashboard',
+  icon: LayoutDashboard,
+  end: true,
+}
+
+const verifikasiItem: NavItem = {
+  label: 'Verifikasi',
+  to: '/verifikasi',
+  icon: ShieldCheck,
+}
+
+const menuUtama: NavItem[] = [dashboardItem, verifikasiItem]
 
 // Pengaturan milik sendiri: foto profil, password, bantuan (issue #113
 // — dulu "Akun Saya" di /akun). Selalu paling bawah.
@@ -50,11 +57,13 @@ const pengaturan: NavItem = {
 
 const adminNav: NavItem[] = [...menuUtama, pengaturan]
 
-// Akun Admin (kelola akun admin lain) cuma untuk super_admin. Menu
+// Semua Laporan dan Akun Admin cuma untuk super_admin. Menu
 // Prioritas/Statistik belum punya route di main, jadi sengaja tidak
 // dipasang sebagai link mati.
 const superAdminNav: NavItem[] = [
-  ...menuUtama,
+  dashboardItem,
+  verifikasiItem,
+  { label: 'Semua Laporan', to: '/semua-laporan', icon: ClipboardList },
   { label: 'Akun Admin', to: '/admin', icon: Users },
   pengaturan,
 ]
