@@ -917,6 +917,46 @@
                             "nim",
                             "foto"
                         ]
+                    },
+                    "diverifikasi_oleh": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Admin yang pertama kali memverifikasi (valid) atau menolak\nlaporan, beserta foto dan waktunya. Null kalau belum pernah."
+                    },
+                    "diverifikasi_oleh_foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "diverifikasi_pada": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "diselesaikan_oleh": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Admin yang terakhir mengubah status ke selesai, beserta\nfoto dan waktunya. Null kalau laporan belum selesai."
+                    },
+                    "diselesaikan_oleh_foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "diselesaikan_pada": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
                     }
                 },
                 "required": [
