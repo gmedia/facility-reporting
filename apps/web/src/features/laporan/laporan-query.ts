@@ -16,9 +16,22 @@ export type Pelapor = {
 // Intersection supaya aman sebelum dan sesudah types:generate dijalankan.
 // `foto_bukti` = foto bukti penyelesaian yang diunggah admin saat status
 // diubah ke selesai (path relatif di disk public, seperti `foto`).
+// `updated_at` = waktu terakhir laporan berubah, dipakai tab Tertahan.
+// `diverifikasi_oleh/foto/pada` dan `diselesaikan_oleh/foto/pada` = nama,
+// foto profil, dan waktu admin saat laporan diverifikasi (atau ditolak) dan
+// diselesaikan. Opsional: dipakai halaman Semua Laporan (kolom & filter
+// Admin) dan panel Aktivitas terbaru. Kalau backend belum mengirimnya,
+// bagian itu otomatis tidak tampil (foto kembali ke lingkaran inisial).
 export type Laporan = components['schemas']['LaporanResource'] & {
   pelapor?: Pelapor | null
   foto_bukti?: string | null
+  updated_at?: string | null
+  diverifikasi_oleh?: string | null
+  diverifikasi_oleh_foto?: string | null
+  diverifikasi_pada?: string | null
+  diselesaikan_oleh?: string | null
+  diselesaikan_oleh_foto?: string | null
+  diselesaikan_pada?: string | null
 }
 
 // Kunci objek ini = nilai enum di backend. Kalau backend nambah kategori,

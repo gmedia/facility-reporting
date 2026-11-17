@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   CalendarDaysIcon,
   ChevronDownIcon,
@@ -843,7 +843,8 @@ function fotoUrl(foto: string): string {
 // penggunanya tetap lihat kotak slot yang sama.
 //
 // Dipakai juga untuk foto bukti penyelesaian (props `alt`, `kosong`,
-// `bisaDibuka`): foto bukti bisa diklik untuk dibuka penuh di tab baru.
+// `bisaDibuka`): foto bukti bisa diklik untuk diperbesar dalam pratinjau
+// (lightbox) di halaman yang sama, tanpa pindah tab.
 // ============================================================
 function FotoLaporan({
   foto,
@@ -858,10 +859,21 @@ function FotoLaporan({
   className?: string
   alt?: string
   kosong?: string
-  // true = foto diklik membuka gambar penuh di tab baru.
+  // true = foto diklik membuka pratinjau besar di halaman yang sama.
   bisaDibuka?: boolean
 }) {
   const [gagal, setGagal] = useState(false)
+  const [terbuka, setTerbuka] = useState(false)
+
+  // Tombol Escape menutup pratinjau.
+  useEffect(() => {
+    if (!terbuka) return
+    const tutup = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setTerbuka(false)
+    }
+    window.addEventListener('keydown', tutup)
+    return () => window.removeEventListener('keydown', tutup)
+  }, [terbuka])
 
   if (foto && !gagal) {
     const src = fotoUrl(foto)
@@ -881,15 +893,32 @@ function FotoLaporan({
     if (!bisaDibuka) return gambar
 
     return (
-      <a
-        href={src}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Klik untuk membuka foto penuh"
-        className="block"
-      >
-        {gambar}
-      </a>
+      <>
+        <button
+          type="button"
+          onClick={() => setTerbuka(true)}
+          title="Klik untuk memperbesar foto"
+          className="block w-full cursor-zoom-in"
+        >
+          {gambar}
+        </button>
+
+        {terbuka && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={alt}
+            className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"
+            onClick={() => setTerbuka(false)}
+          >
+            <img
+              src={src}
+              alt={alt}
+              className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain"
+            />
+          </div>
+        )}
+      </>
     )
   }
 

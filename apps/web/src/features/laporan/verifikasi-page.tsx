@@ -21,7 +21,7 @@ import { LaporanHarianCard } from '@/features/dashboard/dashboard-summary'
 
 import {
   hitungRingkasan,
-  laporanPerBulan, // BARU
+  laporanPerBulan,
   laporanPerHari,
 } from '@/features/dashboard/dashboard-utils'
 import { FotoInput } from '@/features/laporan/foto-input'
@@ -51,12 +51,17 @@ import { cn } from '@/lib/utils'
 
 // 'perlu' = gabungan menunggu verifikasi + terverifikasi.
 type StatusFilter = 'semua' | 'perlu' | LaporanStatus
-type Tab = 'antrian' | 'riwayat'
+type Tab = 'antrian' | 'tertahan' | 'riwayat'
 // Kolom yang bisa diurutkan: hanya Prioritas dan Status.
 type KunciUrut = 'prioritas' | 'status'
 type Urut = { kunci: KunciUrut; arah: 'asc' | 'desc' } | null
 
 const PER_HALAMAN_AWAL = 10
+
+// Pengaturan tab Tertahan (dipatenkan, tidak bisa diubah dari UI).
+const AMBANG_HARI = 2 // laporan aktif tanpa perubahan >= 2 hari = tertahan
+const HARI_MERAH = 5 // >= 5 hari tertahan ditandai merah
+const MS_HARI = 86_400_000
 
 // Nilai ?filter= dari link dashboard -> filter status di halaman ini.
 // 'perlu' = gabungan menunggu verifikasi + terverifikasi (belum dikerjakan).
@@ -75,6 +80,10 @@ const STATUS_PERLU: ReadonlySet<string> = new Set([
 // Kolom daftar: no | foto | judul | prioritas | status. Dipakai bersama oleh
 // baris header dan baris data supaya kolomnya selalu sejajar.
 const KOLOM = 'md:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_7rem_9rem]'
+// Tab Tertahan punya satu kolom tambahan di kanan (lebih lebar supaya muat
+// badge "X hari" + tanggal terakhir diubah).
+const KOLOM_TERTAHAN =
+  'md:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)_7rem_9rem_8rem]' // BARU: 8rem
 
 // Status final (PR #92): tidak ada aksi lanjutan. Laporan dengan status ini
 // keluar dari Antrian dan pindah ke Riwayat.
@@ -165,6 +174,27 @@ function waktu(item: Laporan): number {
   return Number.isNaN(t) ? 0 : t
 }
 
+// Waktu terakhir laporan berubah. Jatuh ke created_at kalau updated_at
+// kosong. 0 kalau keduanya kosong atau tidak valid.
+function waktuUbah(item: Laporan): number {
+  const asal = item.updated_at ?? item.created_at
+  if (!asal) return 0
+  const t = new Date(asal).getTime()
+  return Number.isNaN(t) ? 0 : t
+}
+
+// Berapa hari laporan tidak berubah.
+function hariTertahan(item: Laporan, sekarang: number): number {
+  const t = waktuUbah(item)
+  return t === 0 ? 0 : Math.max(Math.floor((sekarang - t) / MS_HARI), 0)
+}
+
+// BARU: tanggal terakhir laporan berubah, untuk ditampilkan ke admin.
+function tanggalUbah(item: Laporan): string {
+  const asal = item.updated_at ?? item.created_at
+  return asal ? formatTanggal(asal) : '-'
+}
+
 // Rank prioritas: Rendah = 1, Sedang = 2, Tinggi = 3. Tanpa prioritas = 0.
 function rankPrioritas(item: Laporan): number {
   if (item.prioritas_kategori == null) return 0
@@ -238,7 +268,7 @@ export function VerifikasiPage({ user }: { user: User }) {
   const laporan = list.data ?? []
   const ringkasan = hitungRingkasan(laporan)
   const harian = laporanPerHari(laporan)
-  const bulanan = laporanPerBulan(laporan) // BARU
+  const bulanan = laporanPerBulan(laporan)
 
   // Pilihan gedung diambil dari lokasi yang benar-benar ada di laporan.
   const opsiGedung = useMemo(() => {
@@ -271,12 +301,28 @@ export function VerifikasiPage({ user }: { user: User }) {
   const jumlahAntrian = antrianAktif.length
   const jumlahRiwayat = riwayatFinal.length
 
+  // Laporan aktif yang tidak berubah selama >= AMBANG_HARI.
+  const sekarang = Date.now()
+  const tertahanSemua = antrianAktif.filter(
+    (item) => hariTertahan(item, sekarang) >= AMBANG_HARI,
+  )
+  const jumlahTertahan = tertahanSemua.length
+
+  // Sumber data tergantung tab.
+  const sumber =
+    tab === 'antrian'
+      ? antrianAktif
+      : tab === 'tertahan'
+        ? tertahanSemua
+        : riwayatFinal
+
   // Urutan bawaan: yang paling baru di atas; kalau waktunya sama persis, ID
-  // yang lebih besar didahulukan. Kalau kolom Prioritas/Status diklik,
-  // urutan kolom dipakai lebih dulu dan urutan bawaan jadi pembanding
-  // kedua. Pencarian juga mencakup nama dan NIM pelapor.
+  // yang lebih besar didahulukan. Di tab Tertahan, bawaannya kebalikan:
+  // yang paling lama tidak berubah di atas. Kalau kolom Prioritas/Status
+  // diklik, urutan kolom dipakai lebih dulu dan urutan bawaan jadi
+  // pembanding kedua. Pencarian juga mencakup nama dan NIM pelapor.
   const kata = cari.trim().toLowerCase()
-  const hasil = (tab === 'antrian' ? antrianAktif : riwayatFinal)
+  const hasil = sumber
     // Filter 'perlu' = menunggu verifikasi + valid.
     .filter(
       (item) =>
@@ -310,6 +356,11 @@ export function VerifikasiPage({ user }: { user: User }) {
         const rank = urut.kunci === 'prioritas' ? rankPrioritas : rankStatus
         const beda = rank(a) - rank(b)
         if (beda !== 0) return urut.arah === 'asc' ? beda : -beda
+      }
+      // Tab Tertahan: yang paling lama tidak berubah di atas.
+      if (tab === 'tertahan') {
+        const selisihUbah = waktuUbah(a) - waktuUbah(b)
+        return selisihUbah !== 0 ? selisihUbah : a.id - b.id
       }
       // Rank sama (atau tidak ada urutan): terbaru di atas.
       const selisih = waktu(b) - waktu(a)
@@ -361,7 +412,7 @@ export function VerifikasiPage({ user }: { user: User }) {
   const pindahTab = (baru: Tab) => {
     if (baru === tab) return
     setTab(baru)
-    // Filter status khusus Antrian, jadi dilepas saat pindah tab.
+    // Filter status khusus Antrian/Tertahan, jadi dilepas saat pindah tab.
     setFilter('semua')
     setHalaman(0)
   }
@@ -463,9 +514,10 @@ export function VerifikasiPage({ user }: { user: User }) {
   const detailBolehEsc =
     tolakId === null && buktiId === null && fotoBesar === null
 
-  // Grup filter status hanya ada di tab Antrian dan tanpa opsi status final.
+  // Grup filter status ada di tab Antrian dan Tertahan (bukan Riwayat),
+  // tanpa opsi status final.
   const grupStatus =
-    tab === 'antrian'
+    tab !== 'riwayat'
       ? [
           {
             key: 'status',
@@ -479,7 +531,7 @@ export function VerifikasiPage({ user }: { user: User }) {
               {
                 value: 'semua',
                 label: 'Semua status',
-                jumlah: jumlahAntrian,
+                jumlah: tab === 'tertahan' ? jumlahTertahan : jumlahAntrian,
               },
               // Gabungan menunggu verifikasi + terverifikasi.
               {
@@ -500,6 +552,13 @@ export function VerifikasiPage({ user }: { user: User }) {
         ]
       : []
 
+  // Label subtitle header per tab.
+  const labelTab: Record<Tab, string> = {
+    antrian: 'Antrian laporan',
+    tertahan: 'Laporan tertahan',
+    riwayat: 'Riwayat laporan selesai',
+  }
+
   return (
     <DashboardShell
       user={user}
@@ -511,10 +570,8 @@ export function VerifikasiPage({ user }: { user: User }) {
               Verifikasi
             </h1>
             <p className="truncate text-sm text-[#8a8f87]">
-              {tab === 'antrian'
-                ? 'Antrian laporan'
-                : 'Riwayat laporan selesai'}{' '}
-              · {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
+              {labelTab[tab]} ·{' '}
+              {gedung === 'semua' ? 'Semua gedung' : labelGedung(gedung)}
             </p>
           </div>
 
@@ -536,11 +593,11 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
-            {/* Tab: Antrian laporan / Riwayat laporan. */}
+            {/* Tab: Antrian laporan / Tertahan / Riwayat laporan. */}
             <div
               role="tablist"
               aria-label="Jenis daftar laporan"
-              className="flex gap-1 border-b border-[#efe9d8]"
+              className="flex flex-wrap gap-1 border-b border-[#efe9d8]"
             >
               <TabTombol
                 aktif={tab === 'antrian'}
@@ -550,6 +607,14 @@ export function VerifikasiPage({ user }: { user: User }) {
                 Antrian laporan
               </TabTombol>
               <TabTombol
+                aktif={tab === 'tertahan'}
+                jumlah={jumlahTertahan}
+                peringatan
+                onClick={() => pindahTab('tertahan')}
+              >
+                Tertahan
+              </TabTombol>
+              <TabTombol
                 aktif={tab === 'riwayat'}
                 jumlah={jumlahRiwayat}
                 onClick={() => pindahTab('riwayat')}
@@ -557,6 +622,36 @@ export function VerifikasiPage({ user }: { user: User }) {
                 Riwayat laporan selesai
               </TabTombol>
             </div>
+
+            {/* Banner peringatan di tab Antrian. */}
+            {tab === 'antrian' && jumlahTertahan > 0 && (
+              <div
+                role="status"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-100 px-4 py-3 text-sm text-amber-800"
+              >
+                <span>
+                  <b>{jumlahTertahan} laporan</b> belum berubah selama{' '}
+                  {AMBANG_HARI} hari atau lebih. Segera tindak lanjuti.
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => pindahTab('tertahan')}
+                  className="bg-amber-700 text-white hover:bg-amber-800"
+                >
+                  Lihat yang tertahan
+                </Button>
+              </div>
+            )}
+
+            {/* Keterangan di tab Tertahan (ambang dipatenkan). */}
+            {tab === 'tertahan' && (
+              <p className="text-sm text-[#8a8f87]">
+                Laporan yang belum selesai dan tidak berubah selama{' '}
+                {AMBANG_HARI} hari atau lebih, dihitung dari tanggal terakhir
+                diubah. Urut dari yang paling lama.
+              </p>
+            )}
 
             {/* Search + filter ikut ter-scroll bersama halaman (tidak sticky). */}
             <div>
@@ -639,9 +734,11 @@ export function VerifikasiPage({ user }: { user: User }) {
                   <p className="text-sm text-[#8a8f87]">
                     {tab === 'riwayat' && jumlahRiwayat === 0
                       ? 'Belum ada laporan yang selesai atau ditolak.'
-                      : tab === 'antrian' && jumlahAntrian === 0
-                        ? 'Belum ada laporan di antrian.'
-                        : 'Tidak ada laporan yang cocok. Ubah filter atau kata kunci.'}
+                      : tab === 'tertahan' && jumlahTertahan === 0
+                        ? 'Tidak ada laporan tertahan. Bagus!'
+                        : tab === 'antrian' && jumlahAntrian === 0
+                          ? 'Belum ada laporan di antrian.'
+                          : 'Tidak ada laporan yang cocok. Ubah filter atau kata kunci.'}
                   </p>
                   {laporan.length > 0 && (
                     <Button
@@ -656,7 +753,11 @@ export function VerifikasiPage({ user }: { user: User }) {
                 </div>
               ) : (
                 <>
-                  <KepalaDaftar urut={urut} onUrut={ubahUrut} />
+                  <KepalaDaftar
+                    urut={urut}
+                    onUrut={ubahUrut}
+                    tertahan={tab === 'tertahan'}
+                  />
 
                   <ul className="divide-y divide-[#efe9d8]">
                     {tampak.map((item, itemIndex) => (
@@ -664,7 +765,7 @@ export function VerifikasiPage({ user }: { user: User }) {
                         key={item.id}
                         className={cn(
                           'relative grid grid-cols-[2.5rem_3.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5 px-4 py-3 hover:bg-[#faf3e5]',
-                          KOLOM,
+                          tab === 'tertahan' ? KOLOM_TERTAHAN : KOLOM,
                         )}
                       >
                         {/* Nomor urut: halamanEfektif * perHalaman + index + 1. */}
@@ -706,6 +807,25 @@ export function VerifikasiPage({ user }: { user: User }) {
                         <div className="col-start-2 md:col-start-auto">
                           <StatusPill status={item.status} />
                         </div>
+
+                        {/* BARU: kolom lama tertahan + tanggal terakhir diubah. */}
+                        {tab === 'tertahan' && (
+                          <div className="col-start-2 md:col-start-auto">
+                            <span
+                              className={cn(
+                                'inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap',
+                                hariTertahan(item, sekarang) >= HARI_MERAH
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-amber-100 text-amber-800',
+                              )}
+                            >
+                              {hariTertahan(item, sekarang)} hari
+                            </span>
+                            <span className="mt-1 block text-[11px] text-[#8a8f87]">
+                              Diubah {tanggalUbah(item)}
+                            </span>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -725,7 +845,7 @@ export function VerifikasiPage({ user }: { user: User }) {
 
             <LaporanHarianCard
               harian={harian}
-              bulanan={bulanan} // BARU
+              bulanan={bulanan}
               terpilih={indeksHari}
               onPilih={(i) =>
                 ubahTanggal(i === null ? null : (harian[i]?.awal ?? null))
@@ -810,19 +930,21 @@ function KolomUrut({
 
 // Baris judul kolom. Hanya Prioritas dan Status yang bisa diurutkan; No,
 // Foto, dan Judul tulisan biasa. Disembunyikan di layar kecil (baris data
-// ditumpuk di sana).
+// ditumpuk di sana). `tertahan` menambah kolom "Tertahan" di kanan.
 function KepalaDaftar({
   urut,
   onUrut,
+  tertahan,
 }: {
   urut: Urut
   onUrut: (kunci: KunciUrut) => void
+  tertahan: boolean
 }) {
   return (
     <div
       className={cn(
         'hidden items-center gap-x-3.5 border-b border-[#efe9d8] bg-[#faf7ee] px-4 py-2.5 text-xs font-semibold text-[#5f655d] md:grid',
-        KOLOM,
+        tertahan ? KOLOM_TERTAHAN : KOLOM,
       )}
     >
       <span>No</span>
@@ -835,19 +957,23 @@ function KepalaDaftar({
         onUrut={onUrut}
       />
       <KolomUrut label="Status" kunci="status" urut={urut} onUrut={onUrut} />
+      {tertahan && <span>Tertahan</span>}
     </div>
   )
 }
 
 // Tombol tab di atas daftar, lengkap dengan jumlah laporan per tab.
+// `peringatan` = angka jadi merah kalau jumlahnya lebih dari 0.
 function TabTombol({
   aktif,
   jumlah,
+  peringatan = false,
   onClick,
   children,
 }: {
   aktif: boolean
   jumlah: number
+  peringatan?: boolean
   onClick: () => void
   children: string
 }) {
@@ -858,14 +984,21 @@ function TabTombol({
       aria-selected={aktif}
       onClick={onClick}
       className={cn(
-        '-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+        '-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
         aktif
           ? 'border-[#1f6b4f] text-[#1d2b26]'
           : 'border-transparent text-[#8a8f87] hover:text-[#1d2b26]',
       )}
     >
       {children}
-      <span className="rounded-full bg-[#f1f5f3] px-2 py-0.5 text-[11px] tabular-nums">
+      <span
+        className={cn(
+          'rounded-full px-2 py-0.5 text-[11px] tabular-nums',
+          peringatan && jumlah > 0
+            ? 'bg-red-100 font-semibold text-red-800'
+            : 'bg-[#f1f5f3]',
+        )}
+      >
         {jumlah}
       </span>
     </button>
@@ -1164,10 +1297,13 @@ function DetailDialog({
               {item.deskripsi}
             </h2>
 
+            {/* BARU: tampilkan tanggal dibuat dan terakhir diubah. */}
             <p className="mt-1 text-[13px] leading-relaxed text-[#5f655d]">
               {kategoriLabel(item.kategori)} · {item.lokasi}
               <br />
-              {formatTanggal(item.created_at)}
+              Dibuat {formatTanggal(item.created_at)}
+              <br />
+              Terakhir diubah {tanggalUbah(item)}
             </p>
           </div>
         </div>

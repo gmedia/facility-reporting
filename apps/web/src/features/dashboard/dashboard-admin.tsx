@@ -449,7 +449,8 @@ function TombolHalaman({
 // Menampilkan semua laporan terbaru (urut dari yang terbaru) dengan
 // pagination. Kolom Prioritas dan Status bisa diklik untuk mengurutkan.
 // Setiap kali jumlah baris atau urutan berubah, halaman kembali ke 1.
-function LaporanTerbaru({
+// Di-export supaya dipakai juga oleh dashboard super admin.
+export function LaporanTerbaru({
   laporan,
   onBukaFoto,
 }: {
@@ -660,7 +661,8 @@ function LaporanTerbaru({
 // Thumbnail foto di baris daftar. Kalau `foto` null atau gagal dimuat,
 // tetap digambar kotak putus-putus berukuran sama supaya tinggi baris
 // tidak melompat dan tidak ada ikon gambar patah.
-function FotoThumb({
+// Di-export supaya dipakai juga oleh halaman Semua Laporan.
+export function FotoThumb({
   foto,
   onBuka,
 }: {
@@ -701,8 +703,76 @@ function FotoThumb({
   )
 }
 
+function inisialAdmin(nama: string): string {
+  return nama
+    .split(' ')
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+// Warna avatar stabil: dari nama yang sama selalu dapat warna yang sama.
+function warnaAdmin(nama: string): string {
+  let h = 0
+  for (let i = 0; i < nama.length; i++) {
+    h = (h * 31 + nama.charCodeAt(i)) % 360
+  }
+  return `hsl(${h} 42% 36%)`
+}
+
+// Avatar admin: pakai foto kalau ada, kalau tidak atau gagal dimuat
+// kembali ke lingkaran inisial.
+// Di-export supaya dipakai dashboard super admin dan Semua Laporan.
+export function AvatarAdmin({
+  nama,
+  foto,
+  className = 'size-8',
+}: {
+  nama: string
+  foto?: string | null
+  className?: string
+}) {
+  const [gagal, setGagal] = useState(false)
+
+  if (foto && !gagal) {
+    return (
+      <img
+        src={fotoUrl(foto)}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        onError={() => setGagal(true)}
+        className={cn('shrink-0 rounded-full object-cover', className)}
+      />
+    )
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'grid shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white',
+        className,
+      )}
+      style={{ background: warnaAdmin(nama) }}
+    >
+      {inisialAdmin(nama)}
+    </span>
+  )
+}
+
 // Foto ukuran besar. Ditutup lewat klik di luar foto, tombol X, atau Esc.
-function FotoLightbox({ src, onTutup }: { src: string; onTutup: () => void }) {
+// Di-export supaya dipakai juga oleh dashboard super admin dan halaman
+// Semua Laporan.
+export function FotoLightbox({
+  src,
+  onTutup,
+}: {
+  src: string
+  onTutup: () => void
+}) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onTutup()

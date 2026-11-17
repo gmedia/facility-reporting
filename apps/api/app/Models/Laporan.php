@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['user_id', 'kategori', 'lokasi', 'deskripsi', 'foto', 'nilai_kerusakan', 'nilai_risiko', 'nilai_dampak', 'nilai_frekuensi', 'skor_prioritas', 'foto_bukti'])]
 class Laporan extends Model
@@ -48,5 +49,16 @@ class Laporan extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Riwayat perubahan status laporan ini. Dipakai LaporanResource untuk
+     * mencari admin yang memverifikasi dan menyelesaikan laporan.
+     *
+     * @return HasMany<LaporanStatusHistory, $this>
+     */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(LaporanStatusHistory::class, 'laporan_id');
     }
 }
