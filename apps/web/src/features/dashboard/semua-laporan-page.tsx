@@ -115,9 +115,7 @@ function BarisAdmin({
     <div className="flex items-center gap-2">
       <AvatarAdmin nama={nama} foto={foto} className="size-7" />
       <div className="min-w-0">
-        <p className="truncate text-[13px] leading-tight font-medium">
-          {nama}
-        </p>
+        <p className="truncate text-[13px] leading-tight font-medium">{nama}</p>
         <p className="text-[11px] leading-tight text-neutral-500">
           {peran}
           {waktu ? ` · ${formatWaktu(waktu)}` : ''}
@@ -468,7 +466,9 @@ function Konten({
                     </td>
                   )}
                   <td className="px-3 py-3">
-                    <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+                    <PrioritasBadge
+                      kategori={item.prioritas_kategori ?? null}
+                    />
                   </td>
                   <td className="px-3 py-3">
                     <StatusBadge status={item.status} />

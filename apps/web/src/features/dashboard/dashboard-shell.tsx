@@ -23,11 +23,7 @@ import { cn } from '@/lib/utils'
 // Rute yang boleh muncul di sidebar. Union eksplisit supaya Link dapat
 // tipe route yang benar dan menu tidak pernah mengarah ke halaman fiktif.
 type NavTo =
-  | '/dashboard'
-  | '/semua-laporan'
-  | '/verifikasi'
-  | '/pengaturan'
-  | '/admin'
+  '/dashboard' | '/semua-laporan' | '/verifikasi' | '/pengaturan' | '/admin'
 
 interface NavItem {
   label: string

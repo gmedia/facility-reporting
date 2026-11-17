@@ -17,10 +17,7 @@ import {
   LaporanTerbaru,
 } from '@/features/dashboard/dashboard-admin'
 import { DashboardActions } from '@/features/dashboard/dashboard-actions'
-import {
-  formatWaktu,
-  waktuRelatif,
-} from '@/features/dashboard/dashboard-query'
+import { formatWaktu, waktuRelatif } from '@/features/dashboard/dashboard-query'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
 import {
   gedungDari,
@@ -165,11 +162,7 @@ function DashboardContent({
       <BannerTertahan jumlah={tertahan.length} ambang={ambang} />
       <KpiKartu laporan={laporan} />
       <Heatmap laporan={laporan} />
-      <PanelTertahan
-        tertahan={tertahan}
-        ambang={ambang}
-        onAmbang={setAmbang}
-      />
+      <PanelTertahan tertahan={tertahan} ambang={ambang} onAmbang={setAmbang} />
       <AktivitasTerbaru laporan={laporan} />
       <LaporanTerbaru laporan={terbaru} onBukaFoto={onBukaFoto} />
     </>
@@ -462,7 +455,11 @@ function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
         <ul className="mt-4 divide-y divide-neutral-100">
           {aktivitas.map((a) => (
             <li key={a.key} className="flex items-center gap-3 py-3">
-              <AvatarAdmin nama={a.admin} foto={a.adminFoto} className="size-8" />
+              <AvatarAdmin
+                nama={a.admin}
+                foto={a.adminFoto}
+                className="size-8"
+              />
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">
