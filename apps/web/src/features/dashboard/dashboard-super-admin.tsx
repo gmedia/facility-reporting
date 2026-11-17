@@ -30,8 +30,9 @@ import {
 import {
   KATEGORI_LABEL,
   errorMessage,
-  useLaporanList,
   type Laporan,
+  type LaporanKategori,
+  useLaporanList,
 } from '@/features/laporan/laporan-query'
 import { cn } from '@/lib/utils'
 
@@ -470,7 +471,8 @@ function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
                 </p>
                 <p className="text-xs text-neutral-500">
                   {a.laporan.lokasi} ·{' '}
-                  {KATEGORI_LABEL[a.laporan.kategori] ?? a.laporan.kategori}
+                  {KATEGORI_LABEL[a.laporan.kategori as LaporanKategori] ??
+                    a.laporan.kategori}
                   {a.laporan.pelapor && (
                     <>
                       {' '}

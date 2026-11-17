@@ -23,8 +23,9 @@ import {
   STATUS_LABEL,
   STATUS_VALUES,
   errorMessage,
-  useLaporanList,
   type Laporan,
+  type LaporanKategori,
+  useLaporanList,
 } from '@/features/laporan/laporan-query'
 import { PrioritasBadge } from '@/features/laporan/prioritas-badge'
 import { StatusBadge } from '@/features/laporan/status-badge'
@@ -149,7 +150,7 @@ function unduhCsv(rows: Laporan[]) {
   const baris = rows.map((i) => [
     i.id,
     i.deskripsi,
-    KATEGORI_LABEL[i.kategori] ?? i.kategori,
+    KATEGORI_LABEL[i.kategori as LaporanKategori] ?? i.kategori,
     gedungDari(i.lokasi),
     i.lokasi,
     i.pelapor?.name ?? '',
@@ -426,8 +427,9 @@ function Konten({
                   <td className="px-3 py-3">
                     <p className="font-medium">{item.deskripsi}</p>
                     <p className="mt-0.5 text-xs text-neutral-500">
-                      {KATEGORI_LABEL[item.kategori] ?? item.kategori} ·{' '}
-                      {item.lokasi} · {formatTanggal(item.created_at)}
+                      {KATEGORI_LABEL[item.kategori as LaporanKategori] ??
+                        item.kategori}{' '}
+                      · {item.lokasi} · {formatTanggal(item.created_at)}
                     </p>
                     {item.pelapor && (
                       <p className="mt-0.5 text-xs text-neutral-500">

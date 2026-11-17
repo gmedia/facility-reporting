@@ -314,6 +314,8 @@ export function VerifikasiPage({ user }: { user: User }) {
     (item) => hariTertahan(item, sekarang) >= AMBANG_HARI,
   )
 
+  const jumlahTertahan = tertahanSemua.length
+
   // Sumber data tergantung tab.
   const sumber =
     tab === 'antrian'
