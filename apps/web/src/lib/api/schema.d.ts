@@ -311,6 +311,22 @@ export interface components {
         nim: string | null
         foto: string | null
       } | null
+      /**
+       * @description Admin yang pertama kali memverifikasi (valid) atau menolak
+       *     laporan, beserta foto dan waktunya. Null kalau belum pernah.
+       */
+      diverifikasi_oleh?: string | null
+      diverifikasi_oleh_foto?: string | null
+      /** Format: date-time */
+      diverifikasi_pada?: string | null
+      /**
+       * @description Admin yang terakhir mengubah status ke selesai, beserta
+       *     foto dan waktunya. Null kalau laporan belum selesai.
+       */
+      diselesaikan_oleh?: string | null
+      diselesaikan_oleh_foto?: string | null
+      /** Format: date-time */
+      diselesaikan_pada?: string | null
     }
     /**
      * LaporanStatus
