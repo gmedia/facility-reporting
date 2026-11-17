@@ -302,17 +302,17 @@ export function VerifikasiPage({ user }: { user: User }) {
   const jumlahRiwayat = riwayatFinal.length
 
   // Laporan aktif yang tidak berubah selama >= AMBANG_HARI.
-  const [sekarang, setSekarang] = useState(Date.now())
+  const [sekarang, setSekarang] = useState(0)
 
+  // eslint-disable react-hooks/set-state-in-effect
   useEffect(() => {
-    const id = setInterval(() => setSekarang(Date.now()), 60_000)
-    return () => clearInterval(id)
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setSekarang(Date.now)
   }, [])
 
   const tertahanSemua = antrianAktif.filter(
     (item) => hariTertahan(item, sekarang) >= AMBANG_HARI,
   )
-  const jumlahTertahan = tertahanSemua.length
 
   // Sumber data tergantung tab.
   const sumber =
