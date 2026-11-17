@@ -14,15 +14,15 @@ type Akun = {
   name: string
   nim: string | null
   email: string
-  role: 'super_admin'
+  role: 'admin' | 'super_admin'
 }
 
-const superAdmin: Akun = {
-  id: 1,
-  name: 'Super Admin',
+const adminPengelola: Akun = {
+  id: 2,
+  name: 'Admin Pengelola',
   nim: null,
-  email: 'superadmin@facility.test',
-  role: 'super_admin',
+  email: 'admin@facility.test',
+  role: 'admin',
 }
 
 const laporan = [
@@ -79,7 +79,7 @@ vi.mock('@/features/auth/auth-query', async (importOriginal) => {
     ...actual,
     meQueryOptions: {
       queryKey: ['me'],
-      queryFn: async () => superAdmin,
+      queryFn: async () => adminPengelola,
       retry: false,
       staleTime: 0,
     },
@@ -128,7 +128,7 @@ describe('dashboard pengelola', () => {
     renderAt('/dashboard')
 
     expect(
-      await screen.findByRole('heading', { name: 'Halo, Super Admin' }),
+      await screen.findByRole('heading', { name: 'Halo, Admin Pengelola' }),
     ).toBeInTheDocument()
     expect(await screen.findByText('Laporan terbaru')).toBeInTheDocument()
     expect(screen.getByText('Total')).toBeInTheDocument()
