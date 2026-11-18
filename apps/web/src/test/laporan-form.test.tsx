@@ -68,7 +68,10 @@ vi.mock('@/components/ui/select', () => {
       <select
         id={id}
         value={value ?? ''}
-        onChange={(event) => onValueChange?.(event.target.value)}
+        onChange={(event) => {
+          // react-hook-form's field.onChange accepts value directly
+          onValueChange?.(event.target.value)
+        }}
       >
         {children}
       </select>

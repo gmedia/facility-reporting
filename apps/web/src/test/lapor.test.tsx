@@ -77,7 +77,9 @@ vi.mock('@/components/ui/select', () => {
       <select
         id={id}
         value={value ?? ''}
-        onChange={(event) => onValueChange?.(event.target.value)}
+        onChange={(event) => {
+          onValueChange?.(event.target.value)
+        }}
       >
         {children}
       </select>
