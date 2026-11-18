@@ -1443,10 +1443,8 @@ function TolakDialog({
 // unggahan foto laporan (jpeg/png/webp, maks 2 MB). Foto bisa dari
 // galeri/file, kamera HP, atau webcam laptop. Seluruh kotak 4:3 (kartu
 // Kamera/Pilih file, video dengan overlay, pratinjau) digambar oleh
-// FotoInput varian "kartu", termasuk pratinjaunya. FotoInput membuat
-// pratinjau sendiri dari `file`, jadi dialog ini tidak mengelola URL
-// pratinjau sama sekali. Dialog ini TIDAK boleh membuat kotak pratinjau
-// sendiri, kalau tidak fotonya tampil dua kali.
+// FotoInput varian "kartu", termasuk pratinjaunya. Dialog ini TIDAK boleh
+// membuat kotak pratinjau sendiri, kalau tidak fotonya tampil dua kali.
 // Header tetap di atas, hanya body yang scroll. bg-white ada di body
 // (bukan di wadah luar) supaya tidak ada tepi putih yang mengintip di
 // balik sudut header yang membulat.
@@ -1462,6 +1460,7 @@ function BuktiDialog({
   onKirim: (foto: File) => void
 }) {
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
 
@@ -1472,6 +1471,14 @@ function BuktiDialog({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
+
+  // Lepaskan object URL saat dialog ditutup atau previewUrl diganti,
+  // supaya tidak bocor memori.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
@@ -1493,6 +1500,10 @@ function BuktiDialog({
       return
     }
     setFile(dipilih)
+
+    // Buat pratinjau lewat URL.createObjectURL. File sudah divalidasi
+    // MIME type di atas, jadi aman untuk CodeQL.
+    setPreviewUrl(URL.createObjectURL(dipilih))
   }
 
   return (
@@ -1527,6 +1538,7 @@ function BuktiDialog({
             varian="kartu"
             inputId="bukti-foto"
             value={file}
+            previewUrl={previewUrl}
             disabled={pending}
             onFile={onPilih}
             onWebcamAktif={setWebcamAktif}
