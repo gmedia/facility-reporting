@@ -49,26 +49,49 @@ type Aktivitas = {
   waktu: string
   admin: string
   adminFoto: string | null
-  aksi: 'memverifikasi' | 'menolak' | 'menyelesaikan'
+  aksi: 'memverifikasi' | 'memproses' | 'menolak' | 'menyelesaikan'
   laporan: Laporan
 }
 
-// Kejadian diambil dari jejak verifikasi / penolakan dan penyelesaian pada
-// tiap laporan, diurutkan dari yang terbaru.
+// Kejadian diambil dari jejak verifikasi / penolakan, pemrosesan, dan
+// penyelesaian pada tiap laporan, diurutkan dari yang terbaru.
 function susunAktivitas(laporan: Laporan[]): Aktivitas[] {
   const hasil: Aktivitas[] = []
 
   for (const item of laporan) {
+    const adaJejakProses = Boolean(item.diproses_oleh && item.diproses_pada)
+
     if (item.diverifikasi_oleh && item.diverifikasi_pada) {
+      let aksi: Aktivitas['aksi'] = 'memverifikasi'
+      if (item.status === 'ditolak') {
+        aksi = 'menolak'
+      } else if (item.status === 'diproses' && !adaJejakProses) {
+        // Fallback: backend belum kirim diproses_*, tapi statusnya sedang
+        // diproses, jadi kejadian terakhir yang tercatat dibaca "memproses".
+        aksi = 'memproses'
+      }
+
       hasil.push({
         key: `verifikasi-${item.id}`,
         waktu: item.diverifikasi_pada,
         admin: item.diverifikasi_oleh,
         adminFoto: item.diverifikasi_oleh_foto ?? null,
-        aksi: item.status === 'ditolak' ? 'menolak' : 'memverifikasi',
+        aksi,
         laporan: item,
       })
     }
+
+    if (item.diproses_oleh && item.diproses_pada) {
+      hasil.push({
+        key: `proses-${item.id}`,
+        waktu: item.diproses_pada,
+        admin: item.diproses_oleh,
+        adminFoto: item.diproses_oleh_foto ?? null,
+        aksi: 'memproses',
+        laporan: item,
+      })
+    }
+
     if (
       item.status === 'selesai' &&
       item.diselesaikan_oleh &&
@@ -426,8 +449,8 @@ function PanelTertahan({
   )
 }
 
-// Jejak terbaru: siapa memverifikasi / menolak / menyelesaikan laporan apa
-// dan kapan. Hanya tampil kalau backend sudah mengirim data admin.
+// Jejak terbaru: siapa memverifikasi / memproses / menolak / menyelesaikan
+// laporan apa dan kapan. Hanya tampil kalau backend sudah mengirim data admin.
 function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
   const aktivitas = susunAktivitas(laporan)
 
@@ -437,7 +460,8 @@ function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
         <div>
           <h2 className="text-base font-semibold">Aktivitas terbaru</h2>
           <p className="text-sm text-neutral-500">
-            Verifikasi, penolakan, dan penyelesaian laporan oleh admin.
+            Verifikasi, pemrosesan, penolakan, dan penyelesaian laporan oleh
+            admin.
           </p>
         </div>
         <Link

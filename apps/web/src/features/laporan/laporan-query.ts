@@ -17,9 +17,9 @@ export type Pelapor = {
 // `foto_bukti` = foto bukti penyelesaian yang diunggah admin saat status
 // diubah ke selesai (path relatif di disk public, seperti `foto`).
 // `updated_at` = waktu terakhir laporan berubah, dipakai tab Tertahan.
-// `diverifikasi_oleh/foto/pada` dan `diselesaikan_oleh/foto/pada` = nama,
-// foto profil, dan waktu admin saat laporan diverifikasi (atau ditolak) dan
-// diselesaikan. Opsional: dipakai halaman Semua Laporan (kolom & filter
+// `diverifikasi_*`, `diproses_*`, dan `diselesaikan_*` = nama, foto profil,
+// dan waktu admin saat laporan diverifikasi (atau ditolak), mulai diproses,
+// dan diselesaikan. Opsional: dipakai halaman Semua Laporan (kolom & filter
 // Admin) dan panel Aktivitas terbaru. Kalau backend belum mengirimnya,
 // bagian itu otomatis tidak tampil (foto kembali ke lingkaran inisial).
 export type Laporan = components['schemas']['LaporanResource'] & {
@@ -29,6 +29,9 @@ export type Laporan = components['schemas']['LaporanResource'] & {
   diverifikasi_oleh?: string | null
   diverifikasi_oleh_foto?: string | null
   diverifikasi_pada?: string | null
+  diproses_oleh?: string | null
+  diproses_oleh_foto?: string | null
+  diproses_pada?: string | null
   diselesaikan_oleh?: string | null
   diselesaikan_oleh_foto?: string | null
   diselesaikan_pada?: string | null
@@ -151,6 +154,8 @@ export function useLaporanHistory(id: number) {
 // Daftar laporan. Backend sudah menyeleksi per role:
 //   user → cuma laporannya sendiri, admin/super_admin → semua.
 // Jadi gak perlu difilter lagi di sisi klien.
+//
+// Polling: laporan dari user lain muncul otomatis tanpa refresh manual.
 export function useLaporanList() {
   return useQuery({
     queryKey: ['laporan', 'list'],
@@ -161,6 +166,10 @@ export function useLaporanList() {
       }
       return data.data
     },
+    refetchInterval: 15_000, // cek ulang tiap 15 detik
+    refetchIntervalInBackground: false, // berhenti saat tab tidak aktif
+    refetchOnWindowFocus: true, // refetch saat kembali ke tab
+    refetchOnMount: 'always', // selalu ambil data segar saat halaman dibuka
   })
 }
 
@@ -238,6 +247,8 @@ export function useUpdateLaporanStatus() {
 }
 
 export function useCreateLaporan() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async (values: LaporanFormValues) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
@@ -270,6 +281,11 @@ export function useCreateLaporan() {
       }
 
       return data.data
+    },
+    onSuccess: () => {
+      // Tanpa ini, dashboard setelah submit masih menampilkan cache lama
+      // sampai di-refresh manual.
+      void queryClient.invalidateQueries({ queryKey: ['laporan'] })
     },
   })
 }
