@@ -32,9 +32,9 @@ function formatUkuran(byte: number): string {
   if (byte < 1024 * 1024) return `${Math.max(1, Math.round(byte / 1024))} KB`
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
+
 export function FotoInput({
   value,
-  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -45,11 +45,8 @@ export function FotoInput({
   petunjuk = 'Arahkan ke hasil perbaikan, lalu tekan tombol bulat',
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
+  // Pratinjau dibuat di dalam komponen ini dari `value`.
   value: File | null
-  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
-  // pemanggil (verifikasi-page.tsx) lewat FileReader.readAsDataURL, bukan
-  // di dalam komponen ini.
-  previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
@@ -76,13 +73,10 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  // Gunakan ref untuk internal previewUrl untuk menghindari
-  // react-hooks/no-set-state-in-effect error.
-  const internalPreviewUrlRef = useRef<string | null>(null)
-  // hasPreview turunkan selama render (bukan di effect) untuk menghindari
-  // react-hooks/no-set-state-in-effect. Jika value atau previewUrl ada,
-  // kita tahu akan ada pratinjau (effect akan set img.src segera setelah render).
-  const hasPreview = !!previewUrl || !!value
+
+  // Diturunkan saat render (bukan di effect) untuk menghindari
+  // react-hooks/no-set-state-in-effect.
+  const hasPreview = !!value
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -104,23 +98,16 @@ export function FotoInput({
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
 
-  // Buat pratinjau dari `value` jika pemanggil tidak menyediakan previewUrl.
-  // `value` adalah File yang sudah divalidasi MIME type oleh pemanggil,
-  // jadi URL.createObjectURL di sini aman untuk CodeQL.
+  // Buat pratinjau dari `value`. URL.createObjectURL selalu menghasilkan
+  // URL "blob:", dan hanya URL berawalan "blob:" yang dipasang ke <img>.
+  // URL dibebaskan lagi saat value berganti atau komponen ditutup.
   useEffect(() => {
-    const img = imgRef.current
-    if (!value) {
-      internalPreviewUrlRef.current = null
-      if (img) img.src = previewUrl ?? ''
-      return
-    }
+    if (!value) return
     const url = URL.createObjectURL(value)
-    internalPreviewUrlRef.current = url
-    // Set src langsung di sini (bukan lewat useEffect terpisah) karena
-    // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
-    if (img) img.src = previewUrl ?? url
+    const img = imgRef.current
+    if (img && url.startsWith('blob:')) img.src = url
     return () => URL.revokeObjectURL(url)
-  }, [value, previewUrl])
+  }, [value])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -309,7 +296,7 @@ export function FotoInput({
                 type="button"
                 disabled={disabled}
                 onClick={() => galeriRef.current?.click()}
-                className="hover:bg:#{d3e9de} flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg-[#d3e9de] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImageIcon aria-hidden="true" className="size-5.5" />
                 {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
@@ -375,7 +362,7 @@ export function FotoInput({
           type="button"
           disabled={disabled}
           onClick={() => onFile(null)}
-          className="transition:hover:bg-red-50 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 aria-hidden="true" className="size-4" />
           Hapus foto
