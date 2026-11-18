@@ -84,13 +84,10 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  // Gunakan ref untuk internal previewUrl untuk menghindari
-  // react-hooks/no-set-state-in-effect error.
-  const internalPreviewUrlRef = useRef<string | null>(null)
   // hasPreview turunkan selama render (bukan di effect) untuk menghindari
-  // react-hooks/no-set-state-in-effect. Jika value atau previewUrl ada,
+  // react-hooks/no-set-state-in-effect. Jika previewUrl ada,
   // kita tahu akan ada pratinjau (effect akan set img.src segera setelah render).
-  const hasPreview = !!previewUrl || !!value
+  const hasPreview = !!previewUrl
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -112,22 +109,23 @@ export function FotoInput({
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
 
-  // Buat pratinjau dari `value` jika pemanggil tidak menyediakan previewUrl.
-  // `value` adalah File yang sudah divalidasi MIME type oleh pemanggil,
-  // jadi URL.createObjectURL di sini aman untuk CodeQL.
+  // Tampilkan pratinjau dari previewUrl yang dibuat oleh pemanggil
+  // (verifikasi-page.tsx lewat URL.createObjectURL). FotoInput cuma menampilkan,
+  // tidak membuat URL baru, sehingga tidak ada taint dari e.target.files di sini.
   useEffect(() => {
     const img = imgRef.current
-    if (!value) {
-      internalPreviewUrlRef.current = null
-      if (img) img.src = sanitasiUrl(previewUrl)
+    if (!previewUrl) {
+      if (img) img.src = ''
       return
     }
-    const url = URL.createObjectURL(value)
-    internalPreviewUrlRef.current = url
-    const aman = sanitasiUrl(previewUrl ?? url)
+    const aman = sanitasiUrl(previewUrl)
     if (img) img.src = aman
-    return () => URL.revokeObjectURL(url)
-  }, [value, previewUrl])
+    return () => {
+      if (aman.startsWith('blob:')) {
+        URL.revokeObjectURL(aman)
+      }
+    }
+  }, [previewUrl])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
