@@ -1455,6 +1455,7 @@ function BuktiDialog({
   onKirim: (foto: File) => void
 }) {
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
 
@@ -1473,6 +1474,8 @@ function BuktiDialog({
 
     if (!dipilih) {
       setFile(null)
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
       return
     }
     if (!FOTO_MIME_IZIN.includes(dipilih.type)) {
@@ -1486,6 +1489,7 @@ function BuktiDialog({
       return
     }
     setFile(dipilih)
+    setPreviewUrl(URL.createObjectURL(dipilih))
   }
 
   return (
@@ -1519,6 +1523,7 @@ function BuktiDialog({
             varian="kartu"
             inputId="bukti-foto"
             value={file}
+            previewUrl={previewUrl}
             disabled={pending}
             onFile={onPilih}
             onWebcamAktif={setWebcamAktif}

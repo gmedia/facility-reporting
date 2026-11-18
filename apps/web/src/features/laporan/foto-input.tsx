@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
 import { FOTO_ACCEPT } from './laporan-query'
 
@@ -33,16 +33,9 @@ function formatUkuran(byte: number): string {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Hanya izinkan URL yang aman untuk atribut src (blob: atau data:image/*).
-// Mencegah data dari input file pengguna yang tidak terpercaya
-// direinterpretasikan sebagai HTML/JavaScript oleh CodeQL.
-function isAmanUrl(url: string | null): boolean {
-  if (!url) return false
-  return url.startsWith('blob:') || url.startsWith('data:image/')
-}
-
 export function FotoInput({
   value,
+  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -55,6 +48,10 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
+  // URL pratinjau yang sudah aman (blob:). Dibuat oleh pemanggil lewat
+  // URL.createObjectURL, bukan di dalam komponen ini, supaya data dari
+  // input file pengguna tidak langsung mencapai atribut src.
+  previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
@@ -100,20 +97,6 @@ export function FotoInput({
     !window.matchMedia('(hover: hover)').matches
 
   const kartu = varian === 'kartu'
-
-  // Thumbnail / pratinjau untuk foto yang terpilih.
-  const thumb = useMemo(
-    () =>
-      (pratinjau || kartu) && value && value.type.startsWith('image/')
-        ? URL.createObjectURL(value)
-        : null,
-    [pratinjau, kartu, value],
-  )
-  useEffect(() => {
-    return () => {
-      if (thumb) URL.revokeObjectURL(thumb)
-    }
-  }, [thumb])
 
   const matikanWebcam = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -256,9 +239,9 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {thumb ? (
+          {previewUrl ? (
             <img
-              src={isAmanUrl(thumb) ? thumb : undefined}
+              src={previewUrl}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
               decoding="async"
