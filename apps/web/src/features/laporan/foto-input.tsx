@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
+
 import { FOTO_ACCEPT } from './laporan-query'
 
 const LEBAR_MAKS = 1600
@@ -7,9 +9,11 @@ const LEBAR_MAKS = 1600
 // Kecilkan frame video jadi File JPEG supaya muat batas 2 MB.
 function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
   const skala = Math.min(1, LEBAR_MAKS / video.videoWidth)
+
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(video.videoWidth * skala)
   canvas.height = Math.round(video.videoHeight * skala)
+
   canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
 
   return new Promise((resolve) => {
@@ -29,12 +33,22 @@ function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
 }
 
 function formatUkuran(byte: number): string {
-  if (byte < 1024 * 1024) return `${Math.max(1, Math.round(byte / 1024))} KB`
+  if (byte < 1024 * 1024) {
+    return `${Math.max(1, Math.round(byte / 1024))} KB`
+  }
+
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// Sanitasi URL: hanya izinkan blob: atau data:image/
+function sanitasiUrl(url: string | null | undefined): string {
+  if (!url || !/^blob:|^data:image\//.test(url)) return ''
+  return url
 }
 
 export function FotoInput({
   value,
+  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -44,25 +58,31 @@ export function FotoInput({
   kosong = 'kartu',
   petunjuk = 'Arahkan ke hasil perbaikan, lalu tekan tombol bulat',
 }: {
-  // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
+  // Foto yang sedang terpilih (null = belum ada).
   value: File | null
+
+  // URL pratinjau gambar yang disediakan pemanggil.
+  previewUrl?: string | null
+
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
+
   inputId: string
   disabled?: boolean
-  // Dipanggil saat webcam menyala/mati.
+
+  // Callback saat webcam menyala/mati.
   onWebcamAktif?: (aktif: boolean) => void
-  // Label aksesibilitas untuk input file. Default "Foto".
+
   ariaLabel?: string
-  // 'pill'  = tombol kecil di bawah (bawaan).
-  // 'kartu' = satu kotak 4:3 lengkap: kamera/Pilih file, video dengan
-  //           overlay, dan pratinjau besar.
+
+  // 'pill' = tombol kecil.
+  // 'kartu' = kotak 4:3 lengkap.
   varian?: 'pill' | 'kartu'
-  // Hanya untuk varian 'kartu' saat belum ada foto dan kamera mati:
-  // 'kartu' = kotak putus-putus 4:3 (bawaan, dipakai dialog bukti).
-  // 'pill'  = tombol kecil seperti varian 'pill'.
+
+  // Tampilan ketika belum ada foto.
   kosong?: 'kartu' | 'pill'
-  // Teks petunjuk di atas kamera (varian 'kartu').
+
+  // Petunjuk di atas kamera.
   petunjuk?: string
 }) {
   const galeriRef = useRef<HTMLInputElement>(null)
@@ -70,19 +90,17 @@ export function FotoInput({
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const imgRef = useRef<HTMLImageElement>(null)
+
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  // Pratinjau foto dibuat sendiri lewat FileReader.readAsDataURL (data: URL)
-  // supaya CodeQL tidak melihat taint dari e.target.files sampai ke img.src.
-  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(
-    null,
-  )
-  const hasPreview = !!internalPreviewUrl
+
+  // Tentukan preview langsung saat render.
+  const hasPreview = !!previewUrl || !!value
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
 
-  // HP/tablet murni: layar sentuh DAN tidak ada mouse/trackpad (hover).
+  // HP/tablet murni: layar sentuh tanpa mouse/trackpad.
   const perangkatSentuh =
     typeof window !== 'undefined' &&
     window.matchMedia('(pointer: coarse)').matches &&
@@ -91,41 +109,53 @@ export function FotoInput({
   const kartu = varian === 'kartu'
 
   const matikanWebcam = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     setWebcamAktif(false)
   }
 
-  // Pastikan kamera mati saat komponen ditutup.
-  useEffect(() => matikanWebcam, [])
-
-  // Buat pratinjau data: URL dari `value` dengan FileReader. Data URL
-  // (base64) bukan hasil URL.createObjectURL dari file mentah, jadi CodeQL
-  // tidak melacak taint sampai ke img.src.
+  // Pastikan kamera mati saat komponen dilepas.
+  // Tidak memanggil setState di dalam cleanup.
   useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+  }, [])
+
+  // Buat pratinjau dari File jika previewUrl tidak disediakan.
+  useEffect(() => {
+    const img = imgRef.current
+
     if (!value) {
-      setInternalPreviewUrl(null)
+      if (img) {
+        img.src = sanitasiUrl(previewUrl)
+      }
+
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      setInternalPreviewUrl(
-        typeof reader.result === 'string' ? reader.result : null,
-      )
+
+    const url = URL.createObjectURL(value)
+    const aman = sanitasiUrl(previewUrl ?? url)
+
+    if (img) {
+      img.src = aman
     }
-    reader.readAsDataURL(value)
+
     return () => {
-      reader.abort()
+      URL.revokeObjectURL(url)
     }
-  }, [value])
+  }, [value, previewUrl])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
         audio: false,
       })
+
       streamRef.current = stream
       setWebcamAktif(true)
     } catch {
@@ -133,7 +163,7 @@ export function FotoInput({
     }
   }
 
-  // Sambungkan stream ke <video> setelah elemennya muncul.
+  // Sambungkan stream ke video setelah elemennya muncul.
   useEffect(() => {
     if (webcamAktif && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
@@ -147,22 +177,32 @@ export function FotoInput({
 
   const ambilFoto = async () => {
     if (!videoRef.current) return
+
     const file = await frameKeFile(videoRef.current)
+
     matikanWebcam()
-    if (file) onFile(file)
+
+    if (file) {
+      onFile(file)
+    }
   }
 
-  // Tombol kamera: HP buka kamera bawaan, laptop nyalakan webcam.
+  // Tombol kamera: HP membuka kamera bawaan,
+  // laptop menyalakan webcam.
   const bukaKamera = () => {
-    if (perangkatSentuh) kameraHpRef.current?.click()
-    else void nyalakanWebcam()
+    if (perangkatSentuh) {
+      kameraHpRef.current?.click()
+    } else {
+      void nyalakanWebcam()
+    }
   }
+
   const adaKamera = perangkatSentuh || adaWebcam
 
   const tombol =
     'inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50'
 
-  // Tombol kecil kondisi kosong (belum ada foto, kamera mati).
+  // Tombol kecil kondisi kosong.
   const tombolKosong = (
     <div className="flex flex-wrap gap-2">
       {perangkatSentuh ? (
@@ -188,6 +228,7 @@ export function FotoInput({
           </button>
         )
       )}
+
       <button
         type="button"
         disabled={disabled}
@@ -203,7 +244,8 @@ export function FotoInput({
   let isi
 
   if (kartu) {
-    // ============ VARIAN KARTU (tampilan prototype) ============
+    // ============ VARIAN KARTU ============
+
     if (webcamAktif) {
       isi = (
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black">
@@ -217,8 +259,11 @@ export function FotoInput({
 
           {/* Sudut bidik */}
           <i className="pointer-events-none absolute top-[20%] left-[14%] size-6.5 rounded-tl-lg border-t-[3px] border-l-[3px] border-white/85" />
+
           <i className="pointer-events-none absolute top-[20%] right-[14%] size-6.5 rounded-tr-lg border-t-[3px] border-r-[3px] border-white/85" />
+
           <i className="pointer-events-none absolute bottom-[24%] left-[14%] size-6.5 rounded-bl-lg border-b-[3px] border-l-[3px] border-white/85" />
+
           <i className="pointer-events-none absolute right-[14%] bottom-[24%] size-6.5 rounded-br-lg border-r-[3px] border-b-[3px] border-white/85" />
 
           {/* Petunjuk di atas */}
@@ -237,7 +282,7 @@ export function FotoInput({
               Tutup kamera
             </button>
 
-            {/* Tombol bulat persis di tengah, dengan jarak dari tepi bawah */}
+            {/* Tombol ambil foto */}
             <button
               type="button"
               aria-label="Ambil foto"
@@ -250,23 +295,26 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {hasPreview && internalPreviewUrl ? (
-            <img
-              ref={imgRef}
-              alt="Pratinjau foto terpilih"
-              className="size-full object-cover"
-              decoding="async"
-              src={internalPreviewUrl}
-            />
-          ) : (
+          <img
+            ref={imgRef}
+            alt="Pratinjau foto terpilih"
+            className="size-full object-cover"
+            decoding="async"
+            src=""
+            style={{ display: hasPreview ? 'block' : 'none' }}
+          />
+
+          {!hasPreview && (
             <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
           )}
 
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 bg-gradient-to-t from-[#050f0a]/75 to-transparent p-3.5">
             <div className="min-w-0 flex-1 text-white">
               <p className="truncate text-sm font-medium">{value.name}</p>
+
               <p className="text-xs opacity-80">{formatUkuran(value.size)}</p>
             </div>
+
             <button
               type="button"
               disabled={disabled}
@@ -280,7 +328,6 @@ export function FotoInput({
         </div>
       )
     } else if (kosong === 'pill') {
-      // Kondisi kosong: tombol kecil, bukan kotak putus-putus besar.
       isi = tombolKosong
     } else {
       isi = (
@@ -302,11 +349,12 @@ export function FotoInput({
                   Kamera
                 </button>
               )}
+
               <button
                 type="button"
                 disabled={disabled}
                 onClick={() => galeriRef.current?.click()}
-                className="hover:bg:#{d3e9de} flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg-[#d3e9de] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImageIcon aria-hidden="true" className="size-5.5" />
                 {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
@@ -317,7 +365,8 @@ export function FotoInput({
       )
     }
   } else if (webcamAktif) {
-    // ============ VARIAN PILL (bawaan) ============
+    // ============ VARIAN PILL ============
+
     isi = (
       <div className="flex flex-col gap-2">
         <video
@@ -327,6 +376,7 @@ export function FotoInput({
           muted
           className="aspect-[4/3] w-full rounded-xl border border-neutral-200 bg-black object-cover"
         />
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -336,6 +386,7 @@ export function FotoInput({
             <Camera aria-hidden="true" className="size-4" />
             Ambil foto
           </button>
+
           <button type="button" onClick={matikanWebcam} className={tombol}>
             <X aria-hidden="true" className="size-4" />
             Tutup kamera
@@ -344,17 +395,18 @@ export function FotoInput({
       </div>
     )
   } else if (value) {
-    // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
+    // Sudah ada foto: hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {hasPreview && internalPreviewUrl ? (
-          <img
-            ref={imgRef}
-            alt="Pratinjau foto terpilih"
-            className="size-12 shrink-0 rounded-lg object-cover"
-            src={internalPreviewUrl}
-          />
-        ) : (
+        <img
+          ref={imgRef}
+          alt="Pratinjau foto terpilih"
+          className="size-12 shrink-0 rounded-lg object-cover"
+          src=""
+          style={{ display: hasPreview ? 'block' : 'none' }}
+        />
+
+        {!hasPreview && (
           <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-white text-emerald-700">
             <ImageIcon aria-hidden="true" className="size-5" />
           </span>
@@ -364,10 +416,12 @@ export function FotoInput({
           <p className="truncate text-sm font-medium text-emerald-900">
             {value.name}
           </p>
+
           <p className="text-xs text-emerald-800/70">
             {formatUkuran(value.size)}
           </p>
         </div>
+
         <button
           type="button"
           disabled={disabled}
@@ -383,9 +437,9 @@ export function FotoInput({
     isi = tombolKosong
   }
 
-  // Jarak atas: varian 'pill' selalu pakai mt-3. Varian 'kartu' hanya pakai
-  // mt-3 saat menampilkan tombol kecil (kosong="pill").
+  // Pengaturan jarak atas.
   const kosongKecil = kartu && kosong === 'pill' && !webcamAktif && !value
+
   const pakaiJarak = !kartu || kosongKecil
 
   return (
@@ -404,9 +458,11 @@ export function FotoInput({
         onChange={(e) => {
           const file = e.target.files?.[0] ?? null
           e.target.value = ''
+
           if (file) onFile(file)
         }}
       />
+
       <input
         ref={kameraHpRef}
         type="file"
@@ -418,6 +474,7 @@ export function FotoInput({
         onChange={(e) => {
           const file = e.target.files?.[0] ?? null
           e.target.value = ''
+
           if (file) onFile(file)
         }}
       />
