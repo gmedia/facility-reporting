@@ -33,12 +33,11 @@ function formatUkuran(byte: number): string {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Hanya izinkan URL blob: atau data:image/* sebagai src gambar.
-// Ini mencegah CodeQL DOM XSS karena URL dari createObjectURL
-// masih dianggap tainted saat berasal dari e.target.files.
-function isAmanUrl(url: string | null | undefined): boolean {
-  if (!url) return false
-  return /^blob:|^data:image\//.test(url)
+// Sanitasi URL untuk CodeQL DOM XSS: hanya izinkan blob: atau data:image/*
+// Kembalikan '' jika tidak aman, agar CodeQL yakin hanya data bersih ke img.src.
+function sanitasiUrl(url: string | null | undefined): string {
+  if (!url || !/^blob:|^data:image\//.test(url)) return ''
+  return url
 }
 
 export function FotoInput({
@@ -120,16 +119,13 @@ export function FotoInput({
     const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
-      if (img && isAmanUrl(previewUrl)) img.src = previewUrl ?? ''
-      else if (img) img.src = ''
+      if (img) img.src = sanitasiUrl(previewUrl)
       return
     }
     const url = URL.createObjectURL(value)
     internalPreviewUrlRef.current = url
-    // Set src langsung di sini (bukan lewat useEffect terpisah) karena
-    // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
-    const aman = previewUrl ?? url
-    if (img && isAmanUrl(aman)) img.src = aman
+    const aman = sanitasiUrl(previewUrl ?? url)
+    if (img) img.src = aman
     return () => URL.revokeObjectURL(url)
   }, [value, previewUrl])
 
