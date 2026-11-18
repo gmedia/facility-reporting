@@ -140,14 +140,12 @@ function renderAt(path: string) {
 // user-event supaya ngelakuin apa yang beneran dilakuin user: ngetik
 // karakter per karakter, bukan sekali set nilai.
 async function isiForm(user: UserEvent) {
-  fireEvent.change(screen.getByLabelText('Kategori'), {
-    target: { value: 'elektronik' },
-  })
-  // Lokasi sekarang dropdown (bukan ketikan bebas) — pilihannya cuma
-  // Gedung D dan Gedung S, lihat LOKASI_VALUES di laporan-form.
-  fireEvent.change(screen.getByLabelText('Lokasi'), {
-    target: { value: 'Gedung D' },
-  })
+  const kategoriLabel = screen.getByLabelText('Kategori')
+  const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
+  fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
+  const lokasiLabel = screen.getByLabelText('Lokasi')
+  const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+  fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
@@ -208,10 +206,11 @@ describe('halaman /lapor', () => {
 
     // Lokasi berupa dropdown, bukan ketikan bebas: pilihannya terkunci
     // di LOKASI_VALUES (permintaan 3 Nov 2026).
-    const lokasi = screen.getByLabelText('Lokasi')
-    expect(lokasi).toBeInTheDocument()
+    const lokasiLabel = screen.getByLabelText('Lokasi')
+    expect(lokasiLabel).toBeInTheDocument()
+    const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
     expect(
-      within(lokasi)
+      within(lokasiSelect!)
         .getAllByRole('option')
         .map((option) => option.textContent),
     ).toEqual(['Gedung D', 'Gedung S'])

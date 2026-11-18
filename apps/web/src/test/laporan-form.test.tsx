@@ -125,12 +125,12 @@ function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
 }
 
 async function isiForm(user: UserEvent) {
-  fireEvent.change(screen.getByLabelText('Kategori'), {
-    target: { value: 'elektronik' },
-  })
-  fireEvent.change(screen.getByLabelText('Lokasi'), {
-    target: { value: 'Gedung D' },
-  })
+  const kategoriLabel = screen.getByLabelText('Kategori')
+  const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
+  fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
+  const lokasiLabel = screen.getByLabelText('Lokasi')
+  const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+  fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
