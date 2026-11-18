@@ -206,7 +206,7 @@ describe('halaman /lapor', () => {
 
     // Lokasi berupa dropdown, bukan ketikan bebas: pilihannya terkunci
     // di LOKASI_VALUES (permintaan 3 Nov 2026).
-    const lokasiLabel = screen.getByLabelText('Lokasi')
+    const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
     expect(lokasiLabel).toBeInTheDocument()
     const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
     expect(
