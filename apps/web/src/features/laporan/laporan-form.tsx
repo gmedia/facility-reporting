@@ -257,8 +257,10 @@ export function LaporanForm() {
         name="kategori"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-kategori">Kategori</FieldLabel>
-            <Wajib />
+            <FieldLabel htmlFor="laporan-kategori" aria-label="Kategori">
+              Kategori
+              <Wajib />
+            </FieldLabel>
 
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
@@ -291,8 +293,10 @@ export function LaporanForm() {
         name="lokasi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
-            <Wajib />
+            <FieldLabel htmlFor="laporan-lokasi" aria-label="Lokasi">
+              Lokasi
+              <Wajib />
+            </FieldLabel>
 
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
@@ -325,8 +329,10 @@ export function LaporanForm() {
         name="deskripsi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-deskripsi">Deskripsi</FieldLabel>
-            <Wajib />
+            <FieldLabel htmlFor="laporan-deskripsi" aria-label="Deskripsi">
+              Deskripsi
+              <Wajib />
+            </FieldLabel>
 
             <Textarea
               id="laporan-deskripsi"
@@ -353,8 +359,10 @@ export function LaporanForm() {
 
           return (
             <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
-            <Wajib />
+              <FieldLabel htmlFor="laporan-foto" aria-label="Foto">
+                Foto
+                <Wajib />
+              </FieldLabel>
 
               <FotoInput
                 varian="kartu"
@@ -438,10 +446,10 @@ export function LaporanForm() {
               name={item.name}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid || undefined}>
-                  <FieldLabel id={`${item.name}-label`}>
+                  <FieldLabel id={`${item.name}-label`} aria-label={item.label}>
                     {item.label}
+                    <Wajib />
                   </FieldLabel>
-                  <Wajib />
 
                   <p
                     id={`${item.name}-hint`}
