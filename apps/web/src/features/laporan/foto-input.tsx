@@ -317,9 +317,9 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {thumb ? (
+        {previewUrl ? (
           <img
-            src={thumb}
+            src={previewUrl}
             alt="Pratinjau foto terpilih"
             className="size-12 shrink-0 rounded-lg object-cover"
           />
