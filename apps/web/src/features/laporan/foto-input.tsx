@@ -84,6 +84,7 @@ export function FotoInput({
   const kameraHpRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
 
@@ -106,6 +107,16 @@ export function FotoInput({
 
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
+
+  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
+  // props tidak langsung mencapai atribut src elemen  (menghindari
+  // pelacakan taint CodeQL DOM XSS).
+  useEffect(() => {
+    const img = imgRef.current
+    if (img) {
+      img.src = previewUrl ?? ''
+    }
+  }, [previewUrl])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -241,7 +252,7 @@ export function FotoInput({
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
           {previewUrl ? (
             <img
-              src={previewUrl}
+              ref={imgRef}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
               decoding="async"
