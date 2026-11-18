@@ -104,14 +104,19 @@ export function FotoInput({
   // `value` adalah File yang sudah divalidasi MIME type oleh pemanggil,
   // jadi URL.createObjectURL di sini aman untuk CodeQL.
   useEffect(() => {
+    const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
+      if (img) img.src = previewUrl ?? ''
       return
     }
     const url = URL.createObjectURL(value)
     internalPreviewUrlRef.current = url
+    // Set src langsung di sini (bukan lewat useEffect terpisah) karena
+    // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
+    if (img) img.src = previewUrl ?? url
     return () => URL.revokeObjectURL(url)
-  }, [value])
+  }, [value, previewUrl])
 
   // Tetapkan src secara imperatif lewat ref supaya data dari
   // prop tidak langsung mencapai atribut src elemen (menghindari
