@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { Eye, EyeOff } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -33,6 +33,7 @@ const tombolSoft =
 
 export function LoginForm() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [serverError, setServerError] = useState<string | null>(null)
   // false = password tersembunyi (titik-titik), true = terlihat.
   const [tampilPassword, setTampilPassword] = useState(false)
@@ -47,6 +48,11 @@ export function LoginForm() {
     setServerError(null)
     try {
       const user = await login.mutateAsync(values)
+      // Buang semua cache akun sebelumnya (daftar laporan, data user, dll.)
+      // supaya halaman tujuan mengambil data baru sesuai role akun ini.
+      // Tanpa ini, admin bisa melihat data milik mahasiswa yang login
+      // sebelumnya di browser yang sama.
+      queryClient.clear()
       // cast: route /admin & /dashboard belum ada di route tree
       await router.navigate({ to: homeFor(user.role) as never })
     } catch (error) {

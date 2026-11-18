@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   ClipboardList,
@@ -113,6 +113,7 @@ export function DashboardShell({
   children: ReactNode
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const logout = useMutation(logoutMutationOptions)
   const navItems = navFor(user.role)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -123,7 +124,15 @@ export function DashboardShell({
   const akun = me ?? user
 
   const onLogout = async () => {
-    await logout.mutateAsync()
+    try {
+      await logout.mutateAsync()
+    } finally {
+      // Buang SEMUA cache (daftar laporan, data user, dll.) supaya akun
+      // berikutnya yang login di browser ini tidak melihat data akun ini.
+      // Di `finally` supaya tetap terbuang walau request logout gagal
+      // (misalnya sesi sudah kedaluwarsa).
+      queryClient.clear()
+    }
     await router.navigate({ to: '/login' })
   }
 

@@ -41,6 +41,9 @@ export function FotoInput({
   pratinjau = false,
   onWebcamAktif,
   ariaLabel = 'Foto',
+  varian = 'pill',
+  kosong = 'kartu',
+  petunjuk = 'Arahkan ke hasil perbaikan, lalu tekan tombol bulat',
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
@@ -56,6 +59,21 @@ export function FotoInput({
   onWebcamAktif?: (aktif: boolean) => void
   // Label aksesibilitas untuk input file. Default "Foto".
   ariaLabel?: string
+  // 'pill'  = tombol kecil di bawah (bawaan).
+  // 'kartu' = satu kotak 4:3 lengkap: kartu Kamera/Pilih file, video dengan
+  //           overlay, dan pratinjau besar. Pemanggil tidak perlu membuat
+  //           kotak pratinjau sendiri.
+  varian?: 'pill' | 'kartu'
+  // Hanya berlaku untuk varian 'kartu', dan hanya untuk kondisi belum ada
+  // foto dan kamera mati:
+  // 'kartu' = kotak putus-putus 4:3 berisi tombol Kamera/Pilih file (bawaan,
+  //           dipakai dialog bukti).
+  // 'pill'  = tombol kecil seperti varian 'pill'. Setelah kamera menyala atau
+  //           foto terpilih, tampilannya tetap kotak 4:3 besar.
+  kosong?: 'kartu' | 'pill'
+  // Teks petunjuk di atas kamera (varian 'kartu'). Default untuk foto bukti
+  // perbaikan; form lapor mengirim teks sendiri.
+  petunjuk?: string
 }) {
   const galeriRef = useRef<HTMLInputElement>(null)
   const kameraHpRef = useRef<HTMLInputElement>(null)
@@ -73,13 +91,15 @@ export function FotoInput({
     window.matchMedia('(pointer: coarse)').matches &&
     !window.matchMedia('(hover: hover)').matches
 
-  // Thumbnail kecil untuk foto yang terpilih.
+  const kartu = varian === 'kartu'
+
+  // Thumbnail / pratinjau untuk foto yang terpilih.
   const thumb = useMemo(
     () =>
-      pratinjau && value && value.type.startsWith('image/')
+      (pratinjau || kartu) && value && value.type.startsWith('image/')
         ? URL.createObjectURL(value)
         : null,
-    [pratinjau, value],
+    [pratinjau, kartu, value],
   )
   useEffect(() => {
     return () => {
@@ -129,11 +149,171 @@ export function FotoInput({
     if (file) onFile(file)
   }
 
+  // Tombol kamera: HP buka kamera bawaan, laptop nyalakan webcam.
+  const bukaKamera = () => {
+    if (perangkatSentuh) kameraHpRef.current?.click()
+    else void nyalakanWebcam()
+  }
+  const adaKamera = perangkatSentuh || adaWebcam
+
   const tombol =
     'inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50'
 
+  // Tombol kecil kondisi kosong (belum ada foto, kamera mati). Dipakai
+  // varian 'pill' dan varian 'kartu' dengan kosong="pill".
+  const tombolKosong = (
+    <div className="flex flex-wrap gap-2">
+      {perangkatSentuh ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => kameraHpRef.current?.click()}
+          className={tombol}
+        >
+          <Camera aria-hidden="true" className="size-4" />
+          Ambil foto
+        </button>
+      ) : (
+        adaWebcam && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => void nyalakanWebcam()}
+            className={tombol}
+          >
+            <Camera aria-hidden="true" className="size-4" />
+            Kamera
+          </button>
+        )
+      )}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => galeriRef.current?.click()}
+        className={tombol}
+      >
+        <ImageIcon aria-hidden="true" className="size-4" />
+        {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
+      </button>
+    </div>
+  )
+
   let isi
-  if (webcamAktif) {
+
+  if (kartu) {
+    // ============ VARIAN KARTU (tampilan prototype) ============
+    if (webcamAktif) {
+      isi = (
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="size-full object-cover"
+          />
+
+          {/* Sudut bidik */}
+          <i className="pointer-events-none absolute top-[20%] left-[14%] size-6.5 rounded-tl-lg border-t-[3px] border-l-[3px] border-white/85" />
+          <i className="pointer-events-none absolute top-[20%] right-[14%] size-6.5 rounded-tr-lg border-t-[3px] border-r-[3px] border-white/85" />
+          <i className="pointer-events-none absolute bottom-[24%] left-[14%] size-6.5 rounded-bl-lg border-b-[3px] border-l-[3px] border-white/85" />
+          <i className="pointer-events-none absolute right-[14%] bottom-[24%] size-6.5 rounded-br-lg border-r-[3px] border-b-[3px] border-white/85" />
+
+          {/* Petunjuk di atas */}
+          <div className="absolute inset-x-3 top-3 rounded-full bg-[#0a140f]/70 px-3 py-1 text-center text-xs text-white">
+            {petunjuk}
+          </div>
+
+          {/* Kontrol di bawah */}
+          <div className="absolute inset-x-0 bottom-0 flex items-center bg-gradient-to-t from-[#050f0a]/75 to-transparent px-4 pt-10 pb-5">
+            <button
+              type="button"
+              onClick={matikanWebcam}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-2 text-sm font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-white/30"
+            >
+              <X aria-hidden="true" className="size-4" />
+              Tutup kamera
+            </button>
+
+            {/* Tombol bulat persis di tengah, dengan jarak dari tepi bawah */}
+            <button
+              type="button"
+              aria-label="Ambil foto"
+              onClick={() => void ambilFoto()}
+              className="absolute bottom-5 left-1/2 size-15.5 -translate-x-1/2 rounded-full bg-[#1f6b4f] ring-4 ring-white transition active:scale-90"
+            />
+          </div>
+        </div>
+      )
+    } else if (value) {
+      isi = (
+        <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
+          {thumb ? (
+            <img
+              src={thumb}
+              alt="Pratinjau foto terpilih"
+              className="size-full object-cover"
+            />
+          ) : (
+            <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
+          )}
+
+          <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 bg-gradient-to-t from-[#050f0a]/75 to-transparent p-3.5">
+            <div className="min-w-0 flex-1 text-white">
+              <p className="truncate text-sm font-medium">{value.name}</p>
+              <p className="text-xs opacity-80">{formatUkuran(value.size)}</p>
+            </div>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onFile(null)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              Hapus foto
+            </button>
+          </div>
+        </div>
+      )
+    } else if (kosong === 'pill') {
+      // Kondisi kosong: tombol kecil, bukan kotak putus-putus besar.
+      isi = tombolKosong
+    } else {
+      isi = (
+        <div className="grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-[#c9d6cf] bg-[#f1f6f3] px-4 text-center text-sm text-neutral-500">
+          <div className="w-full">
+            <span className="mx-auto mb-2 grid size-13 place-items-center rounded-2xl bg-[#e3f1ea] text-[#1f6b4f]">
+              <ImageIcon aria-hidden="true" className="size-6.5" />
+            </span>
+            Belum ada foto
+            <div className="mt-3.5 flex gap-2.5">
+              {adaKamera && (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={bukaKamera}
+                  className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#1f6b4f] px-2 py-3.5 text-sm font-medium text-white transition hover:bg-[#0f3d2e] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Camera aria-hidden="true" className="size-5.5" />
+                  Kamera
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => galeriRef.current?.click()}
+                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg-[#d3e9de] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ImageIcon aria-hidden="true" className="size-5.5" />
+                {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  } else if (webcamAktif) {
+    // ============ VARIAN PILL (bawaan, tidak berubah) ============
     isi = (
       <div className="flex flex-col gap-2">
         <video
@@ -194,46 +374,17 @@ export function FotoInput({
       </div>
     )
   } else {
-    isi = (
-      <div className="flex flex-wrap gap-2">
-        {perangkatSentuh ? (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => kameraHpRef.current?.click()}
-            className={tombol}
-          >
-            <Camera aria-hidden="true" className="size-4" />
-            Ambil foto
-          </button>
-        ) : (
-          adaWebcam && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => void nyalakanWebcam()}
-              className={tombol}
-            >
-              <Camera aria-hidden="true" className="size-4" />
-              Kamera
-            </button>
-          )
-        )}
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => galeriRef.current?.click()}
-          className={tombol}
-        >
-          <ImageIcon aria-hidden="true" className="size-4" />
-          {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
-        </button>
-      </div>
-    )
+    isi = tombolKosong
   }
 
+  // Jarak atas: varian 'pill' selalu pakai mt-3. Varian 'kartu' hanya pakai
+  // mt-3 saat menampilkan tombol kecil (kosong="pill"), karena kotak 4:3
+  // besar tidak butuh jarak tambahan.
+  const kosongKecil = kartu && kosong === 'pill' && !webcamAktif && !value
+  const pakaiJarak = !kartu || kosongKecil
+
   return (
-    <div className="mt-3">
+    <div className={pakaiJarak ? 'mt-3' : undefined}>
       {isi}
 
       {/* Input tersembunyi: galeri/file dan kamera HP. */}

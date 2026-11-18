@@ -144,6 +144,17 @@ const NILAI_FIELDS = [
   },
 ] as const
 
+// Tanda bintang merah di samping label field wajib. aria-hidden supaya
+// screen reader tidak membacanya sebagai simbol; kewajibannya disampaikan
+// lewat aria-required di field-nya.
+function Wajib() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 text-red-600">
+      *
+    </span>
+  )
+}
+
 // Pilihan 1–5 berupa radio asli yang disembunyikan secara visual, jadi
 // keyboard (tab + panah) dan screen reader tetap jalan tanpa kode tambahan.
 // Tidak di-export, sama seperti LOKASI_VALUES (aturan react-refresh).
@@ -161,6 +172,7 @@ function SkalaNilai({
   return (
     <div
       role="radiogroup"
+      aria-required="true"
       aria-labelledby={`${name}-label`}
       aria-describedby={`${name}-hint`}
       className="grid grid-cols-5 gap-1.5"
@@ -258,14 +270,29 @@ export function LaporanForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      {/* Keterangan tanda bintang di bagian atas form. */}
+      <p className="text-muted-foreground text-xs">
+        <span aria-hidden="true" className="text-red-600">
+          *
+        </span>{' '}
+        Wajib diisi
+      </p>
+
       <Controller
         control={control}
         name="kategori"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-kategori">Kategori</FieldLabel>
+            <FieldLabel htmlFor="laporan-kategori">
+              Kategori
+              <Wajib />
+            </FieldLabel>
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="laporan-kategori" className="w-full">
+              <SelectTrigger
+                id="laporan-kategori"
+                aria-required="true"
+                className="w-full"
+              >
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
               <SelectContent>
@@ -288,12 +315,19 @@ export function LaporanForm() {
         name="lokasi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
+            <FieldLabel htmlFor="laporan-lokasi">
+              Lokasi
+              <Wajib />
+            </FieldLabel>
             {/* Pola yang sama dengan kategori: Base UI Select. Pilihan
                 dikunci di LOKASI_VALUES — bukan Input bebas — supaya user
                 tinggal memilih. */}
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="laporan-lokasi" className="w-full">
+              <SelectTrigger
+                id="laporan-lokasi"
+                aria-required="true"
+                className="w-full"
+              >
                 <SelectValue placeholder="Pilih lokasi" />
               </SelectTrigger>
               <SelectContent>
@@ -316,10 +350,14 @@ export function LaporanForm() {
         name="deskripsi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-deskripsi">Deskripsi</FieldLabel>
+            <FieldLabel htmlFor="laporan-deskripsi">
+              Deskripsi
+              <Wajib />
+            </FieldLabel>
             <Textarea
               id="laporan-deskripsi"
               rows={5}
+              aria-required="true"
               placeholder="Ceritakan kerusakannya. Contoh: lampu AC di ruang 301 mati total sejak Senin."
               {...field}
             />
@@ -338,12 +376,23 @@ export function LaporanForm() {
 
           return (
             <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
+              <FieldLabel htmlFor="laporan-foto">
+                Foto
+                <Wajib />
+              </FieldLabel>
+              {/* Varian "kartu" dengan kondisi kosong berupa tombol kecil
+                  (Kamera / Pilih file). Saat kamera menyala atau foto sudah
+                  terpilih, tampilannya kotak 4:3 besar seperti dialog
+                  "Selesaikan laporan". Teks petunjuk kamera disesuaikan
+                  untuk laporan kerusakan. */}
               <FotoInput
+                varian="kartu"
+                kosong="pill"
+                petunjuk="Arahkan ke kerusakan, lalu tekan tombol bulat"
                 inputId="laporan-foto"
                 value={terpilih}
-                pratinjau
                 disabled={busy}
+                ariaLabel="Foto laporan"
                 onFile={(file) => {
                   clearErrors('foto')
 
@@ -392,7 +441,10 @@ export function LaporanForm() {
             name={item.name}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid || undefined}>
-                <FieldLabel id={`${item.name}-label`}>{item.label}</FieldLabel>
+                <FieldLabel id={`${item.name}-label`}>
+                  {item.label}
+                  <Wajib />
+                </FieldLabel>
                 <p
                   id={`${item.name}-hint`}
                   className="text-muted-foreground -mt-1 text-xs leading-snug sm:min-h-4"
