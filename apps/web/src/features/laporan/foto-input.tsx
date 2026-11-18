@@ -35,6 +35,7 @@ function formatUkuran(byte: number): string {
 
 export function FotoInput({
   value,
+  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -46,6 +47,9 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
+  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
+  // pemanggil lewat FileReader.readAsDataURL, bukan di dalam komponen ini.
+  previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
