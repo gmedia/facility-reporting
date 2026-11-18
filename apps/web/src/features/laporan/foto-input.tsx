@@ -38,7 +38,6 @@ export function FotoInput({
   onFile,
   inputId,
   disabled,
-  pratinjau = false,
   onWebcamAktif,
   ariaLabel = 'Foto',
   varian = 'pill',
@@ -51,9 +50,6 @@ export function FotoInput({
   onFile: (file: File | null) => void
   inputId: string
   disabled?: boolean
-  // true = tampilkan thumbnail kecil di samping nama file. Matikan kalau
-  // pemanggil sudah punya pratinjau sendiri (contoh: dialog bukti).
-  pratinjau?: boolean
   // Dipanggil saat webcam menyala/mati, supaya pemanggil bisa
   // menyembunyikan pratinjau miliknya sendiri.
   onWebcamAktif?: (aktif: boolean) => void
