@@ -257,10 +257,8 @@ export function LaporanForm() {
         name="kategori"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-kategori">
-              Kategori
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-kategori">Kategori</FieldLabel>
+            <Wajib />
 
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
@@ -293,10 +291,8 @@ export function LaporanForm() {
         name="lokasi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-lokasi">
-              Lokasi
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
+            <Wajib />
 
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
@@ -329,10 +325,8 @@ export function LaporanForm() {
         name="deskripsi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-deskripsi">
-              Deskripsi
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-deskripsi">Deskripsi</FieldLabel>
+            <Wajib />
 
             <Textarea
               id="laporan-deskripsi"
@@ -359,10 +353,8 @@ export function LaporanForm() {
 
           return (
             <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="laporan-foto">
-                Foto
-                <Wajib />
-              </FieldLabel>
+              <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
+            <Wajib />
 
               <FotoInput
                 varian="kartu"
@@ -448,8 +440,8 @@ export function LaporanForm() {
                 <Field data-invalid={fieldState.invalid || undefined}>
                   <FieldLabel id={`${item.name}-label`}>
                     {item.label}
-                    <Wajib />
                   </FieldLabel>
+                  <Wajib />
 
                   <p
                     id={`${item.name}-hint`}
