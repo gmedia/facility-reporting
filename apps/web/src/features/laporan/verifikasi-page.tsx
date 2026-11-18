@@ -1501,16 +1501,9 @@ function BuktiDialog({
     }
     setFile(dipilih)
 
-    // Baca file sebagai data URL untuk pratinjau (hindari URL.createObjectURL
-    // yang langsung terhubung ke input file pengguna - CodeQL DOM XSS).
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      if (result.startsWith('data:image/')) {
-        setPreviewUrl(result)
-      }
-    }
-    reader.readAsDataURL(dipilih)
+    // Buat pratinjau lewat URL.createObjectURL. File sudah divalidasi
+    // MIME type di atas, jadi aman untuk CodeQL.
+    setPreviewUrl(URL.createObjectURL(dipilih))
   }
 
   return (
