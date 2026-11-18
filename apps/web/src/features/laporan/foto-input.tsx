@@ -36,7 +36,7 @@ function formatUkuran(byte: number): string {
 // Hanya izinkan URL blob: atau data:image/* sebagai src gambar.
 // Ini mencegah CodeQL DOM XSS karena URL dari createObjectURL
 // masih dianggap tainted saat berasal dari e.target.files.
-function isAmanUrl(url: string | null): boolean {
+function isAmanUrl(url: string | null | undefined): boolean {
   if (!url) return false
   return /^blob:|^data:image\//.test(url)
 }
@@ -120,7 +120,7 @@ export function FotoInput({
     const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
-      if (img && isAmanUrl(previewUrl)) img.src = previewUrl
+      if (img && isAmanUrl(previewUrl)) img.src = previewUrl ?? ''
       else if (img) img.src = ''
       return
     }
