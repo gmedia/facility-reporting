@@ -1,4 +1,3 @@
-
 import { Controller, useForm } from 'react-hook-form'
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -245,7 +244,7 @@ export function LaporanForm() {
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
       {/* Keterangan field wajib */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-muted-foreground text-xs">
         <span aria-hidden="true" className="text-red-600">
           *
         </span>{' '}
@@ -415,7 +414,7 @@ export function LaporanForm() {
                 }}
               />
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
               </p>
 
@@ -434,7 +433,7 @@ export function LaporanForm() {
             Penilaian Kerusakan
           </h3>
 
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             Berikan nilai berdasarkan kondisi fasilitas yang dilaporkan.
           </p>
         </div>
@@ -454,7 +453,7 @@ export function LaporanForm() {
 
                   <p
                     id={`${item.name}-hint`}
-                    className="text-xs leading-relaxed text-muted-foreground"
+                    className="text-muted-foreground text-xs leading-relaxed"
                   >
                     {item.hint}
                   </p>
