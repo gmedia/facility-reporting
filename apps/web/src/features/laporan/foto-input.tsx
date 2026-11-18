@@ -32,7 +32,6 @@ function formatUkuran(byte: number): string {
   if (byte < 1024 * 1024) return `${Math.max(1, Math.round(byte / 1024))} KB`
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
-
 export function FotoInput({
   value,
   previewUrl,
@@ -47,11 +46,9 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
-  // URL pratinjau gambar yang sudah aman (data:image/* atau blob:*).
-  // Dibuat oleh pemanggil (verifikasi-page.tsx) lewat
-  // URL.createObjectURL setelah MIME type divalidasi. Kalau pemanggil
-  // tidak menyediakan (contoh: laporan-form.tsx), komponen ini membuatnya
-  // sendiri dari `value`.
+  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
+  // pemanggil (verifikasi-page.tsx) lewat FileReader.readAsDataURL, bukan
+  // di dalam komponen ini.
   previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
@@ -62,9 +59,8 @@ export function FotoInput({
   // Label aksesibilitas untuk input file. Default "Foto".
   ariaLabel?: string
   // 'pill'  = tombol kecil di bawah (bawaan).
-  // 'kartu' = satu kotak 4:3 lengkap: kartu Kamera/Pilih file, video dengan
-  //           overlay, dan pratinjau besar. Pemanggil TIDAK boleh membuat
-  //           kotak pratinjau sendiri, kalau tidak akan tampil dua kali.
+  // 'kartu' = satu kotak 4:3 lengkap: kamera/Pilih file, video dengan
+  //           overlay, dan pratinjau besar.
   varian?: 'pill' | 'kartu'
   // Hanya untuk varian 'kartu' saat belum ada foto dan kamera mati:
   // 'kartu' = kotak putus-putus 4:3 (bawaan, dipakai dialog bukti).
@@ -80,12 +76,9 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  // Preview URL bawaan jika pemanggil tidak menyediakan prop previewUrl
-  // (contoh: laporan-form.tsx). Dibuat dari `value` yang sudah divalidasi
-  // MIME type oleh pemanggil.
-  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(
-    null,
-  )
+  // Gunakan ref untuk internal previewUrl untuk menghindari
+  // react-hooks/no-set-state-in-effect error.
+  const internalPreviewUrlRef = useRef<string | null>(null)
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -112,23 +105,23 @@ export function FotoInput({
   // jadi URL.createObjectURL di sini aman untuk CodeQL.
   useEffect(() => {
     if (!value) {
-      setInternalPreviewUrl(null)
+      internalPreviewUrlRef.current = null
       return
     }
     const url = URL.createObjectURL(value)
-    setInternalPreviewUrl(url)
+    internalPreviewUrlRef.current = url
     return () => URL.revokeObjectURL(url)
   }, [value])
 
-  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
+  // Tetapkan src secara imperatif lewat ref supaya data dari
   // prop tidak langsung mencapai atribut src elemen (menghindari
   // pelacakan taint CodeQL DOM XSS).
   useEffect(() => {
     const img = imgRef.current
     if (img) {
-      img.src = (previewUrl ?? internalPreviewUrl) ?? ''
+      img.src = (previewUrl ?? internalPreviewUrlRef.current) ?? ''
     }
-  }, [previewUrl, internalPreviewUrl])
+  }, [previewUrl, internalPreviewUrlRef.current])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -261,7 +254,7 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {(previewUrl ?? internalPreviewUrl) ? (
+          { (previewUrl ?? internalPreviewUrlRef.current) ? (
             <img
               ref={imgRef}
               alt="Pratinjau foto terpilih"
@@ -316,7 +309,7 @@ export function FotoInput({
                 type="button"
                 disabled={disabled}
                 onClick={() => galeriRef.current?.click()}
-                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg-[#d3e9de] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg:#{d3e9de} disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImageIcon aria-hidden="true" className="size-5.5" />
                 {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
@@ -357,7 +350,7 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {(previewUrl ?? internalPreviewUrl) ? (
+        { (previewUrl ?? internalPreviewUrlRef.current) ? (
           <img
             ref={imgRef}
             alt="Pratinjau foto terpilih"
@@ -368,6 +361,7 @@ export function FotoInput({
             <ImageIcon aria-hidden="true" className="size-5" />
           </span>
         )}
+
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-emerald-900">
             {value.name}
@@ -380,7 +374,7 @@ export function FotoInput({
           type="button"
           disabled={disabled}
           onClick={() => onFile(null)}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition:hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 aria-hidden="true" className="size-4" />
           Hapus foto
