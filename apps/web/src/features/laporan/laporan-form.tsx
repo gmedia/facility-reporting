@@ -1,4 +1,5 @@
 import { Controller, useForm } from 'react-hook-form'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
@@ -227,6 +228,11 @@ export function LaporanForm() {
     },
   })
 
+  // previewUrl untuk pratinjau foto di FotoInput. Dibuat dengan
+  // FileReader.readAsDataURL (data: URL, aman untuk CodeQL DOM XSS)
+  // bukan URL.createObjectURL agar taint tidak sampai ke FotoInput.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
   const onSubmit = handleSubmit(async (values) => {
     const file = values.foto?.[0]
     if (file && file.size > BATAS_FOTO_BYTE) {
@@ -383,6 +389,7 @@ export function LaporanForm() {
                 petunjuk="Arahkan ke kerusakan, lalu tekan tombol bulat"
                 inputId="laporan-foto"
                 value={terpilih}
+                previewUrl={previewUrl}
                 disabled={busy}
                 ariaLabel="Foto laporan"
                 onFile={(file) => {
@@ -391,6 +398,7 @@ export function LaporanForm() {
                   // null = user menekan "Hapus foto".
                   if (!file) {
                     field.onChange(undefined)
+                    setPreviewUrl(null)
                     return
                   }
                   // Cek format dan ukuran saat dipilih, bukan baru saat kirim.
@@ -404,6 +412,15 @@ export function LaporanForm() {
                     setError('foto', { message: 'Ukuran foto maksimal 2 MB' })
                     return
                   }
+
+                  // Buat preview URL dengan FileReader.readAsDataURL (data: URL)
+                  // supaya aman untuk CodeQL DOM XSS — tidak ada
+                  // URL.createObjectURL dari e.target.files di sini.
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setPreviewUrl(typeof reader.result === 'string' ? reader.result : null)
+                  }
+                  reader.readAsDataURL(file)
 
                   // Form menyimpan FileList, jadi File dibungkus lewat
                   // DataTransfer.
