@@ -125,10 +125,10 @@ function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
 }
 
 async function isiForm(user: UserEvent) {
-  const kategoriLabel = screen.getByLabelText('Kategori')
+  const kategoriLabel = screen.getByLabelText('Kategori') as HTMLLabelElement
   const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
   fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
-  const lokasiLabel = screen.getByLabelText('Lokasi')
+  const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
   const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
   fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
