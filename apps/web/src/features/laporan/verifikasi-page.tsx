@@ -1478,14 +1478,6 @@ function BuktiDialog({
     }
   }, [previewUrl])
 
-  // Lepaskan object URL saat dialog ditutup atau previewUrl diganti,
-  // supaya tidak bocor memori.
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
-
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
   const onPilih = (dipilih: File | null) => {
@@ -1493,7 +1485,6 @@ function BuktiDialog({
 
     if (!dipilih) {
       setFile(null)
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
       setPreviewUrl(null)
       return
     }
@@ -1508,7 +1499,18 @@ function BuktiDialog({
       return
     }
     setFile(dipilih)
-    setPreviewUrl(URL.createObjectURL(dipilih))
+
+    // Baca file sebagai data URL supaya pratinjau tidak menggunakan
+    // URL.createObjectURL yang langsung terhubung ke input file pengguna.
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Hanya terima data URL gambar yang aman (data:image/*).
+      if (result.startsWith('data:image/')) {
+        setPreviewUrl(result)
+      }
+    }
+    reader.readAsDataURL(dipilih)
   }
 
   return (
