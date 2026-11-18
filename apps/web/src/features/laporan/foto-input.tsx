@@ -79,6 +79,10 @@ export function FotoInput({
   // Gunakan ref untuk internal previewUrl untuk menghindari
   // react-hooks/no-set-state-in-effect error.
   const internalPreviewUrlRef = useRef<string | null>(null)
+  // State untuk melacak apakah ada preview URL yang sudah di-set ke img.src.
+  // Ref tidak memicu re-render, jadi perlu state untuk conditional render
+  // elemen  vs ImageIcon.
+  const [hasPreview, setHasPreview] = useState(false)
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -107,26 +111,18 @@ export function FotoInput({
     const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
+      setHasPreview(false)
       if (img) img.src = previewUrl ?? ''
       return
     }
     const url = URL.createObjectURL(value)
     internalPreviewUrlRef.current = url
+    setHasPreview(true)
     // Set src langsung di sini (bukan lewat useEffect terpisah) karena
     // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
     if (img) img.src = previewUrl ?? url
     return () => URL.revokeObjectURL(url)
   }, [value, previewUrl])
-
-  // Tetapkan src secara imperatif lewat ref supaya data dari
-  // prop tidak langsung mencapai atribut src elemen (menghindari
-  // pelacakan taint CodeQL DOM XSS).
-  useEffect(() => {
-    const img = imgRef.current
-    if (img) {
-      img.src = (previewUrl ?? internalPreviewUrlRef.current) ?? ''
-    }
-  }, [previewUrl, internalPreviewUrlRef.current])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -259,14 +255,15 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          { (previewUrl ?? internalPreviewUrlRef.current) ? (
-            <img
-              ref={imgRef}
-              alt="Pratinjau foto terpilih"
-              className="size-full object-cover"
-              decoding="async"
-            />
-          ) : (
+          <img
+            ref={imgRef}
+            alt="Pratinjau foto terpilih"
+            className="size-full object-cover"
+            decoding="async"
+            src=""
+            style={{ display: hasPreview ? 'block' : 'none' }}
+          />
+          {!hasPreview && (
             <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
           )}
 
@@ -355,13 +352,14 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        { (previewUrl ?? internalPreviewUrlRef.current) ? (
-          <img
-            ref={imgRef}
-            alt="Pratinjau foto terpilih"
-            className="size-12 shrink-0 rounded-lg object-cover"
-          />
-        ) : (
+        <img
+          ref={imgRef}
+          alt="Pratinjau foto terpilih"
+          className="size-12 shrink-0 rounded-lg object-cover"
+          src=""
+          style={{ display: hasPreview ? 'block' : 'none' }}
+        />
+        {!hasPreview && (
           <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-white text-emerald-700">
             <ImageIcon aria-hidden="true" className="size-5" />
           </span>
