@@ -283,10 +283,8 @@ export function LaporanForm() {
         name="kategori"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-kategori">
-              Kategori
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-kategori">Kategori</FieldLabel>
+            <Wajib />
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
                 id="laporan-kategori"
@@ -315,10 +313,8 @@ export function LaporanForm() {
         name="lokasi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-lokasi">
-              Lokasi
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
+            <Wajib />
             {/* Pola yang sama dengan kategori: Base UI Select. Pilihan
                 dikunci di LOKASI_VALUES — bukan Input bebas — supaya user
                 tinggal memilih. */}
@@ -350,10 +346,8 @@ export function LaporanForm() {
         name="deskripsi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-deskripsi">
-              Deskripsi
-              <Wajib />
-            </FieldLabel>
+            <FieldLabel htmlFor="laporan-deskripsi">Deskripsi</FieldLabel>
+            <Wajib />
             <Textarea
               id="laporan-deskripsi"
               rows={5}
@@ -376,10 +370,8 @@ export function LaporanForm() {
 
           return (
             <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="laporan-foto">
-                Foto
-                <Wajib />
-              </FieldLabel>
+              <FieldLabel htmlFor="laporan-foto">Foto</FieldLabel>
+              <Wajib />
               {/* Varian "kartu" dengan kondisi kosong berupa tombol kecil
                   (Kamera / Pilih file). Saat kamera menyala atau foto sudah
                   terpilih, tampilannya kotak 4:3 besar seperti dialog

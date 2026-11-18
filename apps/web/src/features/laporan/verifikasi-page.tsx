@@ -603,6 +603,9 @@ export function VerifikasiPage({ user }: { user: User }) {
           <>
             {/* Kartu ringkas "Laporan masuk" di paling atas. Klik titik
                 grafik = filter tanggal. */}
+            <h2 className="text-lg font-semibold text-[#1d2b26]">
+              Laporan per hari
+            </h2>
             <LaporanMasukCard
               harian={harian}
               bulanan={bulanan}
