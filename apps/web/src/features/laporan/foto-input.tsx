@@ -32,6 +32,15 @@ function formatUkuran(byte: number): string {
   if (byte < 1024 * 1024) return `${Math.max(1, Math.round(byte / 1024))} KB`
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
+
+// Hanya izinkan URL blob: atau data:image/* sebagai src gambar.
+// Ini mencegah CodeQL DOM XSS karena URL dari createObjectURL
+// masih dianggap tainted saat berasal dari e.target.files.
+function isAmanUrl(url: string | null): boolean {
+  if (!url) return false
+  return /^blob:|^data:image\//.test(url)
+}
+
 export function FotoInput({
   value,
   previewUrl,
@@ -111,14 +120,16 @@ export function FotoInput({
     const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
-      if (img) img.src = previewUrl ?? ''
+      if (img && isAmanUrl(previewUrl)) img.src = previewUrl
+      else if (img) img.src = ''
       return
     }
     const url = URL.createObjectURL(value)
     internalPreviewUrlRef.current = url
     // Set src langsung di sini (bukan lewat useEffect terpisah) karena
     // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
-    if (img) img.src = previewUrl ?? url
+    const aman = previewUrl ?? url
+    if (img && isAmanUrl(aman)) img.src = aman
     return () => URL.revokeObjectURL(url)
   }, [value, previewUrl])
 
