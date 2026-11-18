@@ -47,32 +47,27 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
-  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
-  // pemanggil lewat FileReader.readAsDataURL, bukan di dalam komponen ini.
+  // OPSIONAL. Komponen ini membuat pratinjau sendiri dari `value`.
+  // Isi hanya kalau pemanggil ingin memakai gambar lain (data:image/*).
   previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
   disabled?: boolean
-  // Dipanggil saat webcam menyala/mati, supaya pemanggil bisa
-  // menyembunyikan pratinjau miliknya sendiri.
+  // Dipanggil saat webcam menyala/mati.
   onWebcamAktif?: (aktif: boolean) => void
   // Label aksesibilitas untuk input file. Default "Foto".
   ariaLabel?: string
   // 'pill'  = tombol kecil di bawah (bawaan).
   // 'kartu' = satu kotak 4:3 lengkap: kartu Kamera/Pilih file, video dengan
-  //           overlay, dan pratinjau besar. Pemanggil tidak perlu membuat
-  //           kotak pratinjau sendiri.
+  //           overlay, dan pratinjau besar. Pemanggil TIDAK boleh membuat
+  //           kotak pratinjau sendiri, kalau tidak akan tampil dua kali.
   varian?: 'pill' | 'kartu'
-  // Hanya berlaku untuk varian 'kartu', dan hanya untuk kondisi belum ada
-  // foto dan kamera mati:
-  // 'kartu' = kotak putus-putus 4:3 berisi tombol Kamera/Pilih file (bawaan,
-  //           dipakai dialog bukti).
-  // 'pill'  = tombol kecil seperti varian 'pill'. Setelah kamera menyala atau
-  //           foto terpilih, tampilannya tetap kotak 4:3 besar.
+  // Hanya untuk varian 'kartu' saat belum ada foto dan kamera mati:
+  // 'kartu' = kotak putus-putus 4:3 (bawaan, dipakai dialog bukti).
+  // 'pill'  = tombol kecil seperti varian 'pill'.
   kosong?: 'kartu' | 'pill'
-  // Teks petunjuk di atas kamera (varian 'kartu'). Default untuk foto bukti
-  // perbaikan; form lapor mengirim teks sendiri.
+  // Teks petunjuk di atas kamera (varian 'kartu').
   petunjuk?: string
 }) {
   const galeriRef = useRef<HTMLInputElement>(null)
@@ -82,6 +77,9 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
+  const [pratinjauInternal, setPratinjauInternal] = useState<string | null>(
+    null,
+  )
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -103,15 +101,37 @@ export function FotoInput({
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
 
-  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
-  // state tidak langsung mencapai atribut src elemen (menghindari
-  // pelacakan taint CodeQL DOM XSS).
+  // Buat pratinjau sendiri dari file yang terpilih (data URL lewat FileReader).
+  useEffect(() => {
+    if (!value) {
+      setPratinjauInternal(null)
+      return
+    }
+    let batal = false
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (!batal && typeof reader.result === 'string') {
+        setPratinjauInternal(reader.result)
+      }
+    }
+    reader.readAsDataURL(value)
+    return () => {
+      batal = true
+    }
+  }, [value])
+
+  // Prioritas: gambar dari pemanggil (kalau ada), lalu buatan sendiri.
+  const gambarUrl = previewUrl ?? pratinjauInternal
+
+  // Tetapkan src secara imperatif lewat ref (menghindari pelacakan taint
+  // CodeQL DOM XSS). Dependensi `value` dan `webcamAktif` penting: saat
+  // elemen <img> baru muncul, src harus diset ulang.
   useEffect(() => {
     const img = imgRef.current
     if (img) {
-      img.src = previewUrl ?? ''
+      img.src = gambarUrl ?? ''
     }
-  }, [previewUrl])
+  }, [gambarUrl, value, webcamAktif])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -156,8 +176,7 @@ export function FotoInput({
   const tombol =
     'inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-50 px-3.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50'
 
-  // Tombol kecil kondisi kosong (belum ada foto, kamera mati). Dipakai
-  // varian 'pill' dan varian 'kartu' dengan kosong="pill".
+  // Tombol kecil kondisi kosong (belum ada foto, kamera mati).
   const tombolKosong = (
     <div className="flex flex-wrap gap-2">
       {perangkatSentuh ? (
@@ -245,13 +264,12 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {previewUrl ? (
+          {gambarUrl ? (
             <img
               ref={imgRef}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
               decoding="async"
-              loading="lazy"
             />
           ) : (
             <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
@@ -312,7 +330,7 @@ export function FotoInput({
       )
     }
   } else if (webcamAktif) {
-    // ============ VARIAN PILL (bawaan, tidak berubah) ============
+    // ============ VARIAN PILL (bawaan) ============
     isi = (
       <div className="flex flex-col gap-2">
         <video
@@ -342,9 +360,9 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {previewUrl ? (
+        {gambarUrl ? (
           <img
-            src={previewUrl}
+            ref={imgRef}
             alt="Pratinjau foto terpilih"
             className="size-12 shrink-0 rounded-lg object-cover"
           />
@@ -377,8 +395,7 @@ export function FotoInput({
   }
 
   // Jarak atas: varian 'pill' selalu pakai mt-3. Varian 'kartu' hanya pakai
-  // mt-3 saat menampilkan tombol kecil (kosong="pill"), karena kotak 4:3
-  // besar tidak butuh jarak tambahan.
+  // mt-3 saat menampilkan tombol kecil (kosong="pill").
   const kosongKecil = kartu && kosong === 'pill' && !webcamAktif && !value
   const pakaiJarak = !kartu || kosongKecil
 

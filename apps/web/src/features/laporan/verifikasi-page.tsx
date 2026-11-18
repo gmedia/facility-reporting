@@ -1443,9 +1443,11 @@ function TolakDialog({
 // unggahan foto laporan (jpeg/png/webp, maks 2 MB). Foto bisa dari
 // galeri/file, kamera HP, atau webcam laptop. Seluruh kotak 4:3 (kartu
 // Kamera/Pilih file, video dengan overlay, pratinjau) digambar oleh
-// FotoInput varian "kartu". Header tetap di atas, hanya body yang scroll.
-// bg-white ada di body (bukan di wadah luar) supaya tidak ada tepi putih
-// yang mengintip di balik sudut header yang membulat.
+// FotoInput varian "kartu", termasuk pratinjaunya. Dialog ini TIDAK boleh
+// membuat kotak pratinjau sendiri, kalau tidak fotonya tampil dua kali.
+// Header tetap di atas, hanya body yang scroll. bg-white ada di body
+// (bukan di wadah luar) supaya tidak ada tepi putih yang mengintip di
+// balik sudut header yang membulat.
 function BuktiDialog({
   id,
   pending,
@@ -1458,10 +1460,8 @@ function BuktiDialog({
   onKirim: (foto: File) => void
 }) {
   const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1471,16 +1471,6 @@ function BuktiDialog({
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
 
-  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
-  // state tidak langsung mencapai atribut src elemen (menghindari
-  // pelacakan taint CodeQL DOM XSS).
-  useEffect(() => {
-    const img = imgRef.current
-    if (img) {
-      img.src = previewUrl ?? ''
-    }
-  }, [previewUrl])
-
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
   const onPilih = (dipilih: File | null) => {
@@ -1488,7 +1478,6 @@ function BuktiDialog({
 
     if (!dipilih) {
       setFile(null)
-      setPreviewUrl(null)
       return
     }
     if (!FOTO_MIME_IZIN.includes(dipilih.type)) {
@@ -1502,18 +1491,6 @@ function BuktiDialog({
       return
     }
     setFile(dipilih)
-
-    // Baca file sebagai data URL supaya pratinjau tidak menggunakan
-    // URL.createObjectURL yang langsung terhubung ke input file pengguna.
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      // Hanya terima data URL gambar yang aman (data:image/*).
-      if (result.startsWith('data:image/')) {
-        setPreviewUrl(result)
-      }
-    }
-    reader.readAsDataURL(dipilih)
   }
 
   return (
@@ -1542,19 +1519,8 @@ function BuktiDialog({
 
         {/* Body: hanya bagian ini yang bisa di-scroll */}
         <div className="overflow-y-auto bg-white px-6 pt-4.5 pb-5.5">
-          {/* Pratinjau foto bukti (render di parent untuk menghindari CodeQL
-              melacak data dari input file langsung ke atribut src di FotoInput) */}
-          {previewUrl ? (
-            <img
-              ref={imgRef}
-              alt="Pratinjau foto bukti"
-              className="size-full object-cover"
-              decoding="async"
-              loading="lazy"
-            />
-          ) : null}
-
-          {/* Kotak 4:3 lengkap (kartu dan kamera) digambar FotoInput */}
+          {/* Kotak 4:3 lengkap (kartu, kamera, dan pratinjau) digambar
+              FotoInput */}
           <FotoInput
             varian="kartu"
             inputId="bukti-foto"
