@@ -90,6 +90,11 @@ type FotoInputProps = {
   petunjuk?: string
 }
 
+type HasilPreview = {
+  file: File
+  url: string
+}
+
 export function FotoInput({
   value,
   previewUrl,
@@ -106,10 +111,10 @@ export function FotoInput({
   const kameraHpRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const imgRef = useRef<HTMLImageElement>(null)
 
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
+  const [hasilPreview, setHasilPreview] = useState<HasilPreview | null>(null)
 
   const kartu = varian === 'kartu'
 
@@ -123,6 +128,50 @@ export function FotoInput({
     !window.matchMedia('(hover: hover)').matches
 
   const adaKamera = perangkatSentuh || adaWebcam
+
+  // URL preview eksternal harus lolos validasi.
+  const previewUrlValid = sanitasiUrl(previewUrl)
+
+  // Hasil preview hanya digunakan untuk File yang sedang dipilih.
+  // Ini mencegah preview file sebelumnya muncul saat file berubah.
+  const urlPratinjau =
+    previewUrlValid ||
+    (value && hasilPreview?.file === value ? hasilPreview.url : '')
+
+  // Membuat preview dari File menggunakan FileReader.
+  useEffect(() => {
+    if (!value || sanitasiUrl(previewUrl)) {
+      return
+    }
+
+    let aktif = true
+    const reader = new FileReader()
+
+    reader.onload = () => {
+      if (!aktif || typeof reader.result !== 'string') {
+        return
+      }
+
+      const urlAman = sanitasiUrl(reader.result)
+
+      if (urlAman) {
+        setHasilPreview({
+          file: value,
+          url: urlAman,
+        })
+      }
+    }
+
+    reader.readAsDataURL(value)
+
+    return () => {
+      aktif = false
+
+      if (reader.readyState === FileReader.LOADING) {
+        reader.abort()
+      }
+    }
+  }, [value, previewUrl])
 
   // Mematikan webcam dan membersihkan stream.
   const matikanWebcam = () => {
@@ -138,37 +187,6 @@ export function FotoInput({
       streamRef.current = null
     }
   }, [])
-
-  // Membuat URL pratinjau dari File yang dipilih.
-  useEffect(() => {
-    const img = imgRef.current
-
-    if (!value) {
-      if (img) {
-        img.removeAttribute('src')
-      }
-
-      return
-    }
-
-    const objectUrl = URL.createObjectURL(value)
-
-    // Gunakan previewUrl jika valid, jika tidak gunakan objectUrl
-    // yang dibuat langsung dari File.
-    const aman = sanitasiUrl(previewUrl) || sanitasiUrl(objectUrl)
-
-    if (img) {
-      if (aman) {
-        img.src = aman
-      } else {
-        img.removeAttribute('src')
-      }
-    }
-
-    return () => {
-      URL.revokeObjectURL(objectUrl)
-    }
-  }, [value, previewUrl])
 
   // Menyalakan webcam laptop.
   const nyalakanWebcam = async () => {
@@ -323,12 +341,14 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          <img
-            ref={imgRef}
-            alt="Pratinjau foto terpilih"
-            className="size-full object-cover"
-            decoding="async"
-          />
+          {urlPratinjau && (
+            <img
+              src={urlPratinjau}
+              alt="Pratinjau foto terpilih"
+              className="size-full object-cover"
+              decoding="async"
+            />
+          )}
 
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 bg-gradient-to-t from-[#050f0a]/75 to-transparent p-3.5">
             <div className="min-w-0 flex-1 text-white">
@@ -418,12 +438,14 @@ export function FotoInput({
   } else if (value) {
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        <img
-          ref={imgRef}
-          alt="Pratinjau foto terpilih"
-          className="size-12 shrink-0 rounded-lg object-cover"
-          decoding="async"
-        />
+        {urlPratinjau && (
+          <img
+            src={urlPratinjau}
+            alt="Pratinjau foto terpilih"
+            className="size-12 shrink-0 rounded-lg object-cover"
+            decoding="async"
+          />
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-emerald-900">
