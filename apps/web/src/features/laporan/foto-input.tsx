@@ -79,10 +79,10 @@ export function FotoInput({
   // Gunakan ref untuk internal previewUrl untuk menghindari
   // react-hooks/no-set-state-in-effect error.
   const internalPreviewUrlRef = useRef<string | null>(null)
-  // State untuk melacak apakah ada preview URL yang sudah di-set ke img.src.
-  // Ref tidak memicu re-render, jadi perlu state untuk conditional render
-  // elemen  vs ImageIcon.
-  const [hasPreview, setHasPreview] = useState(false)
+  // hasPreview turunkan selama render (bukan di effect) untuk menghindari
+  // react-hooks/no-set-state-in-effect. Jika value atau previewUrl ada,
+  // kita tahu akan ada pratinjau (effect akan set img.src segera setelah render).
+  const hasPreview = !!previewUrl || !!value
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -111,13 +111,11 @@ export function FotoInput({
     const img = imgRef.current
     if (!value) {
       internalPreviewUrlRef.current = null
-      setHasPreview(false)
       if (img) img.src = previewUrl ?? ''
       return
     }
     const url = URL.createObjectURL(value)
     internalPreviewUrlRef.current = url
-    setHasPreview(true)
     // Set src langsung di sini (bukan lewat useEffect terpisah) karena
     // mengubah ref tidak memicu re-render, jadi useEffect lain tidak jalan.
     if (img) img.src = previewUrl ?? url
