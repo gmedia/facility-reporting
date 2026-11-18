@@ -253,6 +253,8 @@ export function FotoInput({
               src={thumb}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
+              decoding="async"
+              loading="lazy"
             />
           ) : (
             <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
