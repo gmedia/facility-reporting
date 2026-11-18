@@ -418,7 +418,9 @@ export function LaporanForm() {
                   // URL.createObjectURL dari e.target.files di sini.
                   const reader = new FileReader()
                   reader.onload = () => {
-                    setPreviewUrl(typeof reader.result === 'string' ? reader.result : null)
+                    setPreviewUrl(
+                      typeof reader.result === 'string' ? reader.result : null,
+                    )
                   }
                   reader.readAsDataURL(file)
 
