@@ -35,7 +35,6 @@ function formatUkuran(byte: number): string {
 
 export function FotoInput({
   value,
-  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -48,10 +47,6 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
-  // URL pratinjau yang sudah aman (blob:). Dibuat oleh pemanggil lewat
-  // URL.createObjectURL, bukan di dalam komponen ini, supaya data dari
-  // input file pengguna tidak langsung mencapai atribut src.
-  previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
@@ -84,7 +79,6 @@ export function FotoInput({
   const kameraHpRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
 
@@ -107,16 +101,6 @@ export function FotoInput({
 
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
-
-  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
-  // props tidak langsung mencapai atribut src elemen  (menghindari
-  // pelacakan taint CodeQL DOM XSS).
-  useEffect(() => {
-    const img = imgRef.current
-    if (img) {
-      img.src = previewUrl ?? ''
-    }
-  }, [previewUrl])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -250,17 +234,7 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {previewUrl ? (
-            <img
-              ref={imgRef}
-              alt="Pratinjau foto terpilih"
-              className="size-full object-cover"
-              decoding="async"
-              loading="lazy"
-            />
-          ) : (
-            <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
-          )}
+          <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
 
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 bg-gradient-to-t from-[#050f0a]/75 to-transparent p-3.5">
             <div className="min-w-0 flex-1 text-white">

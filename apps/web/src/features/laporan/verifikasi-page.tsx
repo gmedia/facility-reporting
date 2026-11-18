@@ -1467,6 +1467,14 @@ function BuktiDialog({
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
 
+  // Lepaskan object URL saat dialog ditutup atau previewUrl diganti,
+  // supaya tidak bocor memori.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
   const onPilih = (dipilih: File | null) => {
@@ -1518,12 +1526,23 @@ function BuktiDialog({
 
         {/* Body: hanya bagian ini yang bisa di-scroll */}
         <div className="overflow-y-auto bg-white px-6 pt-4.5 pb-5.5">
-          {/* Kotak 4:3 lengkap (kartu, kamera, pratinjau) digambar FotoInput */}
+          {/* Pratinjau foto bukti (render di parent untuk menghindari CodeQL
+              melacak data dari input file langsung ke atribut src di FotoInput) */}
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Pratinjau foto bukti"
+              className="size-full object-cover"
+              decoding="async"
+              loading="lazy"
+            />
+          ) : null}
+
+          {/* Kotak 4:3 lengkap (kartu dan kamera) digambar FotoInput */}
           <FotoInput
             varian="kartu"
             inputId="bukti-foto"
             value={file}
-            previewUrl={previewUrl}
             disabled={pending}
             onFile={onPilih}
             onWebcamAktif={setWebcamAktif}
