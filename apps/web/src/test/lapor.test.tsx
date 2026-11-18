@@ -158,17 +158,17 @@ async function isiForm(user: UserEvent) {
   // form lolos validasi .min(1) (lihat laporan-form.tsx defaultValues).
   // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
   // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
-  const pilihNilai = async (label: string, nilai: number) => {
+  const pilihNilai = async (label: RegExp, nilai: number) => {
     const rg = screen.getByRole('radiogroup', { name: label })
     const radio = within(rg)
       .getAllByRole('radio')
       .find((r) => (r as HTMLInputElement).value === String(nilai))
     await user.click(radio as Element)
   }
-  await pilihNilai('Nilai Kerusakan', 3)
-  await pilihNilai('Nilai Risiko', 3)
-  await pilihNilai('Nilai Dampak', 3)
-  await pilihNilai('Nilai Frekuensi', 3)
+  await pilihNilai(/Nilai Kerusakan/, 3)
+  await pilihNilai(/Nilai Risiko/, 3)
+  await pilihNilai(/Nilai Dampak/, 3)
+  await pilihNilai(/Nilai Frekuensi/, 3)
 }
 
 // Foto sekarang wajib, jadi tiap test yang mau submit harus nempelkin file.

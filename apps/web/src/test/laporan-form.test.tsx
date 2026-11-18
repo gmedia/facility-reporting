@@ -178,7 +178,7 @@ describe('form laporan /lapor', () => {
     await isiForm(user)
 
     // Pilih nilai SMART: 3, 4, 2, 5
-    const pilihNilai = async (labelRadiogroup: string, nilai: number) => {
+    const pilihNilai = async (labelRadiogroup: RegExp, nilai: number) => {
       const rg = screen.getByRole('radiogroup', { name: labelRadiogroup })
       // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
       // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
@@ -188,10 +188,10 @@ describe('form laporan /lapor', () => {
       await user.click(radio as Element)
     }
 
-    await pilihNilai('Nilai Kerusakan', 3)
-    await pilihNilai('Nilai Risiko', 4)
-    await pilihNilai('Nilai Dampak', 2)
-    await pilihNilai('Nilai Frekuensi', 5)
+    await pilihNilai(/Nilai Kerusakan/, 3)
+    await pilihNilai(/Nilai Risiko/, 4)
+    await pilihNilai(/Nilai Dampak/, 2)
+    await pilihNilai(/Nilai Frekuensi/, 5)
 
     await user.click(screen.getByRole('button', { name: 'Kirim Laporan' }))
 
