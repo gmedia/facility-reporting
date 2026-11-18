@@ -47,9 +47,11 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
-  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
-  // pemanggil (verifikasi-page.tsx) lewat FileReader.readAsDataURL, bukan
-  // di dalam komponen ini.
+  // URL pratinjau gambar yang sudah aman (data:image/* atau blob:*).
+  // Dibuat oleh pemanggil (verifikasi-page.tsx) lewat
+  // URL.createObjectURL setelah MIME type divalidasi. Kalau pemanggil
+  // tidak menyediakan (contoh: laporan-form.tsx), komponen ini membuatnya
+  // sendiri dari `value`.
   previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
@@ -78,6 +80,12 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
+  // Preview URL bawaan jika pemanggil tidak menyediakan prop previewUrl
+  // (contoh: laporan-form.tsx). Dibuat dari `value` yang sudah divalidasi
+  // MIME type oleh pemanggil.
+  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(
+    null,
+  )
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -99,15 +107,28 @@ export function FotoInput({
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
 
+  // Buat pratinjau dari `value` jika pemanggil tidak menyediakan previewUrl.
+  // `value` adalah File yang sudah divalidasi MIME type oleh pemanggil,
+  // jadi URL.createObjectURL di sini aman untuk CodeQL.
+  useEffect(() => {
+    if (!value) {
+      setInternalPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(value)
+    setInternalPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [value])
+
   // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
   // prop tidak langsung mencapai atribut src elemen (menghindari
   // pelacakan taint CodeQL DOM XSS).
   useEffect(() => {
     const img = imgRef.current
     if (img) {
-      img.src = previewUrl ?? ''
+      img.src = (previewUrl ?? internalPreviewUrl) ?? ''
     }
-  }, [previewUrl])
+  }, [previewUrl, internalPreviewUrl])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -240,7 +261,7 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {previewUrl ? (
+          {(previewUrl ?? internalPreviewUrl) ? (
             <img
               ref={imgRef}
               alt="Pratinjau foto terpilih"
@@ -336,7 +357,7 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {previewUrl ? (
+        {(previewUrl ?? internalPreviewUrl) ? (
           <img
             ref={imgRef}
             alt="Pratinjau foto terpilih"
