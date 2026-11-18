@@ -1460,7 +1460,6 @@ function BuktiDialog({
   onKirim: (foto: File) => void
 }) {
   const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
 
@@ -1471,14 +1470,6 @@ function BuktiDialog({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
-
-  // Lepaskan object URL saat dialog ditutup atau previewUrl diganti,
-  // supaya tidak bocor memori.
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
-    }
-  }, [previewUrl])
 
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
@@ -1500,10 +1491,6 @@ function BuktiDialog({
       return
     }
     setFile(dipilih)
-
-    // Buat pratinjau lewat URL.createObjectURL. File sudah divalidasi
-    // MIME type di atas, jadi aman untuk CodeQL.
-    setPreviewUrl(URL.createObjectURL(dipilih))
   }
 
   return (
@@ -1538,7 +1525,6 @@ function BuktiDialog({
             varian="kartu"
             inputId="bukti-foto"
             value={file}
-            previewUrl={previewUrl}
             disabled={pending}
             onFile={onPilih}
             onWebcamAktif={setWebcamAktif}

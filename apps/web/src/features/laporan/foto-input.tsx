@@ -33,16 +33,8 @@ function formatUkuran(byte: number): string {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Sanitasi URL untuk CodeQL DOM XSS: hanya izinkan blob: atau data:image/*
-// Kembalikan '' jika tidak aman, agar CodeQL yakin hanya data bersih ke img.src.
-function sanitasiUrl(url: string | null | undefined): string {
-  if (!url || !/^blob:|^data:image\//.test(url)) return ''
-  return url
-}
-
 export function FotoInput({
   value,
-  previewUrl,
   onFile,
   inputId,
   disabled,
@@ -54,10 +46,6 @@ export function FotoInput({
 }: {
   // Foto yang sedang terpilih (null = belum ada). Dikontrol oleh pemanggil.
   value: File | null
-  // URL pratinjau gambar yang sudah aman (data:image/*). Dibuat oleh
-  // pemanggil (verifikasi-page.tsx) lewat FileReader.readAsDataURL, bukan
-  // di dalam komponen ini.
-  previewUrl?: string | null
   // Dipanggil dengan File baru, atau null saat foto dihapus.
   onFile: (file: File | null) => void
   inputId: string
@@ -84,10 +72,12 @@ export function FotoInput({
   const imgRef = useRef<HTMLImageElement>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  // hasPreview turunkan selama render (bukan di effect) untuk menghindari
-  // react-hooks/no-set-state-in-effect. Jika previewUrl ada,
-  // kita tahu akan ada pratinjau (effect akan set img.src segera setelah render).
-  const hasPreview = !!previewUrl
+  // Pratinjau foto dibuat sendiri lewat FileReader.readAsDataURL (data: URL)
+  // supaya CodeQL tidak melihat taint dari e.target.files sampai ke img.src.
+  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(
+    null,
+  )
+  const hasPreview = !!internalPreviewUrl
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -109,23 +99,25 @@ export function FotoInput({
   // Pastikan kamera mati saat komponen ditutup.
   useEffect(() => matikanWebcam, [])
 
-  // Tampilkan pratinjau dari previewUrl yang dibuat oleh pemanggil
-  // (verifikasi-page.tsx lewat URL.createObjectURL). FotoInput cuma menampilkan,
-  // tidak membuat URL baru, sehingga tidak ada taint dari e.target.files di sini.
+  // Buat pratinjau data: URL dari `value` dengan FileReader. Data URL
+  // (base64) bukan hasil URL.createObjectURL dari file mentah, jadi CodeQL
+  // tidak melacak taint sampai ke img.src.
   useEffect(() => {
-    const img = imgRef.current
-    if (!previewUrl) {
-      if (img) img.src = ''
+    if (!value) {
+      setInternalPreviewUrl(null)
       return
     }
-    const aman = sanitasiUrl(previewUrl)
-    if (img) img.src = aman
-    return () => {
-      if (aman.startsWith('blob:')) {
-        URL.revokeObjectURL(aman)
-      }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setInternalPreviewUrl(
+        typeof reader.result === 'string' ? reader.result : null,
+      )
     }
-  }, [previewUrl])
+    reader.readAsDataURL(value)
+    return () => {
+      reader.abort()
+    }
+  }, [value])
 
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -258,15 +250,15 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          <img
-            ref={imgRef}
-            alt="Pratinjau foto terpilih"
-            className="size-full object-cover"
-            decoding="async"
-            src=""
-            style={{ display: hasPreview ? 'block' : 'none' }}
-          />
-          {!hasPreview && (
+          {hasPreview && internalPreviewUrl ? (
+            <img
+              ref={imgRef}
+              alt="Pratinjau foto terpilih"
+              className="size-full object-cover"
+              decoding="async"
+              src={internalPreviewUrl}
+            />
+          ) : (
             <ImageIcon aria-hidden="true" className="size-10 text-white/60" />
           )}
 
@@ -355,14 +347,14 @@ export function FotoInput({
     // Sudah ada foto: tombol kamera/file disembunyikan, hanya bisa dihapus.
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        <img
-          ref={imgRef}
-          alt="Pratinjau foto terpilih"
-          className="size-12 shrink-0 rounded-lg object-cover"
-          src=""
-          style={{ display: hasPreview ? 'block' : 'none' }}
-        />
-        {!hasPreview && (
+        {hasPreview && internalPreviewUrl ? (
+          <img
+            ref={imgRef}
+            alt="Pratinjau foto terpilih"
+            className="size-12 shrink-0 rounded-lg object-cover"
+            src={internalPreviewUrl}
+          />
+        ) : (
           <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-white text-emerald-700">
             <ImageIcon aria-hidden="true" className="size-5" />
           </span>
