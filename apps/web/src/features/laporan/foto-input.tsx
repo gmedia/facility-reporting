@@ -309,7 +309,7 @@ export function FotoInput({
                 type="button"
                 disabled={disabled}
                 onClick={() => galeriRef.current?.click()}
-                className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg:#{d3e9de} disabled:cursor-not-allowed disabled:opacity-50"
+                className="hover:bg:#{d3e9de} flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImageIcon aria-hidden="true" className="size-5.5" />
                 {perangkatSentuh ? 'Pilih dari galeri' : 'Pilih file'}
@@ -375,7 +375,7 @@ export function FotoInput({
           type="button"
           disabled={disabled}
           onClick={() => onFile(null)}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition:hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="transition:hover:bg-red-50 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 aria-hidden="true" className="size-4" />
           Hapus foto
