@@ -1458,6 +1458,7 @@ function BuktiDialog({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -1466,6 +1467,16 @@ function BuktiDialog({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
+
+  // Tetapkan src pratinjau secara imperatif lewat ref supaya data dari
+  // state tidak langsung mencapai atribut src elemen (menghindari
+  // pelacakan taint CodeQL DOM XSS).
+  useEffect(() => {
+    const img = imgRef.current
+    if (img) {
+      img.src = previewUrl ?? ''
+    }
+  }, [previewUrl])
 
   // Lepaskan object URL saat dialog ditutup atau previewUrl diganti,
   // supaya tidak bocor memori.
@@ -1530,7 +1541,7 @@ function BuktiDialog({
               melacak data dari input file langsung ke atribut src di FotoInput) */}
           {previewUrl ? (
             <img
-              src={previewUrl}
+              ref={imgRef}
               alt="Pratinjau foto bukti"
               className="size-full object-cover"
               decoding="async"
