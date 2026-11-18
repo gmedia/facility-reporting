@@ -118,7 +118,7 @@ function renderAt(path: string) {
 // `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
 // pola yang sama dengan lapor.test.tsx dan akun.test.tsx.
 function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
-  const input = screen.getByLabelText('Foto')
+  const input = screen.getByLabelText('Foto laporan')
   const file = new File(['isi-foto'], nama, { type: tipe })
   Object.defineProperty(input, 'files', {
     value: [file],

@@ -175,7 +175,7 @@ async function isiForm(user: UserEvent) {
 // `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
 // sama dengan yang dilakukan library upload pada umumnya.
 function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
-  const input = screen.getByLabelText('Foto')
+  const input = screen.getByLabelText('Foto laporan')
   const file = new File(['isi-foto'], nama, { type: tipe })
   Object.defineProperty(input, 'files', {
     value: [file],
