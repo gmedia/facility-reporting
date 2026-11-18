@@ -33,6 +33,14 @@ function formatUkuran(byte: number): string {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// Hanya izinkan URL yang aman untuk atribut src (blob: atau data:image/*).
+// Mencegah data dari input file pengguna yang tidak terpercaya
+// direinterpretasikan sebagai HTML/JavaScript oleh CodeQL.
+function isAmanUrl(url: string | null): boolean {
+  if (!url) return false
+  return url.startsWith('blob:') || url.startsWith('data:image/')
+}
+
 export function FotoInput({
   value,
   onFile,
@@ -250,7 +258,7 @@ export function FotoInput({
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
           {thumb ? (
             <img
-              src={thumb}
+              src={isAmanUrl(thumb) ? thumb : undefined}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
               decoding="async"
