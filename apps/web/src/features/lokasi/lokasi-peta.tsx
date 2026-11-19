@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { divIcon, latLng } from 'leaflet'
-import type { Marker as LeafletMarker, LeafletMouseEvent } from 'leaflet'
+import type { Marker as LeafletMarker, DragEndEvent } from 'leaflet'
 import {
   Circle,
   CircleMarker,
@@ -126,7 +126,7 @@ export function LokasiPeta({ pusat, radius, fokus, pelapor, onPindah }: Props) {
         icon={pinPusat}
         draggable
         eventHandlers={{
-          dragend(event: LeafletMouseEvent) {
+          dragend(event: DragEndEvent) {
             const { lat, lng } = (event.target as LeafletMarker)
               .getLatLng()
               .wrap()

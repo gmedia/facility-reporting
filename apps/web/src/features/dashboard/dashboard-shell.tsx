@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   ClipboardList,
-  KeyRound,
   LayoutDashboard,
   LogOut,
   MapPin,
@@ -30,7 +29,6 @@ type NavTo =
   | '/pengaturan'
   | '/admin'
   | '/lokasi-akun'
-  | '/reset-password'
 
 interface NavItem {
   label: string
@@ -70,7 +68,6 @@ const superAdminNav: NavItem[] = [
   { label: 'Semua Laporan', to: '/semua-laporan', icon: ClipboardList },
   { label: 'Lokasi Akun', to: '/lokasi-akun', icon: MapPin },
   { label: 'Akun Admin', to: '/admin', icon: Users },
-  { label: 'Reset Password', to: '/reset-password', icon: KeyRound },
   pengaturan,
 ]
 

@@ -658,10 +658,9 @@
                                                     },
                                                     "last_location_at": {
                                                         "type": [
-                                                            "string",
+                                                            "object",
                                                             "null"
-                                                        ],
-                                                        "format": "date-time"
+                                                        ]
                                                     },
                                                     "distance_m": {
                                                         "type": [

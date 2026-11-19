@@ -17,7 +17,6 @@ import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dash
 import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
 import { Route as ProtectedLokasiAkunRouteImport } from './routes/_protected/lokasi-akun'
 import { Route as ProtectedPengaturanRouteImport } from './routes/_protected/pengaturan'
-import { Route as ProtectedResetPasswordRouteImport } from './routes/_protected/reset-password'
 import { Route as ProtectedSemuaLaporanRouteImport } from './routes/_protected/semua-laporan'
 import { Route as ProtectedVerifikasiRouteImport } from './routes/_protected/verifikasi'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
@@ -62,11 +61,6 @@ const ProtectedPengaturanRoute = ProtectedPengaturanRouteImport.update({
   path: '/pengaturan',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedResetPasswordRoute = ProtectedResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const ProtectedSemuaLaporanRoute = ProtectedSemuaLaporanRouteImport.update({
   id: '/semua-laporan',
   path: '/semua-laporan',
@@ -96,7 +90,6 @@ export interface FileRoutesByFullPath {
   '/lapor': typeof ProtectedLaporRoute
   '/lokasi-akun': typeof ProtectedLokasiAkunRoute
   '/pengaturan': typeof ProtectedPengaturanRoute
-  '/reset-password': typeof ProtectedResetPasswordRoute
   '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
@@ -109,7 +102,6 @@ export interface FileRoutesByTo {
   '/lapor': typeof ProtectedLaporRoute
   '/lokasi-akun': typeof ProtectedLokasiAkunRoute
   '/pengaturan': typeof ProtectedPengaturanRoute
-  '/reset-password': typeof ProtectedResetPasswordRoute
   '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
   '/laporan/saya': typeof ProtectedLaporanSayaRoute
@@ -125,7 +117,6 @@ export interface FileRoutesById {
   '/_protected/lapor': typeof ProtectedLaporRoute
   '/_protected/lokasi-akun': typeof ProtectedLokasiAkunRoute
   '/_protected/pengaturan': typeof ProtectedPengaturanRoute
-  '/_protected/reset-password': typeof ProtectedResetPasswordRoute
   '/_protected/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/_protected/verifikasi': typeof ProtectedVerifikasiRoute
   '/_protected/laporan/saya': typeof ProtectedLaporanSayaRoute
@@ -141,7 +132,6 @@ export interface FileRouteTypes {
     | '/lapor'
     | '/lokasi-akun'
     | '/pengaturan'
-    | '/reset-password'
     | '/semua-laporan'
     | '/verifikasi'
     | '/laporan/saya'
@@ -154,7 +144,6 @@ export interface FileRouteTypes {
     | '/lapor'
     | '/lokasi-akun'
     | '/pengaturan'
-    | '/reset-password'
     | '/semua-laporan'
     | '/verifikasi'
     | '/laporan/saya'
@@ -169,7 +158,6 @@ export interface FileRouteTypes {
     | '/_protected/lapor'
     | '/_protected/lokasi-akun'
     | '/_protected/pengaturan'
-    | '/_protected/reset-password'
     | '/_protected/semua-laporan'
     | '/_protected/verifikasi'
     | '/_protected/laporan/saya'
@@ -240,13 +228,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPengaturanRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/reset-password': {
-      id: '/_protected/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ProtectedResetPasswordRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_protected/semua-laporan': {
       id: '/_protected/semua-laporan'
       path: '/semua-laporan'
@@ -295,7 +276,6 @@ interface ProtectedRouteChildren {
   ProtectedLaporRoute: typeof ProtectedLaporRoute
   ProtectedLokasiAkunRoute: typeof ProtectedLokasiAkunRoute
   ProtectedPengaturanRoute: typeof ProtectedPengaturanRoute
-  ProtectedResetPasswordRoute: typeof ProtectedResetPasswordRoute
   ProtectedSemuaLaporanRoute: typeof ProtectedSemuaLaporanRoute
   ProtectedVerifikasiRoute: typeof ProtectedVerifikasiRoute
   ProtectedLaporanSayaRoute: typeof ProtectedLaporanSayaRoute
@@ -307,7 +287,6 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedLaporRoute: ProtectedLaporRoute,
   ProtectedLokasiAkunRoute: ProtectedLokasiAkunRoute,
   ProtectedPengaturanRoute: ProtectedPengaturanRoute,
-  ProtectedResetPasswordRoute: ProtectedResetPasswordRoute,
   ProtectedSemuaLaporanRoute: ProtectedSemuaLaporanRoute,
   ProtectedVerifikasiRoute: ProtectedVerifikasiRoute,
   ProtectedLaporanSayaRoute: ProtectedLaporanSayaRoute,
