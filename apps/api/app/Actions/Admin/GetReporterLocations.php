@@ -8,14 +8,30 @@ use App\Enums\UserRole;
 use App\Models\LocationSetting;
 use App\Models\User;
 use App\Support\GeoDistance;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 final class GetReporterLocations
 {
     /**
      * @return array{
-     *     rows: Collection<int, array<string, mixed>>,
-     *     summary: array<string, int>
+     *     rows: Collection<int, array{
+     *         id: int,
+     *         name: string,
+     *         nim: string|null,
+     *         lat: float|null,
+     *         lng: float|null,
+     *         last_location_at: Carbon|null,
+     *         distance_m: int|null,
+     *         status: string
+     *     }>,
+     *     summary: array{
+     *         total: int,
+     *         outside: int,
+     *         inside: int,
+     *         unknown: int,
+     *         radius_m: int
+     *     }
      * }
      */
     public function __invoke(): array

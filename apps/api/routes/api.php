@@ -1,17 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\LocationSettingController;
+use App\Http\Controllers\Api\V1\Admin\ReporterLocationController;
+use App\Http\Controllers\Api\V1\Admin\ReporterPasswordController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\LaporanController;
+use App\Http\Controllers\Api\V1\MeLocationController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\StatusController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\Admin\LocationSettingController;
-use App\Http\Controllers\Api\V1\Admin\ReporterLocationController;
-use App\Http\Controllers\Api\V1\MeLocationController;
-use App\Http\Controllers\Api\V1\Admin\ReporterPasswordController;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('status', StatusController::class);
