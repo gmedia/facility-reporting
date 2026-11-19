@@ -981,8 +981,7 @@ export interface operations {
               nim: string | null
               lat: number | null
               lng: number | null
-              /** Format: date-time */
-              last_location_at: string | null
+              last_location_at: Record<string, never> | null
               distance_m: number | null
               /**
                * @description inside | outside | unknown (belum pernah mengirim lokasi)
