@@ -17,16 +17,23 @@ class ChangePasswordRequest extends FormRequest
 
     /**
      * `current_password` memverifikasi password lama terhadap user yang
-     * sedang login (guard-nya sudah di-set oleh middleware auth:sanctum).
+     * sedang login. Kewajibannya dilewati untuk akun yang
+     * `password_changed_at`-nya null (password hasil reset admin atau
+     * password awal), karena user memang tidak tahu password itu.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return [
-            'current_password' => ['required', 'current_password'],
+        $rules = [
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
+
+        if (! $this->melewatiPasswordLama()) {
+            $rules['current_password'] = ['required', 'current_password'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -48,5 +55,12 @@ class ChangePasswordRequest extends FormRequest
         return new ChangePasswordData(
             password: $this->validated('password'),
         );
+    }
+
+    private function melewatiPasswordLama(): bool
+    {
+        $user = $this->user();
+
+        return $user !== null && $user->password_changed_at === null;
     }
 }

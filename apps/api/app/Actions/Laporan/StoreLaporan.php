@@ -27,6 +27,8 @@ final class StoreLaporan
             'user_id' => $userId,
             'kategori' => $data->kategori,
             'lokasi' => $data->lokasi,
+            'latitude' => $data->latitude,
+            'longitude' => $data->longitude,
             'deskripsi' => $data->deskripsi,
             'foto' => $data->foto,
             'nilai_kerusakan' => $data->nilai_kerusakan,
@@ -34,6 +36,7 @@ final class StoreLaporan
             'nilai_dampak' => $data->nilai_dampak,
             'nilai_frekuensi' => $data->nilai_frekuensi,
             'skor_prioritas' => $prioritas->skor,
+
         ]);
     }
 }

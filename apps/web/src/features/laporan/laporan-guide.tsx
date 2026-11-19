@@ -6,10 +6,17 @@ import { STATUS_LABEL, type LaporanStatus } from './laporan-query'
 //   - palet pindah dari gradient emerald ke #0d3f31 (warna identitas
 //     halaman user, sama dengan sidebar, hero, dan footer)
 //   - entri foto ditulis "Wajib", karena field-nya sudah tidak opsional
+//   - langkah pertama: izin lokasi, karena laporan hanya bisa dikirim
+//     dari area kampus (radius diatur super admin, jadi tidak ditulis
+//     angkanya di sini)
 //
 // Isinya sengaja tipis — panel ini "highlight", bukan artikel. Tiap entri
 // sebaris: judul + satu kalimat pendukung.
 const HIGHLIGHT = [
+  {
+    judul: 'Izinkan lokasi',
+    isi: 'Kamu harus berada di area kampus untuk bisa mengirim laporan.',
+  },
   {
     judul: 'Pilih kategori',
     isi: 'Yang paling sesuai dengan jenis kerusakannya.',
@@ -52,7 +59,7 @@ export function LaporanGuide() {
             Panduan singkat
           </p>
           <p className="text-xs text-white/55">
-            Empat langkah, sekitar satu menit.
+            Lima langkah, sekitar satu menit.
           </p>
         </div>
       </div>

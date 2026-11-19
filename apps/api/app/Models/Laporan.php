@@ -12,7 +12,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'kategori', 'lokasi', 'deskripsi', 'foto', 'nilai_kerusakan', 'nilai_risiko', 'nilai_dampak', 'nilai_frekuensi', 'skor_prioritas', 'foto_bukti'])]
+#[Fillable([
+    'user_id',
+    'kategori',
+    'lokasi',
+    'latitude',
+    'longitude',
+    'deskripsi',
+    'foto',
+    'nilai_kerusakan',
+    'nilai_risiko',
+    'nilai_dampak',
+    'nilai_frekuensi',
+    'skor_prioritas',
+    'foto_bukti',
+])]
 class Laporan extends Model
 {
     /** @use HasFactory<LaporanFactory> */
@@ -34,6 +48,8 @@ class Laporan extends Model
     {
         return [
             'status' => LaporanStatus::class,
+            'latitude' => 'float',
+            'longitude' => 'float',
             'nilai_kerusakan' => 'integer',
             'nilai_risiko' => 'integer',
             'nilai_dampak' => 'integer',

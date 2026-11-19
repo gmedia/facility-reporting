@@ -34,6 +34,8 @@ final class LaporanResource extends JsonResource
             'user_id' => $this->resource->user_id,
             'kategori' => $this->resource->kategori,
             'lokasi' => $this->resource->lokasi,
+            'latitude' => $this->resource->latitude,
+            'longitude' => $this->resource->longitude,
             'deskripsi' => $this->resource->deskripsi,
             'foto' => $this->resource->foto,
             'status' => $this->resource->status->value,

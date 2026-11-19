@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FotoInput } from './foto-input'
+import { LokasiKotak } from './lokasi-kotak'
+import { usePosisiPelapor } from './lokasi-pelapor'
 import {
   BATAS_FOTO_BYTE,
   FOTO_MIME_IZIN,
@@ -174,6 +176,10 @@ export function LaporanForm() {
   const navigate = useNavigate()
   const create = useCreateLaporan()
 
+  // Meminta izin lokasi begitu form terbuka. Tombol kirim terkunci sampai
+  // pelapor terdeteksi di dalam radius kampus.
+  const posisi = usePosisiPelapor()
+
   const {
     control,
     handleSubmit,
@@ -197,6 +203,13 @@ export function LaporanForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const onSubmit = handleSubmit(async (values) => {
+    // Pengaman kedua: tombol sudah terkunci, tapi submit lewat Enter atau
+    // devtools tetap harus ditolak. Server tetap memvalidasi ulang jaraknya.
+    if (!posisi.gps || !posisi.bisaKirim) {
+      toast.error('Lokasimu belum terdeteksi di dalam radius kampus.')
+      return
+    }
+
     const file = values.foto?.[0]
 
     if (file && file.size > BATAS_FOTO_BYTE) {
@@ -212,7 +225,11 @@ export function LaporanForm() {
     }
 
     try {
-      await create.mutateAsync(values)
+      await create.mutateAsync({
+        ...values,
+        latitude: posisi.gps.lat,
+        longitude: posisi.gps.lng,
+      })
       toast.success('Laporan berhasil dikirim')
       await navigate({ to: '/dashboard' })
     } catch (error) {
@@ -227,6 +244,15 @@ export function LaporanForm() {
             setError(field as keyof FormValues, { message })
             applied = true
           }
+        }
+
+        // Penolakan jarak dari server (di luar radius) tidak punya field di
+        // form, jadi ditampilkan lewat toast.
+        const pesanLokasi =
+          serverErrors.latitude?.[0] ?? serverErrors.longitude?.[0]
+        if (pesanLokasi) {
+          toast.error(pesanLokasi)
+          applied = true
         }
       }
 
@@ -250,6 +276,9 @@ export function LaporanForm() {
         </span>{' '}
         Wajib diisi
       </p>
+
+      {/* LOKASI PELAPOR (izin lokasi + jarak ke kampus) */}
+      <LokasiKotak posisi={posisi} />
 
       {/* KATEGORI */}
       <Controller
@@ -478,13 +507,21 @@ export function LaporanForm() {
       </div>
 
       {/* TOMBOL KIRIM */}
-      <Button
-        type="submit"
-        disabled={busy}
-        className="h-11 w-full rounded-xl bg-[#0d3f31] text-sm font-semibold text-white shadow-none transition-colors hover:bg-[#0a3127] disabled:opacity-60"
-      >
-        {busy ? 'Mengirim...' : 'Kirim Laporan'}
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button
+          type="submit"
+          disabled={busy || !posisi.bisaKirim}
+          className="h-11 w-full rounded-xl bg-[#0d3f31] text-sm font-semibold text-white shadow-none transition-colors hover:bg-[#0a3127] disabled:opacity-60"
+        >
+          {busy ? 'Mengirim...' : 'Kirim Laporan'}
+        </Button>
+
+        {!posisi.bisaKirim && (
+          <p className="text-muted-foreground text-center text-xs">
+            Tombol aktif setelah lokasimu terdeteksi di dalam radius kampus.
+          </p>
+        )}
+      </div>
     </form>
   )
 }

@@ -31,6 +31,8 @@ function validReportPayload(): array
     return [
         'kategori' => 'elektronik',
         'lokasi' => 'Lab 3 Lt.2',
+        'latitude' => -7.385942,
+        'longitude' => 109.236755,
         'deskripsi' => 'Proyektor mati total sejak pagi.',
         'nilai_kerusakan' => 5,
         'nilai_risiko' => 4,

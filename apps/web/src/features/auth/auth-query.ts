@@ -21,8 +21,17 @@ export const meQueryOptions = queryOptions({
 export const loginMutationOptions = mutationOptions({
   mutationFn: async (input: LoginInput) => {
     await initializeCsrf() // WAJIB — lupa = 419 Page Expired
-    const { data, error } = await api.POST('/auth/login', { body: input })
-    if (error || !data) throw error ?? new Error('Login gagal')
+    const { data, error, response } = await api.POST('/auth/login', {
+      body: input,
+    })
+    if (error || !data) {
+      // Isi body error (`message` / `errors`) tetap ikut, ditambah `status`
+      // supaya form bisa membedakan 429 (terlalu banyak percobaan) dari
+      // salah password.
+      throw Object.assign(new Error('Login gagal'), (error ?? {}) as object, {
+        status: response.status,
+      })
+    }
     return data.data
   },
 })
@@ -35,7 +44,12 @@ export const logoutMutationOptions = mutationOptions({
   },
 })
 
-// Step 17: role → tujuan redirect
+// Step 17: role → tujuan redirect.
+// Semua role mendarat di /dashboard. Super admin tetap bisa membuka
+// Akun Admin dan Lokasi Akun lewat sidebar. Kalau suatu role perlu halaman
+// awal sendiri, tambahkan di tabel ini.
+const HOME_PER_ROLE: Record<string, string> = {}
+
 export function homeFor(role: string): string {
-  return role === 'super_admin' ? '/admin' : '/dashboard'
+  return HOME_PER_ROLE[role] ?? '/dashboard'
 }

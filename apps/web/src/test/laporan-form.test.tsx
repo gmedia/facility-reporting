@@ -25,6 +25,25 @@ const fakeUser = {
   role: 'user',
 }
 
+// Posisi pelapor di-mock: jsdom tidak punya GPS, dan yang diuji di sini
+// adalah form + kontrak POST /reports, bukan perilaku geolocation browser.
+const { posisiMock, POSISI_DALAM } = vi.hoisted(() => {
+  const dalam = {
+    status: 'dalam' as const,
+    gps: { lat: -7.3859479, lng: 109.236801, akurasi: 10 },
+    jarak: 149,
+    radius: 400,
+    bisaKirim: true,
+    ulangi: () => {},
+    muatUlangBatas: () => {},
+  }
+  return { POSISI_DALAM: dalam, posisiMock: { nilai: dalam as unknown } }
+})
+
+vi.mock('@/features/laporan/lokasi-pelapor', () => ({
+  usePosisiPelapor: () => posisiMock.nilai,
+}))
+
 vi.mock('@/features/auth/auth-query', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@/features/auth/auth-query')>()
@@ -143,6 +162,7 @@ async function isiForm(user: UserEvent) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  posisiMock.nilai = POSISI_DALAM
   vi.mocked(api.POST).mockResolvedValue(
     ok({ data: { id: 1, status: 'menunggu_verifikasi' } }),
   )
@@ -209,6 +229,9 @@ describe('form laporan /lapor', () => {
     expect(options.body.get('nilai_risiko')).toBe('4')
     expect(options.body.get('nilai_dampak')).toBe('2')
     expect(options.body.get('nilai_frekuensi')).toBe('5')
+    // Koordinat GPS ikut terkirim, 7 desimal.
+    expect(options.body.get('latitude')).toBe('-7.3859479')
+    expect(options.body.get('longitude')).toBe('109.2368010')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),

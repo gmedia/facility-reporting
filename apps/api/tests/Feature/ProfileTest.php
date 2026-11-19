@@ -19,6 +19,7 @@ function makeAkunProfil(): User
     return User::factory()->create([
         'role' => UserRole::User->value,
         'password' => 'password-lama-123',
+        'password_changed_at' => now(),
     ]);
 }
 
@@ -164,4 +165,54 @@ it('requires current password and new password fields', function (): void {
         ->patchJson('/api/v1/profile/password', [])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['current_password', 'password']);
+});
+
+it('lets a reset account change password without the current password', function (): void {
+    $user = makeAkunProfil();
+    $user->forceFill(['password_changed_at' => null])->save();
+
+    $this->actingAs($user)
+        ->patchJson('/api/v1/profile/password', [
+            'password' => 'password-baru-456',
+            'password_confirmation' => 'password-baru-456',
+        ])
+        ->assertOk()
+        ->assertJsonPath('message', 'Password berhasil diperbarui.');
+
+    $fresh = $user->fresh();
+    expect(Hash::check('password-baru-456', $fresh->password))->toBeTrue();
+    expect($fresh->password_changed_at)->not->toBeNull();
+});
+
+it('requires the current password again after a reset account has changed it', function (): void {
+    $user = makeAkunProfil();
+    $user->forceFill(['password_changed_at' => null])->save();
+
+    $this->actingAs($user)
+        ->patchJson('/api/v1/profile/password', [
+            'password' => 'password-baru-456',
+            'password_confirmation' => 'password-baru-456',
+        ])
+        ->assertOk();
+
+    $this->actingAs($user->fresh())
+        ->patchJson('/api/v1/profile/password', [
+            'password' => 'password-ketiga-789',
+            'password_confirmation' => 'password-ketiga-789',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['current_password']);
+});
+
+it('still validates the new password for a reset account', function (): void {
+    $user = makeAkunProfil();
+    $user->forceFill(['password_changed_at' => null])->save();
+
+    $this->actingAs($user)
+        ->patchJson('/api/v1/profile/password', [
+            'password' => 'abc123',
+            'password_confirmation' => 'abc123',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['password']);
 });

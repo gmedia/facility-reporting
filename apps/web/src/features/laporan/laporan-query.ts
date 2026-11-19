@@ -22,10 +22,14 @@ export type Pelapor = {
 // dan diselesaikan. Opsional: dipakai halaman Semua Laporan (kolom & filter
 // Admin) dan panel Aktivitas terbaru. Kalau backend belum mengirimnya,
 // bagian itu otomatis tidak tampil (foto kembali ke lingkaran inisial).
+// `latitude`/`longitude` = koordinat pelapor saat laporan dikirim. Null untuk
+// laporan lama yang dibuat sebelum fitur lokasi ada.
 export type Laporan = components['schemas']['LaporanResource'] & {
   pelapor?: Pelapor | null
   foto_bukti?: string | null
   updated_at?: string | null
+  latitude?: number | null
+  longitude?: number | null
   diverifikasi_oleh?: string | null
   diverifikasi_oleh_foto?: string | null
   diverifikasi_pada?: string | null
@@ -62,6 +66,10 @@ export type LaporanFormValues = {
   nilai_risiko: number
   nilai_dampak: number
   nilai_frekuensi: number
+  // Posisi GPS pelapor. Diisi otomatis oleh form (bukan input user), dan
+  // dicek ulang jaraknya oleh backend terhadap titik pusat + radius.
+  latitude: number
+  longitude: number
 }
 
 // Sama dengan validasi backend (Billy, PR #33)
@@ -261,6 +269,9 @@ export function useCreateLaporan() {
       form.append('nilai_risiko', String(values.nilai_risiko))
       form.append('nilai_dampak', String(values.nilai_dampak))
       form.append('nilai_frekuensi', String(values.nilai_frekuensi))
+      // 7 desimal = presisi kolom decimal(10,7) di backend (~1 cm).
+      form.append('latitude', values.latitude.toFixed(7))
+      form.append('longitude', values.longitude.toFixed(7))
 
       const file = values.foto?.[0]
       if (file) form.append('foto', file)

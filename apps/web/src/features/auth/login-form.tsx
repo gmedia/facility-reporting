@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { homeFor, loginMutationOptions } from '@/features/auth/auth-query'
+import { LupaPassword } from '@/features/auth/lupa-password'
 
 // Zod — tiru validasi backend
 const loginSchema = z.object({
@@ -126,12 +127,25 @@ export function LoginForm() {
       <Button type="submit" disabled={login.isPending} className={tombolSoft}>
         {login.isPending ? 'Masuk...' : 'Masuk'}
       </Button>
+
+      {/* Terbuka otomatis setelah login gagal, karena itu saat paling
+          mungkin orang butuh petunjuk ini. */}
+      <LupaPassword terbuka={serverError !== null} />
     </form>
   )
 }
 
-// 422 punya `errors`, 429/401 cuma punya `message`
+// 422 punya `errors`, 429/401 cuma punya `message` (+ `status` dari
+// loginMutationOptions)
 function pesanDariServer(error: unknown): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    error.status === 429
+  ) {
+    return 'Terlalu banyak percobaan masuk. Tunggu beberapa saat lalu coba lagi. Kalau lupa password, hubungi admin (petunjuknya ada di bawah).'
+  }
   if (error && typeof error === 'object' && 'errors' in error) {
     const errors = (error as { errors?: Record<string, string[]> }).errors
     const pesan = Object.values(errors ?? {}).flat()[0]

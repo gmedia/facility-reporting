@@ -8,20 +8,23 @@ import {
 } from '@tanstack/react-router'
 import { routeTree } from '../routeTree.gen'
 
-const fakeUser = {
-  id: 1,
-  name: 'User Biasa',
-  nim: '12345',
-  email: 'user@facility.test',
-  role: 'user',
-}
+const { fakeUser, loginFn } = vi.hoisted(() => {
+  const fakeUser = {
+    id: 1,
+    name: 'User Biasa',
+    nim: '12345',
+    email: 'user@facility.test',
+    role: 'user',
+  }
+  return { fakeUser, loginFn: vi.fn(async () => fakeUser) }
+})
 
 vi.mock('@/features/auth/auth-query', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@/features/auth/auth-query')>()
   return {
     ...actual, // homeFor asli dipakai, biar logika role ikut keuji
-    loginMutationOptions: { mutationFn: vi.fn(async () => fakeUser) },
+    loginMutationOptions: { mutationFn: loginFn },
     meQueryOptions: {
       queryKey: ['me'],
       queryFn: async () => fakeUser,
@@ -112,5 +115,30 @@ describe('halaman login', () => {
       screen.getByRole('complementary', { name: 'Navigasi utama' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Keluar' })).toBeInTheDocument()
+  })
+
+  it('menampilkan petunjuk lupa password', async () => {
+    renderLogin()
+    expect(await screen.findByText('Lupa password?')).toBeInTheDocument()
+    expect(screen.getByText(/Bawa KTM/)).toBeInTheDocument()
+  })
+
+  it('error 429 tampil dalam bahasa Indonesia', async () => {
+    loginFn.mockRejectedValueOnce(
+      Object.assign(new Error('Too Many Attempts.'), { status: 429 }),
+    )
+    renderLogin()
+
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: '234110601012' },
+    })
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'salah12345' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Masuk' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Terlalu banyak percobaan masuk/,
+    )
   })
 })

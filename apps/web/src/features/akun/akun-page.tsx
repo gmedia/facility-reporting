@@ -1,4 +1,5 @@
 import {
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -7,6 +8,7 @@ import {
   type Ref,
 } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearch } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Circle, Eye, EyeOff } from 'lucide-react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
@@ -38,6 +40,10 @@ import { cn } from '@/lib/utils'
 //   - Keamanan  — ganti password (ada bar kekuatan + checklist)
 //   - Bantuan   — QnA, hanya untuk role `user` (pindahan dari Beranda)
 //
+// Tab awal bisa diminta lewat alamat: /pengaturan?tab=keamanan. Dipakai
+// pengingat "Ganti password" supaya pengguna langsung sampai ke form
+// password. Tanpa parameter, tab awalnya Profil.
+//
 // Data user dibaca dari cache /auth/me lewat useQuery — bukan prop
 // route — supaya setelah unggahan foto sukses (mutation menimpa cache
 // ['me']), pratinjau ikut berubah tanpa navigasi.
@@ -60,26 +66,35 @@ const ATURAN_PASSWORD: ReadonlyArray<{
   { label: 'Ada angka', lolos: (nilai) => /\d/.test(nilai) },
 ]
 
-const schemaPassword = z
-  .object({
-    current_password: z.string().min(1, 'Password saat ini wajib diisi'),
-    password: z
-      .string()
-      .min(8, 'Password baru minimal 8 karakter')
-      .regex(/[A-Z]/, 'Password baru harus mengandung huruf besar')
-      .regex(/\d/, 'Password baru harus mengandung angka'),
-    password_confirmation: z.string().min(1, 'Konfirmasi password wajib diisi'),
-  })
-  .refine((value) => value.password === value.password_confirmation, {
-    message: 'Konfirmasi password baru tidak sama',
-    path: ['password_confirmation'],
-  })
+// Skema dibuat per kondisi: akun hasil reset admin tidak diminta password
+// saat ini (user memang tidak tahu password acak itu).
+function buatSchemaPassword(wajibPasswordLama: boolean) {
+  return z
+    .object({
+      current_password: wajibPasswordLama
+        ? z.string().min(1, 'Password saat ini wajib diisi')
+        : z.string(),
+      password: z
+        .string()
+        .min(8, 'Password baru minimal 8 karakter')
+        .regex(/[A-Z]/, 'Password baru harus mengandung huruf besar')
+        .regex(/\d/, 'Password baru harus mengandung angka'),
+      password_confirmation: z
+        .string()
+        .min(1, 'Konfirmasi password wajib diisi'),
+    })
+    .refine((value) => value.password === value.password_confirmation, {
+      message: 'Konfirmasi password baru tidak sama',
+      path: ['password_confirmation'],
+    })
+}
 
 // Beda tipenya, sama seperti laporan-form: z.input sebelum resolver jalan,
 // z.output sesudah refine (di sini bentuknya sama, tetap dipisah biar
 // konsisten dan aman terhadap perubahan skema nanti).
-type PasswordInput = z.input<typeof schemaPassword>
-type PasswordValues = z.output<typeof schemaPassword>
+type SchemaPassword = ReturnType<typeof buatSchemaPassword>
+type PasswordInput = z.input<SchemaPassword>
+type PasswordValues = z.output<SchemaPassword>
 
 // Field yang boleh menerima pesan error 422 dari server. Kalau tidak ada
 // satu pun yang cocok, pesannya jatuh ke toast.
@@ -90,6 +105,10 @@ const FIELD_SERVER: ReadonlyArray<keyof PasswordValues> = [
 
 type TabId = 'profil' | 'keamanan' | 'bantuan'
 
+// Nilai ?tab= yang dikenal. Harus sama dengan validateSearch di
+// routes/_protected/pengaturan.tsx.
+const TAB_IDS: ReadonlyArray<TabId> = ['profil', 'keamanan', 'bantuan']
+
 // Gaya kartu isi dan tombol utama, dipakai bersama oleh semua tab.
 const KARTU_CLASS = 'rounded-3xl border border-black/5 bg-white p-7 shadow-sm'
 const TOMBOL_UTAMA_CLASS =
@@ -98,20 +117,33 @@ const TOMBOL_UTAMA_CLASS =
 export function PengaturanPage() {
   const { data: user } = useQuery(meQueryOptions)
 
+  // Tab awal dari alamat (?tab=). `strict: false` karena komponen ini
+  // dipakai di luar file route-nya; nilainya sudah dibersihkan oleh
+  // validateSearch, jadi di sini cukup dicocokkan lagi sebagai jaring
+  // pengaman.
+  const { tab: tabUrl } = useSearch({ strict: false }) as { tab?: string }
+  const tabAwal: TabId = TAB_IDS.find((id) => id === tabUrl) ?? 'profil'
+
   // Guard login sudah jalan di route _protected, jadi user praktis pasti
   // ada; null-nya cuma jaring pengaman saat cache belum terisi.
   if (!user) return null
 
   if (user.role === 'user') {
-    return <PengaturanIsi user={user} tampilJudul />
+    return <PengaturanIsi user={user} tabAwal={tabAwal} tampilJudul />
   }
 
-  return <PengaturanPengelola user={user} />
+  return <PengaturanPengelola user={user} tabAwal={tabAwal} />
 }
 
 // Admin dan super admin: sidebar hijau tua milik DashboardShell. Judul
 // halaman ditaruh di header atas, jadi tidak diulang di dalam konten.
-function PengaturanPengelola({ user }: { user: User }) {
+function PengaturanPengelola({
+  user,
+  tabAwal,
+}: {
+  user: User
+  tabAwal: TabId
+}) {
   // Badge jumlah laporan menunggu di menu Verifikasi tetap tampil di
   // halaman ini, sama seperti di Dasbor dan Verifikasi.
   const laporan = useLaporanList()
@@ -135,7 +167,7 @@ function PengaturanPengelola({ user }: { user: User }) {
       }
     >
       <div className="mx-auto w-full max-w-5xl">
-        <PengaturanIsi user={user} tampilJudul={false} />
+        <PengaturanIsi user={user} tabAwal={tabAwal} tampilJudul={false} />
       </div>
     </DashboardShell>
   )
@@ -143,14 +175,19 @@ function PengaturanPengelola({ user }: { user: User }) {
 
 function PengaturanIsi({
   user,
+  tabAwal,
   tampilJudul,
 }: {
   user: User
+  tabAwal: TabId
   tampilJudul: boolean
 }) {
-  const [tab, setTab] = useState<TabId>('profil')
+  // Bantuan hanya untuk role `user`. Kalau alamatnya meminta ?tab=bantuan
+  // tapi yang membuka admin, jatuh ke Profil.
+  const [tab, setTab] = useState<TabId>(
+    tabAwal === 'bantuan' && user.role !== 'user' ? 'profil' : tabAwal,
+  )
 
-  // Bantuan hanya untuk role `user`, sama seperti sebelumnya.
   const daftarTab: Array<{ id: TabId; label: string }> = [
     { id: 'profil', label: 'Profil' },
     { id: 'keamanan', label: 'Keamanan' },
@@ -194,7 +231,7 @@ function PengaturanIsi({
 
         <section className={KARTU_CLASS}>
           {tab === 'profil' && <TabProfil user={user} />}
-          {tab === 'keamanan' && <TabKeamanan />}
+          {tab === 'keamanan' && <TabKeamanan user={user} />}
           {tab === 'bantuan' && user.role === 'user' && <TabBantuan />}
         </section>
       </div>
@@ -446,9 +483,16 @@ function KekuatanPassword({ nilai }: { nilai: string }) {
   )
 }
 
-// Tab "Keamanan": ganti password.
-function TabKeamanan() {
+// Tab "Keamanan": ganti password. Akun yang barusan direset admin
+// (must_change_password = true) tidak diminta password saat ini.
+function TabKeamanan({ user }: { user: User }) {
   const ganti = useChangePassword()
+  const lewatiLama = user.must_change_password === true
+
+  const resolver = useMemo(
+    () => zodResolver(buatSchemaPassword(!lewatiLama)),
+    [lewatiLama],
+  )
 
   const {
     control,
@@ -457,7 +501,7 @@ function TabKeamanan() {
     reset,
     formState: { isSubmitting },
   } = useForm<PasswordInput, unknown, PasswordValues>({
-    resolver: zodResolver(schemaPassword),
+    resolver,
     defaultValues: {
       current_password: '',
       password: '',
@@ -470,7 +514,11 @@ function TabKeamanan() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await ganti.mutateAsync(values)
+      const { current_password, ...lainnya } = values
+      // Akun hasil reset: jangan kirim current_password sama sekali.
+      await ganti.mutateAsync(
+        lewatiLama ? lainnya : { current_password, ...lainnya },
+      )
       toast.success('Password berhasil diperbarui')
       reset()
     } catch (error) {
@@ -498,7 +546,11 @@ function TabKeamanan() {
     <div>
       <JudulTab
         judul="Ganti password"
-        keterangan="Gunakan kombinasi yang sulit ditebak."
+        keterangan={
+          lewatiLama
+            ? 'Passwordmu baru direset oleh admin. Buat password baru yang hanya kamu yang tahu.'
+            : 'Gunakan kombinasi yang sulit ditebak.'
+        }
       />
 
       <form
@@ -506,29 +558,31 @@ function TabKeamanan() {
         noValidate
         className="flex max-w-xl flex-col gap-4"
       >
-        <Controller
-          control={control}
-          name="current_password"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid || undefined}>
-              <FieldLabel htmlFor="akun-password-lama">
-                Password saat ini
-              </FieldLabel>
-              <PasswordInput
-                id="akun-password-lama"
-                autoComplete="current-password"
-                name={field.name}
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                inputRef={field.ref}
-              />
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
-            </Field>
-          )}
-        />
+        {!lewatiLama && (
+          <Controller
+            control={control}
+            name="current_password"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid || undefined}>
+                <FieldLabel htmlFor="akun-password-lama">
+                  Password saat ini
+                </FieldLabel>
+                <PasswordInput
+                  id="akun-password-lama"
+                  autoComplete="current-password"
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  inputRef={field.ref}
+                />
+                <FieldError
+                  errors={fieldState.error ? [fieldState.error] : undefined}
+                />
+              </Field>
+            )}
+          />
+        )}
 
         <Controller
           control={control}
