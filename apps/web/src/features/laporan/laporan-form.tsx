@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FotoInput } from './foto-input'
-import { LokasiKotak } from '@/features/lokasi/lokasi-kotak'
-import { usePosisiPelapor } from '@/features/lokasi/lokasi-pelapor'
+import { LokasiKotak } from './lokasi-kotak'
+import { usePosisiPelapor } from './lokasi-pelapor'
 import {
   BATAS_FOTO_BYTE,
   FOTO_MIME_IZIN,

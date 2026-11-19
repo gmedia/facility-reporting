@@ -14,7 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable(['name', 'email', 'password', 'nim', 'role', 'foto'])]
 #[Hidden(['password', 'remember_token'])]
 /**
- * @property string|null $password_changed_at
+ * @property-read string|null $password_changed_at
  * @property-read float|null $last_lat
  * @property-read float|null $last_lng
  * @property-read \DateTimeInterface|null $last_location_at

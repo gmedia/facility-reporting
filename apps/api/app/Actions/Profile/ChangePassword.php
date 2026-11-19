@@ -22,7 +22,7 @@ final class ChangePassword
     public function __invoke(ChangePasswordData $data, User $user): User
     {
         $user->password = $data->password;
-        $user->password_changed_at = now();
+        $user->setAttribute('password_changed_at', now());
         $user->save();
 
         return $user->fresh();

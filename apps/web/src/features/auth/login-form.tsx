@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { homeFor, loginMutationOptions } from '@/features/auth/auth-query'
+import { LupaPassword } from '@/features/auth/lupa-password'
 
 // Zod — tiru validasi backend
 const loginSchema = z.object({
@@ -129,6 +130,7 @@ export function LoginForm() {
 
       {/* Terbuka otomatis setelah login gagal, karena itu saat paling
           mungkin orang butuh petunjuk ini. */}
+      <LupaPassword terbuka={serverError !== null} />
     </form>
   )
 }
