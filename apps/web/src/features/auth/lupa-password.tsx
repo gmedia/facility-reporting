@@ -10,9 +10,7 @@ export function LupaPassword({ terbuka = false }: { terbuka?: boolean }) {
       open={terbuka || undefined}
       className="mt-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm"
     >
-      <summary
-        className="flex cursor-pointer list-none items-center gap-2 font-medium text-[#0d3f31] outline-none focus-visible:ring-2 focus-visible:ring-[#1e6a52]/25"
-      >
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-[#0d3f31] outline-none focus-visible:ring-2 focus-visible:ring-[#1e6a52]/25">
         <KeyRound aria-hidden="true" className="size-4" />
         Lupa password?
       </summary>
@@ -25,9 +23,7 @@ export function LupaPassword({ terbuka = false }: { terbuka?: boolean }) {
             Temui admin di <b>{TEMPAT_RESET}</b> atau hubungi lewat{' '}
             <b>{KONTAK_ADMIN}</b>.
           </li>
-          <li>
-            Bawa KTM atau identitas lain, admin akan memeriksanya dulu.
-          </li>
+          <li>Bawa KTM atau identitas lain, admin akan memeriksanya dulu.</li>
           <li>
             Admin memberikan password sementara. Masuk dengan password itu, lalu
             buat password baru.
