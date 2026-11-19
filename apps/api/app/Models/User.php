@@ -31,6 +31,10 @@ class User extends Authenticatable
             'active' => 'boolean',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_lat' => 'float',
+            'last_lng' => 'float',
+            'last_location_at' => 'datetime',
+            'password_changed_at' => 'datetime',
         ];
     }
 }

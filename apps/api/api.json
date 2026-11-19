@@ -1,1388 +1,1185 @@
 {
-    "openapi": "3.1.2",
-    "info": {
-        "title": "Facility Reporting API",
-        "version": "1.0.0",
-        "description": "Engineering bootstrap API contract."
-    },
-    "servers": [
-        {
-            "url": "http://localhost:8000/api/v1"
+  "openapi": "3.1.2",
+  "info": {
+    "title": "Facility Reporting API",
+    "version": "1.0.0",
+    "description": "Engineering bootstrap API contract."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1"
+    }
+  ],
+  "paths": {
+    "/reports": {
+      "get": {
+        "operationId": "laporan.index",
+        "description": "A regular user only sees their own reports; admins see every report.",
+        "summary": "List the reports visible to the authenticated user",
+        "tags": ["Laporan"],
+        "responses": {
+          "200": {
+            "description": "Array of `LaporanResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LaporanResource"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
         }
-    ],
-    "paths": {
-        "/reports": {
-            "get": {
-                "operationId": "laporan.index",
-                "description": "A regular user only sees their own reports; admins see every report.",
-                "summary": "List the reports visible to the authenticated user",
-                "tags": [
-                    "Laporan"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Array of `LaporanResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/LaporanResource"
-                                            }
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            },
-            "post": {
-                "operationId": "laporan.store",
-                "summary": "Store a new facility report",
-                "tags": [
-                    "Laporan"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StoreLaporanRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "`LaporanResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/LaporanResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
+      },
+      "post": {
+        "operationId": "laporan.store",
+        "summary": "Store a new facility report",
+        "tags": ["Laporan"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreLaporanRequest"
+              }
             }
-        },
-        "/reports/{laporan}/history": {
-            "get": {
-                "operationId": "laporan.history",
-                "summary": "Ambil riwayat perubahan status suatu laporan",
-                "tags": [
-                    "Laporan"
-                ],
-                "parameters": [
-                    {
-                        "name": "laporan",
-                        "in": "path",
-                        "required": true,
-                        "description": "The laporan ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Array of `LaporanStatusHistoryResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/LaporanStatusHistoryResource"
-                                            }
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/reports/{laporan}/status": {
-            "patch": {
-                "operationId": "laporan.updateStatus",
-                "description": "Guarded by the `admin` middleware, so only admins and super admins\ncan reach this method.",
-                "summary": "Change the status of a report",
-                "tags": [
-                    "Laporan"
-                ],
-                "parameters": [
-                    {
-                        "name": "laporan",
-                        "in": "path",
-                        "required": true,
-                        "description": "The laporan ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`LaporanResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/LaporanResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    }
-                }
-            }
-        },
-        "/reports/{laporan}/bukti": {
-            "patch": {
-                "operationId": "laporan.updateBukti",
-                "summary": "Upload foto bukti untuk laporan",
-                "tags": [
-                    "Laporan"
-                ],
-                "parameters": [
-                    {
-                        "name": "laporan",
-                        "in": "path",
-                        "required": true,
-                        "description": "The laporan ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateLaporanBuktiRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`LaporanResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/LaporanResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/AuthorizationException"
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "operationId": "auth.login",
-                "tags": [
-                    "Login"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/auth/logout": {
-            "post": {
-                "operationId": "auth.logout",
-                "tags": [
-                    "Logout"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Logged out."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/auth/me": {
-            "get": {
-                "operationId": "auth.me",
-                "tags": [
-                    "Me"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/profile/foto": {
-            "post": {
-                "operationId": "profile.updateFoto",
-                "summary": "Upload foto profil milik user yang sedang login",
-                "tags": [
-                    "Profile"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateProfileFotoRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/profile/password": {
-            "patch": {
-                "operationId": "profile.changePassword",
-                "summary": "Ganti password user yang sedang login",
-                "tags": [
-                    "Profile"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ChangePasswordRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Password berhasil diperbarui."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/status": {
-            "get": {
-                "operationId": "v1.status",
-                "tags": [
-                    "Status"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "`StatusResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/StatusResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/users/{user}/deactivate": {
-            "put": {
-                "operationId": "user.deactivate",
-                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
-                "summary": "Deactivate an admin account",
-                "tags": [
-                    "User"
-                ],
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "required": true,
-                        "description": "The user ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/admin/users/{user}/activate": {
-            "put": {
-                "operationId": "user.activate",
-                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
-                "summary": "Activate an admin account",
-                "tags": [
-                    "User"
-                ],
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "required": true,
-                        "description": "The user ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/admin/users": {
-            "get": {
-                "operationId": "users.index",
-                "summary": "List all admin accounts",
-                "tags": [
-                    "User"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Array of `UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/UserResource"
-                                            }
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            },
-            "post": {
-                "operationId": "users.store",
-                "summary": "Create a new admin account",
-                "tags": [
-                    "User"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StoreUserRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            }
-        },
-        "/admin/users/{user}": {
-            "put": {
-                "operationId": "users.update",
-                "summary": "Update an admin account",
-                "tags": [
-                    "User"
-                ],
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "required": true,
-                        "description": "The user ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateUserRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "users.destroy",
-                "summary": "Delete an admin account",
-                "tags": [
-                    "User"
-                ],
-                "parameters": [
-                    {
-                        "name": "user",
-                        "in": "path",
-                        "required": true,
-                        "description": "The user ID",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No content"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/ModelNotFoundException"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        }
-    },
-    "components": {
-        "schemas": {
-            "ChangePasswordRequest": {
-                "type": "object",
-                "properties": {
-                    "current_password": {
-                        "type": "string"
-                    },
-                    "password": {
-                        "type": "string",
-                        "minLength": 8
-                    },
-                    "password_confirmation": {
-                        "type": "string",
-                        "minLength": 8
-                    }
-                },
-                "required": [
-                    "current_password",
-                    "password",
-                    "password_confirmation"
-                ],
-                "title": "ChangePasswordRequest"
-            },
-            "LaporanKategori": {
-                "type": "string",
-                "enum": [
-                    "elektronik",
-                    "furnitur",
-                    "mekanik",
-                    "bangunan",
-                    "lainnya"
-                ],
-                "title": "LaporanKategori"
-            },
-            "LaporanResource": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "user_id": {
-                        "type": "integer"
-                    },
-                    "kategori": {
-                        "type": "string"
-                    },
-                    "lokasi": {
-                        "type": "string"
-                    },
-                    "deskripsi": {
-                        "type": "string"
-                    },
-                    "foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "menunggu_verifikasi",
-                            "valid",
-                            "ditolak",
-                            "diproses",
-                            "selesai"
-                        ]
-                    },
-                    "skor_prioritas": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "prioritas_kategori": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "enum": [
-                            "rendah",
-                            "sedang",
-                            "tinggi",
-                            null
-                        ]
-                    },
-                    "nilai_kerusakan": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "nilai_risiko": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "nilai_dampak": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "nilai_frekuensi": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "foto_bukti": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "pelapor": {
-                        "type": [
-                            "object",
-                            "null"
-                        ],
-                        "description": "Data pelapor: hanya untuk admin. loadMissing() menjaga agar\nrespons updateStatus/updateBukti (yang tidak eager load user)\ntetap menyertakan pelapor.",
-                        "properties": {
-                            "id": {
-                                "type": "integer"
-                            },
-                            "name": {
-                                "type": "string"
-                            },
-                            "email": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            },
-                            "nim": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            },
-                            "foto": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "id",
-                            "name",
-                            "email",
-                            "nim",
-                            "foto"
-                        ]
-                    },
-                    "diverifikasi_oleh": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Admin yang pertama kali memverifikasi (valid) atau menolak\nlaporan, beserta foto dan waktunya. Null kalau belum pernah."
-                    },
-                    "diverifikasi_oleh_foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "diverifikasi_pada": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "diselesaikan_oleh": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "description": "Admin yang terakhir mengubah status ke selesai, beserta\nfoto dan waktunya. Null kalau laporan belum selesai."
-                    },
-                    "diselesaikan_oleh_foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "diselesaikan_pada": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "id",
-                    "user_id",
-                    "kategori",
-                    "lokasi",
-                    "deskripsi",
-                    "foto",
-                    "status",
-                    "skor_prioritas",
-                    "prioritas_kategori",
-                    "nilai_kerusakan",
-                    "nilai_risiko",
-                    "nilai_dampak",
-                    "nilai_frekuensi",
-                    "foto_bukti",
-                    "created_at",
-                    "updated_at"
-                ],
-                "title": "LaporanResource"
-            },
-            "LaporanStatus": {
-                "type": "string",
-                "enum": [
-                    "menunggu_verifikasi",
-                    "valid",
-                    "ditolak",
-                    "diproses",
-                    "selesai"
-                ],
-                "title": "LaporanStatus"
-            },
-            "LaporanStatusHistoryResource": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "laporan_id": {
-                        "type": "integer"
-                    },
-                    "status_from": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "status_to": {
-                        "type": "string"
-                    },
-                    "alasan": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "changed_by": {
-                        "type": "integer"
-                    },
-                    "changed_by_name": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "required": [
-                    "id",
-                    "laporan_id",
-                    "status_from",
-                    "status_to",
-                    "alasan",
-                    "changed_by",
-                    "changed_by_name",
-                    "created_at",
-                    "updated_at"
-                ],
-                "title": "LaporanStatusHistoryResource"
-            },
-            "LoginRequest": {
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "password": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "identifier",
-                    "password"
-                ],
-                "title": "LoginRequest"
-            },
-            "StatusResource": {
-                "type": "object",
-                "properties": {
-                    "status": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "status"
-                ],
-                "title": "StatusResource"
-            },
-            "StoreLaporanRequest": {
-                "type": "object",
-                "properties": {
-                    "kategori": {
-                        "$ref": "#/components/schemas/LaporanKategori"
-                    },
-                    "lokasi": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "deskripsi": {
-                        "type": "string",
-                        "minLength": 10,
-                        "maxLength": 2000
-                    },
-                    "foto": {
-                        "type": "string",
-                        "format": "binary",
-                        "contentMediaType": "application/octet-stream",
-                        "description": "Maximum file size: 2048 kilobytes."
-                    },
-                    "nilai_kerusakan": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_risiko": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_dampak": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_frekuensi": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    }
-                },
-                "required": [
-                    "kategori",
-                    "lokasi",
-                    "deskripsi",
-                    "foto",
-                    "nilai_kerusakan",
-                    "nilai_risiko",
-                    "nilai_dampak",
-                    "nilai_frekuensi"
-                ],
-                "title": "StoreLaporanRequest"
-            },
-            "StoreUserRequest": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "maxLength": 255
-                    },
-                    "password": {
-                        "type": "string",
-                        "minLength": 8
-                    }
-                },
-                "required": [
-                    "name",
-                    "email",
-                    "password"
-                ],
-                "title": "StoreUserRequest"
-            },
-            "UpdateLaporanBuktiRequest": {
-                "type": "object",
-                "properties": {
-                    "foto_bukti": {
-                        "type": "string",
-                        "format": "binary",
-                        "contentMediaType": "application/octet-stream",
-                        "description": "Maximum file size: 2048 kilobytes."
-                    }
-                },
-                "required": [
-                    "foto_bukti"
-                ],
-                "title": "UpdateLaporanBuktiRequest"
-            },
-            "UpdateLaporanStatusRequest": {
-                "type": "object",
-                "properties": {
-                    "status": {
-                        "$ref": "#/components/schemas/LaporanStatus"
-                    },
-                    "nilai_kerusakan": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_risiko": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_dampak": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "nilai_frekuensi": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "maximum": 5
-                    },
-                    "alasan": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 255
-                    },
-                    "foto_bukti": {
-                        "type": "string",
-                        "format": "binary",
-                        "contentMediaType": "application/octet-stream",
-                        "description": "Maximum file size: 2048 kilobytes."
-                    }
-                },
-                "required": [
-                    "status"
-                ],
-                "title": "UpdateLaporanStatusRequest"
-            },
-            "UpdateProfileFotoRequest": {
-                "type": "object",
-                "properties": {
-                    "foto": {
-                        "type": "string",
-                        "format": "binary",
-                        "contentMediaType": "application/octet-stream",
-                        "description": "Maximum file size: 2048 kilobytes."
-                    }
-                },
-                "required": [
-                    "foto"
-                ],
-                "title": "UpdateProfileFotoRequest"
-            },
-            "UpdateUserRequest": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "maxLength": 255
-                    },
-                    "password": {
-                        "type": "string",
-                        "minLength": 8
-                    }
-                },
-                "title": "UpdateUserRequest"
-            },
-            "UserResource": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "nim": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "email": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "role": {
-                        "type": "string"
-                    },
-                    "foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "active": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "id",
-                    "name",
-                    "nim",
-                    "email",
-                    "role",
-                    "foto",
-                    "active"
-                ],
-                "title": "UserResource"
-            }
+          }
         },
         "responses": {
-            "ValidationException": {
-                "description": "Validation error",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Errors overview."
-                                },
-                                "errors": {
-                                    "type": "object",
-                                    "description": "A detailed description of each field that failed validation.",
-                                    "additionalProperties": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            },
-                            "required": [
-                                "message",
-                                "errors"
-                            ]
-                        }
+          "201": {
+            "description": "`LaporanResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LaporanResource"
                     }
+                  },
+                  "required": ["data"]
                 }
-            },
-            "AuthenticationException": {
-                "description": "Unauthenticated",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Error overview."
-                                }
-                            },
-                            "required": [
-                                "message"
-                            ]
-                        }
-                    }
-                }
-            },
-            "ModelNotFoundException": {
-                "description": "Not found",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Error overview."
-                                }
-                            },
-                            "required": [
-                                "message"
-                            ]
-                        }
-                    }
-                }
-            },
-            "AuthorizationException": {
-                "description": "Authorization error",
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "message": {
-                                    "type": "string",
-                                    "description": "Error overview."
-                                }
-                            },
-                            "required": [
-                                "message"
-                            ]
-                        }
-                    }
-                }
+              }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
         }
+      }
+    },
+    "/reports/{laporan}/history": {
+      "get": {
+        "operationId": "laporan.history",
+        "summary": "Ambil riwayat perubahan status suatu laporan",
+        "tags": ["Laporan"],
+        "parameters": [
+          {
+            "name": "laporan",
+            "in": "path",
+            "required": true,
+            "description": "The laporan ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of `LaporanStatusHistoryResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LaporanStatusHistoryResource"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/reports/{laporan}/status": {
+      "patch": {
+        "operationId": "laporan.updateStatus",
+        "description": "Guarded by the `admin` middleware, so only admins and super admins\ncan reach this method.",
+        "summary": "Change the status of a report",
+        "tags": ["Laporan"],
+        "parameters": [
+          {
+            "name": "laporan",
+            "in": "path",
+            "required": true,
+            "description": "The laporan ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`LaporanResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LaporanResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationException"
+          }
+        }
+      }
+    },
+    "/reports/{laporan}/bukti": {
+      "patch": {
+        "operationId": "laporan.updateBukti",
+        "summary": "Upload foto bukti untuk laporan",
+        "tags": ["Laporan"],
+        "parameters": [
+          {
+            "name": "laporan",
+            "in": "path",
+            "required": true,
+            "description": "The laporan ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLaporanBuktiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`LaporanResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LaporanResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "403": {
+            "$ref": "#/components/responses/AuthorizationException"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "auth.login",
+        "tags": ["Login"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "auth.logout",
+        "tags": ["Logout"],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "const": "Logged out."
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "auth.me",
+        "tags": ["Me"],
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/profile/foto": {
+      "post": {
+        "operationId": "profile.updateFoto",
+        "summary": "Upload foto profil milik user yang sedang login",
+        "tags": ["Profile"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileFotoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/profile/password": {
+      "patch": {
+        "operationId": "profile.changePassword",
+        "summary": "Ganti password user yang sedang login",
+        "tags": ["Profile"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "const": "Password berhasil diperbarui."
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "operationId": "v1.status",
+        "tags": ["Status"],
+        "responses": {
+          "200": {
+            "description": "`StatusResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/StatusResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/deactivate": {
+      "put": {
+        "operationId": "user.deactivate",
+        "description": "Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+        "summary": "Deactivate an admin account",
+        "tags": ["User"],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "description": "The user ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/activate": {
+      "put": {
+        "operationId": "user.activate",
+        "description": "Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+        "summary": "Activate an admin account",
+        "tags": ["User"],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "description": "The user ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "users.index",
+        "summary": "List all admin accounts",
+        "tags": ["User"],
+        "responses": {
+          "200": {
+            "description": "Array of `UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/UserResource"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      },
+      "post": {
+        "operationId": "users.store",
+        "summary": "Create a new admin account",
+        "tags": ["User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}": {
+      "put": {
+        "operationId": "users.update",
+        "summary": "Update an admin account",
+        "tags": ["User"],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "description": "The user ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`UserResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/UserResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "users.destroy",
+        "summary": "Delete an admin account",
+        "tags": ["User"],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "description": "The user ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModelNotFoundException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
     }
+  },
+  "components": {
+    "schemas": {
+      "ChangePasswordRequest": {
+        "type": "object",
+        "properties": {
+          "current_password": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          },
+          "password_confirmation": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": ["current_password", "password", "password_confirmation"],
+        "title": "ChangePasswordRequest"
+      },
+      "LaporanKategori": {
+        "type": "string",
+        "enum": ["elektronik", "furnitur", "mekanik", "bangunan", "lainnya"],
+        "title": "LaporanKategori"
+      },
+      "LaporanResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "integer"
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "lokasi": {
+            "type": "string"
+          },
+          "deskripsi": {
+            "type": "string"
+          },
+          "foto": {
+            "type": ["string", "null"]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "menunggu_verifikasi",
+              "valid",
+              "ditolak",
+              "diproses",
+              "selesai"
+            ]
+          },
+          "skor_prioritas": {
+            "type": ["string", "null"]
+          },
+          "prioritas_kategori": {
+            "type": ["string", "null"],
+            "enum": ["rendah", "sedang", "tinggi", null]
+          },
+          "nilai_kerusakan": {
+            "type": ["integer", "null"]
+          },
+          "nilai_risiko": {
+            "type": ["integer", "null"]
+          },
+          "nilai_dampak": {
+            "type": ["integer", "null"]
+          },
+          "nilai_frekuensi": {
+            "type": ["integer", "null"]
+          },
+          "foto_bukti": {
+            "type": ["string", "null"]
+          },
+          "created_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "pelapor": {
+            "type": ["object", "null"],
+            "description": "Data pelapor: hanya untuk admin. loadMissing() menjaga agar\nrespons updateStatus/updateBukti (yang tidak eager load user)\ntetap menyertakan pelapor.",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": ["string", "null"]
+              },
+              "nim": {
+                "type": ["string", "null"]
+              },
+              "foto": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["id", "name", "email", "nim", "foto"]
+          },
+          "diverifikasi_oleh": {
+            "type": ["string", "null"],
+            "description": "Admin yang pertama kali memverifikasi (valid) atau menolak\nlaporan, beserta foto dan waktunya. Null kalau belum pernah."
+          },
+          "diverifikasi_oleh_foto": {
+            "type": ["string", "null"]
+          },
+          "diverifikasi_pada": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "diselesaikan_oleh": {
+            "type": ["string", "null"],
+            "description": "Admin yang terakhir mengubah status ke selesai, beserta\nfoto dan waktunya. Null kalau laporan belum selesai."
+          },
+          "diselesaikan_oleh_foto": {
+            "type": ["string", "null"]
+          },
+          "diselesaikan_pada": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "kategori",
+          "lokasi",
+          "deskripsi",
+          "foto",
+          "status",
+          "skor_prioritas",
+          "prioritas_kategori",
+          "nilai_kerusakan",
+          "nilai_risiko",
+          "nilai_dampak",
+          "nilai_frekuensi",
+          "foto_bukti",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LaporanResource"
+      },
+      "LaporanStatus": {
+        "type": "string",
+        "enum": [
+          "menunggu_verifikasi",
+          "valid",
+          "ditolak",
+          "diproses",
+          "selesai"
+        ],
+        "title": "LaporanStatus"
+      },
+      "LaporanStatusHistoryResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "laporan_id": {
+            "type": "integer"
+          },
+          "status_from": {
+            "type": ["string", "null"]
+          },
+          "status_to": {
+            "type": "string"
+          },
+          "alasan": {
+            "type": ["string", "null"]
+          },
+          "changed_by": {
+            "type": "integer"
+          },
+          "changed_by_name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "laporan_id",
+          "status_from",
+          "status_to",
+          "alasan",
+          "changed_by",
+          "changed_by_name",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LaporanStatusHistoryResource"
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": ["identifier", "password"],
+        "title": "LoginRequest"
+      },
+      "StatusResource": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": ["status"],
+        "title": "StatusResource"
+      },
+      "StoreLaporanRequest": {
+        "type": "object",
+        "properties": {
+          "kategori": {
+            "$ref": "#/components/schemas/LaporanKategori"
+          },
+          "lokasi": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "deskripsi": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "contentMediaType": "application/octet-stream",
+            "description": "Maximum file size: 2048 kilobytes."
+          },
+          "nilai_kerusakan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_risiko": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_dampak": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_frekuensi": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "kategori",
+          "lokasi",
+          "deskripsi",
+          "foto",
+          "nilai_kerusakan",
+          "nilai_risiko",
+          "nilai_dampak",
+          "nilai_frekuensi"
+        ],
+        "title": "StoreLaporanRequest"
+      },
+      "StoreUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": ["name", "email", "password"],
+        "title": "StoreUserRequest"
+      },
+      "UpdateLaporanBuktiRequest": {
+        "type": "object",
+        "properties": {
+          "foto_bukti": {
+            "type": "string",
+            "format": "binary",
+            "contentMediaType": "application/octet-stream",
+            "description": "Maximum file size: 2048 kilobytes."
+          }
+        },
+        "required": ["foto_bukti"],
+        "title": "UpdateLaporanBuktiRequest"
+      },
+      "UpdateLaporanStatusRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/LaporanStatus"
+          },
+          "nilai_kerusakan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_risiko": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_dampak": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nilai_frekuensi": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "alasan": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "foto_bukti": {
+            "type": "string",
+            "format": "binary",
+            "contentMediaType": "application/octet-stream",
+            "description": "Maximum file size: 2048 kilobytes."
+          }
+        },
+        "required": ["status"],
+        "title": "UpdateLaporanStatusRequest"
+      },
+      "UpdateProfileFotoRequest": {
+        "type": "object",
+        "properties": {
+          "foto": {
+            "type": "string",
+            "format": "binary",
+            "contentMediaType": "application/octet-stream",
+            "description": "Maximum file size: 2048 kilobytes."
+          }
+        },
+        "required": ["foto"],
+        "title": "UpdateProfileFotoRequest"
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "title": "UpdateUserRequest"
+      },
+      "UserResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nim": {
+            "type": ["string", "null"]
+          },
+          "email": {
+            "type": ["string", "null"]
+          },
+          "role": {
+            "type": "string"
+          },
+          "foto": {
+            "type": ["string", "null"]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "nim", "email", "role", "foto", "active"],
+        "title": "UserResource"
+      }
+    },
+    "responses": {
+      "ValidationException": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Errors overview."
+                },
+                "errors": {
+                  "type": "object",
+                  "description": "A detailed description of each field that failed validation.",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "required": ["message", "errors"]
+            }
+          }
+        }
+      },
+      "AuthenticationException": {
+        "description": "Unauthenticated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Error overview."
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
+      },
+      "ModelNotFoundException": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Error overview."
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
+      },
+      "AuthorizationException": {
+        "description": "Authorization error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Error overview."
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
+      }
+    }
+  }
 }

@@ -264,9 +264,8 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
-    /** ChangePasswordRequest */
     ChangePasswordRequest: {
-      current_password: string
+      current_password?: string
       password: string
       password_confirmation: string
     }
@@ -275,7 +274,7 @@ export interface components {
      * @enum {string}
      */
     LaporanKategori:
-      'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
+    'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
     /** LaporanResource */
     LaporanResource: {
       id: number
@@ -286,7 +285,7 @@ export interface components {
       foto: string | null
       /** @enum {string} */
       status:
-        'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
+      'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
       skor_prioritas: string | null
       /** @enum {string|null} */
       prioritas_kategori: 'rendah' | 'sedang' | 'tinggi' | null
@@ -333,7 +332,7 @@ export interface components {
      * @enum {string}
      */
     LaporanStatus:
-      'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
+    'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
     /** LaporanStatusHistoryResource */
     LaporanStatusHistoryResource: {
       id: number
@@ -417,7 +416,7 @@ export interface components {
       password?: string
     }
     /** UserResource */
-    UserResource: {
+        UserResource: {
       id: number
       name: string
       nim: string | null
@@ -425,7 +424,9 @@ export interface components {
       role: string
       foto: string | null
       active: boolean
+      must_change_password: boolean
     }
+    
   }
   responses: {
     /** @description Validation error */
