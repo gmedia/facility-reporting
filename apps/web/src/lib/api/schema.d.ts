@@ -231,48 +231,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/admin/reporters': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Cari akun mahasiswa (nama, NIM, atau e-mail), default 10 per halaman
-     *     (bisa diubah lewat `per_page`, maksimal 50).
-     *     Admin dan super admin tidak ikut: password mereka dikelola lewat
-     *     halaman Akun Admin
-     */
-    get: operations['reporterPassword.index']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/reporters/{user}/reset-password': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Reset password satu akun mahasiswa. Password sementara hanya ada di
-     *     respons ini, jadi jangan sampai tersimpan di cache
-     */
-    post: operations['reporterPassword.reset']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/status': {
     parameters: {
       query?: never
@@ -393,6 +351,8 @@ export interface components {
       user_id: number
       kategori: string
       lokasi: string
+      latitude: number | null
+      longitude: number | null
       deskripsi: string
       foto: string | null
       /** @enum {string} */
@@ -480,6 +440,8 @@ export interface components {
     StoreLaporanRequest: {
       kategori: components['schemas']['LaporanKategori']
       lokasi: string
+      latitude: number
+      longitude: number
       deskripsi: string
       /**
        * Format: binary
@@ -1039,77 +1001,6 @@ export interface operations {
         }
       }
       401: components['responses']['AuthenticationException']
-    }
-  }
-  'reporterPassword.index': {
-    parameters: {
-      query?: {
-        q?: string | null
-        page?: number
-        per_page?: number | null
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            data: {
-              id: number
-              name: string
-              nim: string | null
-              email: string | null
-              active: boolean
-              must_change_password: boolean
-            }[]
-            meta: {
-              current_page: number
-              last_page: number
-              per_page: number
-              total: number
-            }
-          }
-        }
-      }
-      401: components['responses']['AuthenticationException']
-      422: components['responses']['ValidationException']
-    }
-  }
-  'reporterPassword.reset': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description The user ID */
-        user: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': {
-            data: {
-              id: number
-              name: string
-              nim: string | null
-              password: string
-            }
-          }
-        }
-      }
-      401: components['responses']['AuthenticationException']
-      404: components['responses']['ModelNotFoundException']
     }
   }
   'v1.status': {
