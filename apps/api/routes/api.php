@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Api\V1\Admin\LocationSettingController;
 use App\Http\Controllers\Api\V1\Admin\ReporterLocationController;
-use App\Http\Controllers\Api\V1\Admin\ReporterPasswordController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
@@ -51,9 +50,6 @@ Route::prefix('v1')->group(function (): void {
             Route::get('admin/location-settings', [LocationSettingController::class, 'show']);
             Route::put('admin/location-settings', [LocationSettingController::class, 'update']);
             Route::get('admin/reporter-locations', ReporterLocationController::class);
-            Route::get('admin/reporters', [ReporterPasswordController::class, 'index']);
-            Route::post('admin/reporters/{user}/reset-password', [ReporterPasswordController::class, 'reset'])
-                ->middleware('throttle:20,1');
             Route::apiResource('admin/users', UserController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
         });
