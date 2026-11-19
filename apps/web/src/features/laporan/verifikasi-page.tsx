@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { User } from '@/features/auth/auth-query'
 import { formatTanggal } from '@/features/dashboard/dashboard-query'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
-import { LaporanHarianCard } from '@/features/dashboard/dashboard-summary'
+import { LaporanMasukCard } from '@/features/dashboard/dashboard-summary'
 
 import {
   hitungRingkasan,
@@ -601,6 +601,20 @@ export function VerifikasiPage({ user }: { user: User }) {
           />
         ) : (
           <>
+            {/* Kartu ringkas "Laporan masuk" di paling atas. Klik titik
+                grafik = filter tanggal. */}
+            <h2 className="text-lg font-semibold text-[#1d2b26]">
+              Laporan per hari
+            </h2>
+            <LaporanMasukCard
+              harian={harian}
+              bulanan={bulanan}
+              terpilih={indeksHari}
+              onPilih={(i) =>
+                ubahTanggal(i === null ? null : (harian[i]?.awal ?? null))
+              }
+            />
+
             {/* Tab: Antrian laporan / Tertahan / Riwayat laporan. */}
             <div
               role="tablist"
@@ -850,15 +864,6 @@ export function VerifikasiPage({ user }: { user: User }) {
                 onUbahPerHalaman={ubahPerHalaman}
               />
             )}
-
-            <LaporanHarianCard
-              harian={harian}
-              bulanan={bulanan}
-              terpilih={indeksHari}
-              onPilih={(i) =>
-                ubahTanggal(i === null ? null : (harian[i]?.awal ?? null))
-              }
-            />
           </>
         )}
       </div>
@@ -1436,10 +1441,13 @@ function TolakDialog({
 // Dialog foto bukti penyelesaian. Backend mewajibkan foto bukti saat
 // status diubah ke selesai. Format dan batas ukuran disamakan dengan
 // unggahan foto laporan (jpeg/png/webp, maks 2 MB). Foto bisa dari
-// galeri/file, kamera HP, atau webcam laptop (lewat FotoInput). Setelah
-// foto dipilih, tombol kamera/file hilang; harus "Hapus foto" dulu untuk
-// memilih ulang. Saat webcam menyala, kotak pratinjau disembunyikan supaya
-// hanya ada satu gambar di layar.
+// galeri/file, kamera HP, atau webcam laptop. Seluruh kotak 4:3 (kartu
+// Kamera/Pilih file, video dengan overlay, pratinjau) digambar oleh
+// FotoInput varian "kartu", termasuk pratinjaunya. Dialog ini TIDAK boleh
+// membuat kotak pratinjau sendiri, kalau tidak fotonya tampil dua kali.
+// Header tetap di atas, hanya body yang scroll. bg-white ada di body
+// (bukan di wadah luar) supaya tidak ada tepi putih yang mengintip di
+// balik sudut header yang membulat.
 function BuktiDialog({
   id,
   pending,
@@ -1463,20 +1471,6 @@ function BuktiDialog({
     return () => window.removeEventListener('keydown', onKey)
   }, [onBatal, pending])
 
-  // Pratinjau foto yang dipilih. URL objek (blob:) dihitung langsung dari
-  // file, lalu dibersihkan saat file diganti atau dialog ditutup.
-  const preview = useMemo(
-    () =>
-      file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-    [file],
-  )
-
-  useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview)
-    }
-  }, [preview])
-
   // Menerima File dari galeri, kamera HP, atau webcam laptop.
   // null = user menekan "Hapus foto".
   const onPilih = (dipilih: File | null) => {
@@ -1488,12 +1482,12 @@ function BuktiDialog({
     }
     if (!FOTO_MIME_IZIN.includes(dipilih.type)) {
       setFile(null)
-      setGalat('Format foto harus JPG, PNG, atau WebP.')
+      setGalat('Format tidak didukung. Pilih foto JPG, PNG, atau WebP.')
       return
     }
     if (dipilih.size > BATAS_FOTO_BYTE) {
       setFile(null)
-      setGalat('Ukuran foto maksimal 2 MB.')
+      setGalat('Ukuran foto lebih dari 2 MB. Pilih foto yang lebih kecil.')
       return
     }
     setFile(dipilih)
@@ -1504,80 +1498,71 @@ function BuktiDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="bukti-judul"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       onClick={() => {
         if (!pending) onBatal()
       }}
     >
       <div
-        className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-[26px] border border-neutral-200/70 bg-white p-6 shadow-xl"
+        className="flex max-h-[90dvh] w-full max-w-120 flex-col overflow-hidden rounded-3xl shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="bukti-judul" className="text-lg font-semibold">
-          Selesaikan laporan #{id}
-        </h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          Unggah foto bukti perbaikan. Foto ini wajib diisi.
-        </p>
-
-        {!webcamAktif && (
-          <div className="mt-4">
-            {preview ? (
-              <img
-                src={preview}
-                alt="Pratinjau foto bukti"
-                className="aspect-[4/3] w-full rounded-xl border border-neutral-200 object-cover"
-              />
-            ) : (
-              <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-neutral-300 bg-[#f6f7f4] text-neutral-400">
-                <ImageIcon
-                  aria-hidden="true"
-                  strokeWidth={1.5}
-                  className="size-9"
-                />
-                <span className="text-xs font-medium">Belum ada foto</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        <FotoInput
-          inputId="bukti-foto"
-          value={file}
-          disabled={pending}
-          onFile={onPilih}
-          onWebcamAktif={setWebcamAktif}
-          ariaLabel="Foto bukti penyelesaian"
-        />
-
-        <p className="mt-2 text-xs text-neutral-400">
-          Format JPG, PNG, atau WebP. Maksimal 2 MB.
-        </p>
-        {galat && (
-          <p role="alert" className="mt-2 text-sm text-red-600">
-            {galat}
+        {/* Header gelap (tetap di atas, tidak ikut scroll) */}
+        <div className="shrink-0 bg-[#0f3d2e] px-6 pt-5 pb-4.5 text-white">
+          <h2 id="bukti-judul" className="text-lg font-semibold">
+            Selesaikan laporan #{id}
+          </h2>
+          <p className="mt-0.5 text-sm text-emerald-100/80">
+            Unggah foto bukti perbaikan. Foto ini wajib diisi.
           </p>
-        )}
+        </div>
 
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
+        {/* Body: hanya bagian ini yang bisa di-scroll */}
+        <div className="overflow-y-auto bg-white px-6 pt-4.5 pb-5.5">
+          {/* Kotak 4:3 lengkap (kartu, kamera, dan pratinjau) digambar
+              FotoInput */}
+          <FotoInput
+            varian="kartu"
+            inputId="bukti-foto"
+            value={file}
             disabled={pending}
-            onClick={onBatal}
-          >
-            Batal
-          </Button>
-          <button
-            type="button"
-            disabled={pending || !file}
-            onClick={() => {
-              if (file) onKirim(file)
-            }}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-[#1f6b4f] px-4 text-sm font-semibold text-white transition hover:bg-[#0f3d2e] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {pending ? 'Menyimpan...' : 'Tandai selesai'}
-          </button>
+            onFile={onPilih}
+            onWebcamAktif={setWebcamAktif}
+            ariaLabel="Foto bukti penyelesaian"
+          />
+
+          {galat ? (
+            <p role="alert" className="mt-2.5 text-xs text-red-600">
+              {galat}
+            </p>
+          ) : (
+            <p className="mt-2.5 text-xs text-neutral-500">
+              {webcamAktif
+                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol bulat.'
+                : 'Format JPG, PNG, atau WebP. Maksimal 2 MB.'}
+            </p>
+          )}
+
+          <div className="mt-4 flex gap-2.5">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onBatal}
+              className="h-11 flex-1 rounded-2xl border border-neutral-300 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={pending || !file}
+              onClick={() => {
+                if (file) onKirim(file)
+              }}
+              className="h-11 flex-1 rounded-2xl bg-[#1f6b4f] text-sm font-semibold text-white transition hover:bg-[#0f3d2e] disabled:cursor-not-allowed disabled:bg-[#1f6b4f]/40"
+            >
+              {pending ? 'Menyimpan...' : 'Tandai selesai'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

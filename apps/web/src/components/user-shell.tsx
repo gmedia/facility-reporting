@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   History,
@@ -83,6 +83,7 @@ export function UserShell({
   children: ReactNode
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const logout = useMutation(logoutMutationOptions)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -93,7 +94,15 @@ export function UserShell({
   const akun = me ?? user
 
   const onLogout = async () => {
-    await logout.mutateAsync()
+    try {
+      await logout.mutateAsync()
+    } finally {
+      // Buang SEMUA cache (riwayat laporan, data user, dll.) supaya akun
+      // berikutnya yang login di browser ini tidak melihat data mahasiswa
+      // ini. Di `finally` supaya tetap terbuang walau request logout gagal
+      // (misalnya sesi sudah kedaluwarsa).
+      queryClient.clear()
+    }
     await router.navigate({ to: '/login' })
   }
 

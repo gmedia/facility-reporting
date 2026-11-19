@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { BadgeCheck, Clock, ShieldCheck, Wrench } from 'lucide-react'
+import {
+  BadgeCheck,
+  ClipboardList,
+  Clock,
+  ShieldCheck,
+  Wrench,
+} from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import type { LaporanStatus } from '@/features/laporan/laporan-query'
 import type {
@@ -561,6 +567,261 @@ export function LaporanHarianCard({
           </div>
         </div>
       )}
+    </section>
+  )
+}
+
+// Kartu ringkas "Laporan masuk" untuk halaman Verifikasi: total di kiri,
+// grafik garis di tengah, toggle Harian/Bulanan + Puncak/Rata-rata di kanan.
+export function LaporanMasukCard({
+  harian,
+  bulanan,
+  terpilih = null,
+  onPilih,
+}: {
+  harian: BarHarian[]
+  // Opsional. Kalau diisi, muncul tombol Harian / Bulanan.
+  bulanan?: BarBulanan[]
+  // Indeks hari yang sedang dipilih (buat filter tanggal).
+  terpilih?: number | null
+  // Kalau diisi, titik bisa diklik. Hanya aktif di mode Harian.
+  onPilih?: (indeks: number | null) => void
+}) {
+  const [mode, setMode] = useState<ModeGrafik>('harian')
+  const modeAktif: ModeGrafik = bulanan ? mode : 'harian'
+  const harianMode = modeAktif === 'harian'
+
+  const titik: TitikGrafik[] = harianMode
+    ? harian.map((b) => ({
+        key: b.ariaLabel,
+        label: b.hari,
+        sub: String(b.tanggal),
+        tooltip: `${b.hari}, ${b.tanggal} ${b.bulan} · ${b.jumlah} laporan`,
+        aria: `${b.jumlah} laporan pada ${b.ariaLabel}`,
+        jumlah: b.jumlah,
+        sorot: b.sorot,
+      }))
+    : (bulanan ?? []).map((b) => ({
+        key: b.ariaLabel,
+        label: b.label,
+        sub: String(b.bulan).padStart(2, '0'),
+        tooltip: `${b.ariaLabel} · ${b.jumlah} laporan`,
+        aria: `${b.jumlah} laporan pada ${b.ariaLabel}`,
+        jumlah: b.jumlah,
+        sorot: b.sorot,
+      }))
+
+  const rentang = harianMode ? '7 hari terakhir' : '7 bulan terakhir'
+  const labelSorot = harianMode ? 'Hari ini' : 'Bulan ini'
+  // Klik titik (filter tanggal) hanya masuk akal di mode Harian.
+  const bisaPilih = harianMode && !!onPilih
+
+  const n = titik.length
+  const total = titik.reduce((acc, item) => acc + item.jumlah, 0)
+  const puncak = Math.max(0, ...titik.map((item) => item.jumlah))
+  const rata = n === 0 ? 0 : total / n
+  const maks = Math.max(1, puncak)
+
+  const data = titik.map((t, i) => ({
+    t,
+    x: ((i + 0.5) / n) * LEBAR,
+    y: DASAR - (t.jumlah / maks) * (DASAR - ATAS),
+  }))
+  const garis = buatGaris(data)
+  const pertama = data[0]
+  const terakhir = data[data.length - 1]
+  const area =
+    pertama && terakhir
+      ? `${garis} L${terakhir.x} ${DASAR} L${pertama.x} ${DASAR} Z`
+      : ''
+
+  return (
+    <section
+      aria-label="Laporan masuk"
+      className={cn(
+        KARTU,
+        'flex flex-col gap-5 py-5 lg:flex-row lg:items-center lg:gap-8',
+      )}
+    >
+      {/* Kiri: total */}
+      <div className="flex shrink-0 flex-col lg:min-w-[9rem]">
+        <div className="flex items-center gap-2 text-sm text-neutral-500">
+          <span className="grid size-7 place-items-center rounded-lg bg-emerald-50 text-[#1f6b4f]">
+            <ClipboardList aria-hidden="true" className="size-4" />
+          </span>
+          Laporan masuk
+        </div>
+        <p className="mt-3 text-4xl leading-none font-bold text-[#0f3d2e]">
+          {total}
+        </p>
+        <p className="mt-1.5 text-xs text-neutral-500">{rentang}</p>
+      </div>
+
+      {/* Tengah: grafik */}
+      <div className="relative min-w-0 flex-1">
+        {total === 0 || n === 0 ? (
+          <p className="py-6 text-sm text-neutral-500">
+            Belum ada laporan dalam {rentang}.
+          </p>
+        ) : (
+          <>
+            <svg
+              viewBox={`0 0 ${LEBAR} ${TINGGI}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-24 w-full overflow-visible"
+            >
+              <defs>
+                <linearGradient
+                  id="grad-laporan-masuk"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0" stopColor="#1f6b4f" stopOpacity={0.28} />
+                  <stop offset="1" stopColor="#1f6b4f" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <path
+                d={`M0 ${DASAR}H${LEBAR}`}
+                fill="none"
+                stroke="#e4e0d2"
+                strokeDasharray="4 4"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path d={area} fill="url(#grad-laporan-masuk)" />
+              <path
+                d={garis}
+                fill="none"
+                stroke="#1f6b4f"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+
+            <div
+              role="group"
+              aria-label={`Jumlah laporan per ${harianMode ? 'hari' : 'bulan'}`}
+              className="relative grid"
+              style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+            >
+              {data.map(({ t, y }, i) => {
+                const aktif = harianMode && terpilih === i
+                const nol = t.jumlah === 0
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    aria-pressed={bisaPilih ? aktif : undefined}
+                    aria-label={t.aria}
+                    onClick={() => {
+                      if (bisaPilih) onPilih(aktif ? null : i)
+                    }}
+                    className={cn(
+                      'group relative rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35',
+                      bisaPilih ? 'cursor-pointer' : 'cursor-default',
+                    )}
+                  >
+                    <span className="relative block h-24">
+                      {/* garis bantu vertikal */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y }}
+                        className={cn(
+                          'absolute bottom-3 left-1/2 border-l-[1.5px] border-dashed border-[#1f6b4f] opacity-0 transition-opacity group-hover:opacity-55 group-focus-visible:opacity-55',
+                          aktif && 'opacity-55',
+                        )}
+                      />
+                      {/* titik data */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y }}
+                        className={cn(
+                          'absolute left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-transform group-hover:scale-125 group-focus-visible:scale-125',
+                          nol
+                            ? 'size-[7px] border-2 border-emerald-100 bg-white'
+                            : t.sorot
+                              ? 'size-3.5 border-[2.5px] border-[#0f3d2e] bg-[#0f3d2e]'
+                              : 'size-[11px] border-[2.5px] border-[#1f6b4f] bg-white group-hover:border-[#0f3d2e]',
+                          aktif && 'scale-125 border-[#0f3d2e] bg-[#0f3d2e]',
+                        )}
+                      />
+                      {/* tooltip */}
+                      <span
+                        aria-hidden="true"
+                        style={{ top: y - 12 }}
+                        className={cn(
+                          'pointer-events-none absolute z-10 -translate-y-full rounded-lg bg-[#1d2b26] px-2.5 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+                          posisiTooltip(i, n),
+                          aktif && 'opacity-100',
+                        )}
+                      >
+                        {t.tooltip}
+                      </span>
+                    </span>
+
+                    <span
+                      className={cn(
+                        'mt-0.5 block text-center text-xs leading-tight text-neutral-400',
+                        t.sorot && 'font-semibold text-[#0f3d2e]',
+                      )}
+                    >
+                      {t.sorot ? labelSorot : t.label}
+                      <span
+                        className={cn(
+                          'block text-[13px] text-neutral-700',
+                          t.sorot && 'text-[#0f3d2e]',
+                        )}
+                      >
+                        {t.sub}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Kanan: toggle + puncak/rata-rata */}
+      <div className="flex shrink-0 flex-col items-start gap-2.5 lg:items-end">
+        {bulanan && (
+          <div
+            role="tablist"
+            aria-label="Rentang laporan"
+            className="inline-flex rounded-full bg-neutral-100 p-[3px]"
+          >
+            {(['harian', 'bulanan'] as const).map((m) => {
+              const aktif = modeAktif === m
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={aktif}
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    'rounded-full px-3.5 py-1 text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/35',
+                    aktif
+                      ? 'bg-[#0f3d2e] font-medium text-white'
+                      : 'text-neutral-500 hover:text-neutral-800',
+                  )}
+                >
+                  {m === 'harian' ? 'Harian' : 'Bulanan'}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        <p className="text-xs text-neutral-500">
+          Puncak <b className="text-[#1d2b26]">{puncak}</b> · Rata-rata{' '}
+          <b className="text-[#1d2b26]">{rata.toFixed(1)}</b>
+        </p>
+      </div>
     </section>
   )
 }

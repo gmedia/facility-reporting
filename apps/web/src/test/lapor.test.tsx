@@ -77,7 +77,9 @@ vi.mock('@/components/ui/select', () => {
       <select
         id={id}
         value={value ?? ''}
-        onChange={(event) => onValueChange?.(event.target.value)}
+        onChange={(event) => {
+          onValueChange?.(event.target.value)
+        }}
       >
         {children}
       </select>
@@ -140,14 +142,12 @@ function renderAt(path: string) {
 // user-event supaya ngelakuin apa yang beneran dilakuin user: ngetik
 // karakter per karakter, bukan sekali set nilai.
 async function isiForm(user: UserEvent) {
-  fireEvent.change(screen.getByLabelText('Kategori'), {
-    target: { value: 'elektronik' },
-  })
-  // Lokasi sekarang dropdown (bukan ketikan bebas) — pilihannya cuma
-  // Gedung D dan Gedung S, lihat LOKASI_VALUES di laporan-form.
-  fireEvent.change(screen.getByLabelText('Lokasi'), {
-    target: { value: 'Gedung D' },
-  })
+  const kategoriLabel = screen.getByLabelText('Kategori') as HTMLLabelElement
+  const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
+  fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
+  const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
+  const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+  fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
@@ -158,24 +158,24 @@ async function isiForm(user: UserEvent) {
   // form lolos validasi .min(1) (lihat laporan-form.tsx defaultValues).
   // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
   // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
-  const pilihNilai = async (label: string, nilai: number) => {
+  const pilihNilai = async (label: RegExp, nilai: number) => {
     const rg = screen.getByRole('radiogroup', { name: label })
     const radio = within(rg)
       .getAllByRole('radio')
       .find((r) => (r as HTMLInputElement).value === String(nilai))
     await user.click(radio as Element)
   }
-  await pilihNilai('Nilai Kerusakan', 3)
-  await pilihNilai('Nilai Risiko', 3)
-  await pilihNilai('Nilai Dampak', 3)
-  await pilihNilai('Nilai Frekuensi', 3)
+  await pilihNilai(/Nilai Kerusakan/, 3)
+  await pilihNilai(/Nilai Risiko/, 3)
+  await pilihNilai(/Nilai Dampak/, 3)
+  await pilihNilai(/Nilai Frekuensi/, 3)
 }
 
 // Foto sekarang wajib, jadi tiap test yang mau submit harus nempelkin file.
 // `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
 // sama dengan yang dilakukan library upload pada umumnya.
 function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
-  const input = screen.getByLabelText('Foto')
+  const input = screen.getByLabelText('Foto laporan')
   const file = new File(['isi-foto'], nama, { type: tipe })
   Object.defineProperty(input, 'files', {
     value: [file],
@@ -208,10 +208,11 @@ describe('halaman /lapor', () => {
 
     // Lokasi berupa dropdown, bukan ketikan bebas: pilihannya terkunci
     // di LOKASI_VALUES (permintaan 3 Nov 2026).
-    const lokasi = screen.getByLabelText('Lokasi')
-    expect(lokasi).toBeInTheDocument()
+    const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
+    expect(lokasiLabel).toBeInTheDocument()
+    const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
     expect(
-      within(lokasi)
+      within(lokasiSelect!)
         .getAllByRole('option')
         .map((option) => option.textContent),
     ).toEqual(['Gedung D', 'Gedung S'])

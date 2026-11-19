@@ -68,7 +68,10 @@ vi.mock('@/components/ui/select', () => {
       <select
         id={id}
         value={value ?? ''}
-        onChange={(event) => onValueChange?.(event.target.value)}
+        onChange={(event) => {
+          // react-hook-form's field.onChange accepts value directly
+          onValueChange?.(event.target.value)
+        }}
       >
         {children}
       </select>
@@ -115,7 +118,7 @@ function renderAt(path: string) {
 // `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
 // pola yang sama dengan lapor.test.tsx dan akun.test.tsx.
 function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
-  const input = screen.getByLabelText('Foto')
+  const input = screen.getByLabelText('Foto laporan')
   const file = new File(['isi-foto'], nama, { type: tipe })
   Object.defineProperty(input, 'files', {
     value: [file],
@@ -125,12 +128,12 @@ function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
 }
 
 async function isiForm(user: UserEvent) {
-  fireEvent.change(screen.getByLabelText('Kategori'), {
-    target: { value: 'elektronik' },
-  })
-  fireEvent.change(screen.getByLabelText('Lokasi'), {
-    target: { value: 'Gedung D' },
-  })
+  const kategoriLabel = screen.getByLabelText('Kategori') as HTMLLabelElement
+  const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
+  fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
+  const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
+  const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+  fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
@@ -175,7 +178,7 @@ describe('form laporan /lapor', () => {
     await isiForm(user)
 
     // Pilih nilai SMART: 3, 4, 2, 5
-    const pilihNilai = async (labelRadiogroup: string, nilai: number) => {
+    const pilihNilai = async (labelRadiogroup: RegExp, nilai: number) => {
       const rg = screen.getByRole('radiogroup', { name: labelRadiogroup })
       // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
       // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
@@ -185,10 +188,10 @@ describe('form laporan /lapor', () => {
       await user.click(radio as Element)
     }
 
-    await pilihNilai('Nilai Kerusakan', 3)
-    await pilihNilai('Nilai Risiko', 4)
-    await pilihNilai('Nilai Dampak', 2)
-    await pilihNilai('Nilai Frekuensi', 5)
+    await pilihNilai(/Nilai Kerusakan/, 3)
+    await pilihNilai(/Nilai Risiko/, 4)
+    await pilihNilai(/Nilai Dampak/, 2)
+    await pilihNilai(/Nilai Frekuensi/, 5)
 
     await user.click(screen.getByRole('button', { name: 'Kirim Laporan' }))
 
