@@ -6,7 +6,9 @@ namespace App\Actions\Laporan;
 
 use App\Data\StoreLaporanData;
 use App\Models\Laporan;
+use App\Models\User;
 use App\Services\PrioritasService;
+use Carbon\Carbon;
 
 final class StoreLaporan
 {
@@ -23,7 +25,7 @@ final class StoreLaporan
             $data->nilai_frekuensi,
         );
 
-        return Laporan::create([
+        $laporan = Laporan::create([
             'user_id' => $userId,
             'kategori' => $data->kategori,
             'lokasi' => $data->lokasi,
@@ -36,7 +38,16 @@ final class StoreLaporan
             'nilai_dampak' => $data->nilai_dampak,
             'nilai_frekuensi' => $data->nilai_frekuensi,
             'skor_prioritas' => $prioritas->skor,
-
         ]);
+
+        // Simpan lokasi GPS terakhir ke tabel users supaya super admin
+        // bisa melihatnya di halaman /lokasi-akun.
+        User::where('id', $userId)->update([
+            'last_lat' => $data->latitude,
+            'last_lng' => $data->longitude,
+            'last_location_at' => Carbon::now(),
+        ]);
+
+        return $laporan;
     }
 }
