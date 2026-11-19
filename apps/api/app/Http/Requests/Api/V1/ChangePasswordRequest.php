@@ -61,6 +61,6 @@ class ChangePasswordRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && $user->password_changed_at === null;
+        return $user !== null && $user->getAttribute('password_changed_at') === null;
     }
 }
