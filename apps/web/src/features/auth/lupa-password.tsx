@@ -18,9 +18,7 @@ export function LupaPassword() {
 
   const salin = async () => {
     try {
-      await navigator.clipboard.writeText(
-        NOMOR_ADMIN.replace(/[^\d]/g, ''),
-      )
+      await navigator.clipboard.writeText(NOMOR_ADMIN.replace(/[^\d]/g, ''))
       setTersalin(true)
       setTimeout(() => setTersalin(false), 2000)
     } catch {
@@ -41,13 +39,13 @@ export function LupaPassword() {
 
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+        <h2 className="text-foreground text-2xl font-bold tracking-tight">
           Pusat Bantuan
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-          Mengalami kendala saat menggunakan Facility Reporting?
-          Hubungi administrator melalui kontak resmi di bawah ini
-          untuk mendapatkan bantuan.
+          Mengalami kendala saat menggunakan Facility Reporting? Hubungi
+          administrator melalui kontak resmi di bawah ini untuk mendapatkan
+          bantuan.
         </p>
       </div>
 
@@ -134,9 +132,7 @@ export function LupaPassword() {
                 {i + 1}
               </span>
 
-              <p className="text-xs leading-relaxed text-neutral-700">
-                {isi}
-              </p>
+              <p className="text-xs leading-relaxed text-neutral-700">{isi}</p>
             </li>
           ))}
         </ol>
@@ -144,8 +140,8 @@ export function LupaPassword() {
 
       {/* Peringatan keamanan */}
       <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
-        Admin tidak pernah meminta password Anda melalui chat.
-        Abaikan nomor lain yang mengaku sebagai admin.
+        Admin tidak pernah meminta password Anda melalui chat. Abaikan nomor
+        lain yang mengaku sebagai admin.
       </p>
     </div>
   )

@@ -76,7 +76,11 @@ export function daftarMahasiswaQueryOptions(
         },
       })
       if (error || !data)
-        throw buatError(response.status, error, 'Gagal memuat daftar mahasiswa.')
+        throw buatError(
+          response.status,
+          error,
+          'Gagal memuat daftar mahasiswa.',
+        )
       return data as DaftarMahasiswa
     },
     placeholderData: keepPreviousData,

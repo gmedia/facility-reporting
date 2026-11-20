@@ -71,7 +71,14 @@ function LupaPasswordPage() {
               fill="none"
               className="hidden w-full max-w-[20rem] lg:block lg:h-[40vh] lg:max-h-72 lg:w-auto lg:max-w-full"
             >
-              <rect x="4" y="8" width="132" height="100" rx="14" fill="#ecfdf5" />
+              <rect
+                x="4"
+                y="8"
+                width="132"
+                height="100"
+                rx="14"
+                fill="#ecfdf5"
+              />
               <path
                 d="M4 22A14 14 0 0 1 18 8H122A14 14 0 0 1 136 22V30H4Z"
                 fill="#065f46"
@@ -79,23 +86,97 @@ function LupaPasswordPage() {
               <circle cx="16" cy="19" r="3" fill="#fbbf24" />
               <circle cx="27" cy="19" r="3" fill="#34d399" />
               <circle cx="38" cy="19" r="3" fill="#ffffff" fillOpacity="0.75" />
-              <rect x="16" y="44" width="48" height="8" rx="4" fill="#065f46" fillOpacity="0.4" />
-              <rect x="16" y="60" width="34" height="8" rx="4" fill="#065f46" fillOpacity="0.22" />
-              <rect x="16" y="76" width="42" height="8" rx="4" fill="#065f46" fillOpacity="0.22" />
-              <rect x="74" y="68" width="13" height="28" rx="5" fill="#6ee7b7" />
-              <rect x="91" y="52" width="13" height="44" rx="5" fill="#34d399" />
-              <rect x="108" y="76" width="13" height="20" rx="5" fill="#fbbf24" />
-              <rect x="70" y="96" width="54" height="5" rx="2.5" fill="#065f46" fillOpacity="0.25" />
-              <rect x="130" y="4" width="36" height="36" rx="13" fill="#10b981" />
+              <rect
+                x="16"
+                y="44"
+                width="48"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.4"
+              />
+              <rect
+                x="16"
+                y="60"
+                width="34"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.22"
+              />
+              <rect
+                x="16"
+                y="76"
+                width="42"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.22"
+              />
+              <rect
+                x="74"
+                y="68"
+                width="13"
+                height="28"
+                rx="5"
+                fill="#6ee7b7"
+              />
+              <rect
+                x="91"
+                y="52"
+                width="13"
+                height="44"
+                rx="5"
+                fill="#34d399"
+              />
+              <rect
+                x="108"
+                y="76"
+                width="13"
+                height="20"
+                rx="5"
+                fill="#fbbf24"
+              />
+              <rect
+                x="70"
+                y="96"
+                width="54"
+                height="5"
+                rx="2.5"
+                fill="#065f46"
+                fillOpacity="0.25"
+              />
+              <rect
+                x="130"
+                y="4"
+                width="36"
+                height="36"
+                rx="13"
+                fill="#10b981"
+              />
               <path
                 d="M148 14v16M140 22h16"
                 stroke="#ffffff"
                 strokeWidth="3.5"
                 strokeLinecap="round"
               />
-              <rect x="126" y="80" width="46" height="46" rx="15" fill="#f59e0b" />
+              <rect
+                x="126"
+                y="80"
+                width="46"
+                height="46"
+                rx="15"
+                fill="#f59e0b"
+              />
               <path d="M149 93 162 114H136Z" fill="#064e3b" />
-              <rect x="147.2" y="99" width="3.6" height="8" rx="1.8" fill="#fbbf24" />
+              <rect
+                x="147.2"
+                y="99"
+                width="3.6"
+                height="8"
+                rx="1.8"
+                fill="#fbbf24"
+              />
               <circle cx="149" cy="111" r="1.9" fill="#fbbf24" />
             </svg>
 

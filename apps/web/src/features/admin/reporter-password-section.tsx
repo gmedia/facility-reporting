@@ -33,8 +33,7 @@ import {
 const CARD_CLASS =
   'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
 
-const CATATAN_SALIN =
-  'Mahasiswa wajib mengganti password saat login pertama.'
+const CATATAN_SALIN = 'Mahasiswa wajib mengganti password saat login pertama.'
 
 function inisial(name: string): string {
   return name
@@ -56,7 +55,9 @@ export function ReporterPasswordSection() {
   const [tersalin, setTersalin] = useState(false)
 
   const reset = useResetPasswordMahasiswa()
-  const daftar = useQuery(daftarMahasiswaQueryOptions(kata, halaman, perHalaman))
+  const daftar = useQuery(
+    daftarMahasiswaQueryOptions(kata, halaman, perHalaman),
+  )
 
   // Tunda pencarian 300 ms supaya tidak memanggil API di tiap ketukan.
   useEffect(() => {
@@ -82,9 +83,7 @@ export function ReporterPasswordSection() {
   async function salinSemua() {
     if (!hasil) return
     try {
-      await navigator.clipboard.writeText(
-        `${hasil.password}\n${CATATAN_SALIN}`,
-      )
+      await navigator.clipboard.writeText(`${hasil.password}\n${CATATAN_SALIN}`)
       setTersalin(true)
       setTimeout(() => setTersalin(false), 2000)
     } catch {
@@ -105,7 +104,7 @@ export function ReporterPasswordSection() {
       <div>
         <h2 className="text-base font-semibold">Reset password mahasiswa</h2>
         <p className="text-sm text-neutral-500">
-           mahasiswa yang lupa password dengan membuat password sementara.
+          mahasiswa yang lupa password dengan membuat password sementara.
         </p>
       </div>
 
