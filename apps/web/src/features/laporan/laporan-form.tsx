@@ -30,6 +30,18 @@ import {
 
 const LOKASI_VALUES = ['Gedung D', 'Gedung S'] as const
 
+// Daftar value + label untuk prop `items` di <Select>. Tanpa ini, trigger
+// menampilkan value mentah (mis. "elektronik"), bukan label ("Elektronik").
+const KATEGORI_ITEMS = KATEGORI_VALUES.map((value) => ({
+  value,
+  label: KATEGORI_LABEL[value],
+}))
+
+const LOKASI_ITEMS = LOKASI_VALUES.map((value) => ({
+  value,
+  label: value,
+}))
+
 const formSchema = z.object({
   kategori: z
     .string()
@@ -291,7 +303,11 @@ export function LaporanForm() {
               <Wajib />
             </FieldLabel>
 
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              items={KATEGORI_ITEMS}
+              value={field.value}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger
                 id="laporan-kategori"
                 aria-required="true"
@@ -301,9 +317,9 @@ export function LaporanForm() {
               </SelectTrigger>
 
               <SelectContent>
-                {KATEGORI_VALUES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {KATEGORI_LABEL[value]}
+                {KATEGORI_ITEMS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -327,7 +343,11 @@ export function LaporanForm() {
               <Wajib />
             </FieldLabel>
 
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select
+              items={LOKASI_ITEMS}
+              value={field.value}
+              onValueChange={field.onChange}
+            >
               <SelectTrigger
                 id="laporan-lokasi"
                 aria-required="true"
@@ -337,9 +357,9 @@ export function LaporanForm() {
               </SelectTrigger>
 
               <SelectContent>
-                {LOKASI_VALUES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
+                {LOKASI_ITEMS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
                   </SelectItem>
                 ))}
               </SelectContent>
