@@ -120,7 +120,6 @@ describe('halaman login', () => {
   it('menampilkan petunjuk lupa password', async () => {
     renderLogin()
     expect(await screen.findByText('Lupa password?')).toBeInTheDocument()
-    expect(screen.getByText(/Bawa KTM/)).toBeInTheDocument()
   })
 
   it('error 429 tampil dalam bahasa Indonesia', async () => {

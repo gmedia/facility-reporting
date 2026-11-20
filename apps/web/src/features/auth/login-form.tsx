@@ -127,17 +127,14 @@ export function LoginForm() {
 
           <FieldError>{errors.password?.message}</FieldError>
 
-          {/* Link lupa password + petunjuk Bawa KTM */}
-          <div className="mt-3 flex flex-col gap-1.5">
+          {/* Link lupa password */}
+          <div className="mt-3 flex justify-end">
             <Link
               to="/lupa-password"
               className="text-sm font-semibold text-[#0d3f31] underline underline-offset-2 hover:text-[#1a5f4a]"
             >
               Lupa password?
             </Link>
-            <p className="text-xs text-neutral-500">
-              Bawa KTM atau identitas lain saat hubungi admin.
-            </p>
           </div>
         </FieldContent>
       </Field>
