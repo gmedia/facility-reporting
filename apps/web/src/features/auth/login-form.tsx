@@ -6,7 +6,12 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
-import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
+import {
+  Field,
+  FieldContent,
+  FieldLabel,
+  FieldError,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { homeFor, loginMutationOptions } from '@/features/auth/auth-query'
 
@@ -84,6 +89,7 @@ export function LoginForm() {
             aria-invalid={!!errors.identifier}
             {...form.register('identifier')}
           />
+          <FieldError>{errors.identifier?.message}</FieldError>
         </FieldContent>
       </Field>
 
@@ -119,14 +125,19 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Link lupa password selalu ada di bawah kolom password */}
-          <div className="mt-3 flex justify-end">
+          <FieldError>{errors.password?.message}</FieldError>
+
+          {/* Link lupa password + petunjuk Bawa KTM */}
+          <div className="mt-3 flex flex-col gap-1.5">
             <Link
               to="/lupa-password"
               className="text-sm font-semibold text-[#0d3f31] underline underline-offset-2 hover:text-[#1a5f4a]"
             >
               Lupa password?
             </Link>
+            <p className="text-xs text-neutral-500">
+              Bawa KTM atau identitas lain saat hubungi admin.
+            </p>
           </div>
         </FieldContent>
       </Field>

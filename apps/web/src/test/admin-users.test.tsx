@@ -139,7 +139,7 @@ describe('dashboard CRUD admin', () => {
       }),
     )
 
-    expect(nav.getByRole('link', { name: 'Akun Admin' })).toHaveAttribute(
+    expect(nav.getByRole('link', { name: 'Manajemen Akun' })).toHaveAttribute(
       'aria-current',
       'page',
     )

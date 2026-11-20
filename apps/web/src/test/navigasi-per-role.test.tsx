@@ -138,7 +138,7 @@ describe('Navigasi per role', () => {
       nav.queryByRole('link', { name: 'Verifikasi' }),
     ).not.toBeInTheDocument()
     expect(
-      nav.queryByRole('link', { name: 'Akun Admin' }),
+      nav.queryByRole('link', { name: 'Manajemen Akun' }),
     ).not.toBeInTheDocument()
   })
 
@@ -173,11 +173,11 @@ describe('Navigasi per role', () => {
       '/verifikasi',
     )
     expect(
-      nav.queryByRole('link', { name: 'Akun Admin' }),
+      nav.queryByRole('link', { name: 'Manajemen Akun' }),
     ).not.toBeInTheDocument()
   })
 
-  it('role super_admin: sidebar dapat Akun Admin, bukan Lapor Kerusakan', async () => {
+  it('role super_admin: sidebar dapat Manajemen Akun, bukan Lapor Kerusakan', async () => {
     currentUser = superAdmin
     renderAt('/dashboard')
 
@@ -189,7 +189,7 @@ describe('Navigasi per role', () => {
       'href',
       '/dashboard',
     )
-    expect(nav.getByRole('link', { name: 'Akun Admin' })).toHaveAttribute(
+    expect(nav.getByRole('link', { name: 'Manajemen Akun' })).toHaveAttribute(
       'href',
       '/admin',
     )
