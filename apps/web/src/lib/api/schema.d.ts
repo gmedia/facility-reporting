@@ -231,6 +231,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/reporter-passwords': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Daftar mahasiswa untuk reset password */
+    get: operations['admin.reporterPasswords.index']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/reporter-passwords/{user}/reset': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Reset password satu mahasiswa */
+    post: operations['admin.reporterPasswords.reset']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/status': {
     parameters: {
       query?: never
@@ -996,6 +1030,53 @@ export interface operations {
               unknown: number
               radius_m: number
             }
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'admin.reporterPasswords.index': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource'][]
+            meta: Record<string, never>
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'admin.reporterPasswords.reset': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            password: string
           }
         }
       }
