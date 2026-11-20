@@ -738,10 +738,43 @@
         },
         "/admin/reporter-passwords": {
             "get": {
-                "operationId": "admin.reporterPasswords.index",
-                "summary": "Daftar mahasiswa untuk reset password",
+                "operationId": "reporterPassword.index",
+                "summary": "Cari akun mahasiswa (nama, NIM, atau e-mail), default 10 per halaman\n(bisa diubah lewat `per_page`, maksimal 50).\nAdmin dan super admin tidak ikut: password mereka dikelola lewat\nhalaman Akun Admin",
                 "tags": [
                     "ReporterPassword"
+                ],
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1,
+                            "maximum": 50
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -754,11 +787,65 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/UserResource"
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "nim": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "email": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "active": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "must_change_password": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "nim",
+                                                    "email",
+                                                    "active",
+                                                    "must_change_password"
+                                                ]
                                             }
                                         },
                                         "meta": {
-                                            "type": "object"
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total"
+                                            ]
                                         }
                                     },
                                     "required": [
@@ -769,6 +856,9 @@
                             }
                         }
                     },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
                     }
@@ -777,8 +867,8 @@
         },
         "/admin/reporter-passwords/{user}/reset": {
             "post": {
-                "operationId": "admin.reporterPasswords.reset",
-                "summary": "Reset password satu mahasiswa",
+                "operationId": "reporterPassword.reset",
+                "summary": "Reset password satu akun mahasiswa. Password sementara hanya ada di\nrespons ini, jadi jangan sampai tersimpan di cache",
                 "tags": [
                     "ReporterPassword"
                 ],
@@ -787,6 +877,7 @@
                         "name": "user",
                         "in": "path",
                         "required": true,
+                        "description": "The user ID",
                         "schema": {
                             "type": "integer"
                         }
@@ -800,16 +891,42 @@
                                 "schema": {
                                     "type": "object",
                                     "properties": {
-                                        "password": {
-                                            "type": "string"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "nim": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "nim",
+                                                "password"
+                                            ]
                                         }
                                     },
                                     "required": [
-                                        "password"
+                                        "data"
                                     ]
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
