@@ -367,7 +367,7 @@ export function LaporanForm() {
               id="laporan-deskripsi"
               rows={3}
               aria-required="true"
-              placeholder="Ceritakan kerusakannya. Contoh: lampu AC di ruang 301 mati total sejak Senin."
+              placeholder="Ceritakan kerusakannya. Contoh: AC di ruangan 3s2 mati total sejak Senin."
               className="min-h-[84px] resize-y rounded-xl border-[#d7e2dc] bg-white px-4 py-3 text-sm shadow-none focus-visible:border-[#0d3f31] focus-visible:ring-[#0d3f31]/20"
               {...field}
             />

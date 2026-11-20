@@ -122,9 +122,9 @@ const laporanDitolak = {
 const laporanTahunLalu = {
   id: 20,
   user_id: 3,
-  kategori: 'mekanik',
-  lokasi: 'gedung lama',
-  deskripsi: 'cat tengkorak dinding ruang tunggu',
+  kategori: 'kelistrikan',
+  lokasi: 'panel listrik gedung lama',
+  deskripsi: 'panel listrik berisik dan panas berlebihan',
   foto: null,
   status: 'selesai',
   created_at: '2025-03-12T09:00:00Z',

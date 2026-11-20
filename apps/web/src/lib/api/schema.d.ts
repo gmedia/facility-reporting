@@ -386,7 +386,7 @@ export interface components {
      * @enum {string}
      */
     LaporanKategori:
-      'elektronik' | 'furnitur' | 'mekanik' | 'bangunan' | 'lainnya'
+      'elektronik' | 'furnitur' | 'kelistrikan' | 'bangunan' | 'lainnya'
     /** LaporanResource */
     LaporanResource: {
       id: number
