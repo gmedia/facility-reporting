@@ -736,6 +736,87 @@
                 }
             }
         },
+        "/admin/reporter-passwords": {
+            "get": {
+                "operationId": "admin.reporterPasswords.index",
+                "summary": "Daftar mahasiswa untuk reset password",
+                "tags": [
+                    "ReporterPassword"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UserResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/reporter-passwords/{user}/reset": {
+            "post": {
+                "operationId": "admin.reporterPasswords.reset",
+                "summary": "Reset password satu mahasiswa",
+                "tags": [
+                    "ReporterPassword"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "password": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "password"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/status": {
             "get": {
                 "operationId": "v1.status",
