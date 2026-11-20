@@ -5,6 +5,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  MapPin,
   Menu,
   ShieldCheck,
   UserRound,
@@ -20,10 +21,14 @@ import {
 import type { User } from '@/features/auth/auth-query'
 import { cn } from '@/lib/utils'
 
-// Rute yang boleh muncul di sidebar. Union eksplisit supaya Link dapat
-// tipe route yang benar dan menu tidak pernah mengarah ke halaman fiktif.
+// Rute yang boleh muncul di sidebar.
 type NavTo =
-  '/dashboard' | '/semua-laporan' | '/verifikasi' | '/pengaturan' | '/admin'
+  | '/dashboard'
+  | '/semua-laporan'
+  | '/verifikasi'
+  | '/pengaturan'
+  | '/admin'
+  | '/lokasi-akun'
 
 interface NavItem {
   label: string
@@ -47,8 +52,7 @@ const verifikasiItem: NavItem = {
 
 const menuUtama: NavItem[] = [dashboardItem, verifikasiItem]
 
-// Pengaturan milik sendiri: foto profil, password, bantuan (issue #113
-// — dulu "Akun Saya" di /akun). Selalu paling bawah.
+// Pengaturan milik sendiri.
 const pengaturan: NavItem = {
   label: 'Pengaturan',
   to: '/pengaturan',
@@ -57,13 +61,12 @@ const pengaturan: NavItem = {
 
 const adminNav: NavItem[] = [...menuUtama, pengaturan]
 
-// Semua Laporan dan Akun Admin cuma untuk super_admin. Menu
-// Prioritas/Statistik belum punya route di main, jadi sengaja tidak
-// dipasang sebagai link mati.
+// Menu khusus super admin.
 const superAdminNav: NavItem[] = [
   dashboardItem,
   verifikasiItem,
   { label: 'Semua Laporan', to: '/semua-laporan', icon: ClipboardList },
+  { label: 'Lokasi Akun', to: '/lokasi-akun', icon: MapPin },
   { label: 'Akun Admin', to: '/admin', icon: Users },
   pengaturan,
 ]
@@ -82,8 +85,7 @@ function initialsOf(name: string): string {
     .toUpperCase()
 }
 
-// Duplikat dari features/akun/akun-query.ts — komponen shell tidak menarik
-// dependensi ke folder fitur (pola sama dengan user-shell.tsx).
+// URL foto profil.
 function fotoUrl(foto: string): string {
   if (/^(https?:|data:|blob:)/.test(foto)) return foto
 
@@ -95,12 +97,6 @@ function fotoUrl(foto: string): string {
   return `${origin}/storage/${foto.replace(/^\/+/, '')}`
 }
 
-// Bingkai sidebar hijau tua untuk halaman pengelola (dashboard, verifikasi,
-// akun, akun admin). Warna disamakan dengan layout user. Guard role tetap
-// di masing-masing route; komponen ini murni tampilan.
-//
-// `menunggu` = jumlah laporan yang menunggu verifikasi, ditampilkan
-// sebagai badge di menu Verifikasi.
 export function DashboardShell({
   user,
   header,
@@ -118,8 +114,8 @@ export function DashboardShell({
   const navItems = navFor(user.role)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Cache ['me'] dibaca langsung (bukan cuma prop route) supaya foto di
-  // kartu profil ikut berubah seketika setelah diganti di /pengaturan.
+  // Cache ['me'] dibaca langsung agar foto profil ikut berubah
+  // setelah diperbarui melalui halaman pengaturan.
   const { data: me } = useQuery(meQueryOptions)
   const akun = me ?? user
 
@@ -127,12 +123,11 @@ export function DashboardShell({
     try {
       await logout.mutateAsync()
     } finally {
-      // Buang SEMUA cache (daftar laporan, data user, dll.) supaya akun
-      // berikutnya yang login di browser ini tidak melihat data akun ini.
-      // Di `finally` supaya tetap terbuang walau request logout gagal
-      // (misalnya sesi sudah kedaluwarsa).
+      // Hapus seluruh cache agar akun berikutnya tidak melihat
+      // data akun sebelumnya.
       queryClient.clear()
     }
+
     await router.navigate({ to: '/login' })
   }
 
@@ -202,6 +197,7 @@ export function DashboardShell({
                 {initialsOf(akun.name)}
               </span>
             )}
+
             <div className="min-w-0">
               <p className="truncate text-base font-semibold text-white">
                 {akun.name}
@@ -264,6 +260,7 @@ function NavLink({
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+
   const active = end
     ? pathname === to
     : pathname === to || pathname.startsWith(`${to}/`)
@@ -282,6 +279,7 @@ function NavLink({
     >
       <Icon aria-hidden="true" className="size-5 shrink-0" />
       {label}
+
       {badge ? (
         <span className="ml-auto rounded-full bg-[#f0b45a] px-2 text-[11px] font-bold text-[#3a2600]">
           {badge}

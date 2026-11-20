@@ -25,6 +25,25 @@ const fakeUser = {
   role: 'user',
 }
 
+// Posisi pelapor di-mock: jsdom tidak punya GPS. Tiap tes bisa mengganti
+// `posisiMock.nilai` untuk mensimulasikan izin ditolak atau di luar radius.
+const { posisiMock, POSISI_DALAM } = vi.hoisted(() => {
+  const dalam = {
+    status: 'dalam' as const,
+    gps: { lat: -7.3859479, lng: 109.236801, akurasi: 10 },
+    jarak: 149,
+    radius: 400,
+    bisaKirim: true,
+    ulangi: () => {},
+    muatUlangBatas: () => {},
+  }
+  return { POSISI_DALAM: dalam, posisiMock: { nilai: dalam as unknown } }
+})
+
+vi.mock('@/features/laporan/lokasi-pelapor', () => ({
+  usePosisiPelapor: () => posisiMock.nilai,
+}))
+
 vi.mock('@/features/auth/auth-query', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('@/features/auth/auth-query')>()
@@ -186,6 +205,7 @@ function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  posisiMock.nilai = POSISI_DALAM
   vi.mocked(api.POST).mockResolvedValue(
     ok({ data: { id: 1, status: 'MENUNGGU_VERIFIKASI' } }),
   )
@@ -258,6 +278,8 @@ describe('halaman /lapor', () => {
     expect(options.body.get('nilai_risiko')).toBe('3')
     expect(options.body.get('nilai_dampak')).toBe('3')
     expect(options.body.get('nilai_frekuensi')).toBe('3')
+    expect(options.body.get('latitude')).toBe('-7.3859479')
+    expect(options.body.get('longitude')).toBe('109.2368010')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
@@ -281,6 +303,36 @@ describe('halaman /lapor', () => {
     expect(
       await screen.findByText('Deskripsi minimal 10 karakter.'),
     ).toBeInTheDocument()
+  })
+
+  it('izin lokasi ditolak → banner tampil dan tombol kirim terkunci', async () => {
+    posisiMock.nilai = {
+      ...POSISI_DALAM,
+      status: 'ditolak',
+      gps: null,
+      jarak: null,
+      bisaKirim: false,
+    }
+    renderAt('/lapor')
+
+    expect(await screen.findByText(/Izin lokasi ditolak/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Kirim Laporan' })).toBeDisabled()
+    expect(api.POST).not.toHaveBeenCalled()
+  })
+
+  it('di luar radius → pesan jarak tampil dan tombol kirim terkunci', async () => {
+    posisiMock.nilai = {
+      ...POSISI_DALAM,
+      status: 'luar',
+      jarak: 1200,
+      bisaKirim: false,
+    }
+    renderAt('/lapor')
+
+    expect(
+      await screen.findByText(/Di luar radius 400 m dari kampus \(1200 m\)/),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Kirim Laporan' })).toBeDisabled()
   })
 
   it('melempar role selain user ke /dashboard', async () => {

@@ -19,6 +19,7 @@ type Akun = {
   email: string
   role: Role
   foto: string | null
+  must_change_password: boolean
 }
 
 const mahasiswa: Akun = {
@@ -28,6 +29,7 @@ const mahasiswa: Akun = {
   email: 'user@facility.test',
   role: 'user',
   foto: null,
+  must_change_password: false,
 }
 
 // Ditukar per test, sama seperti navigasi-per-role: meQueryOptions dibaca

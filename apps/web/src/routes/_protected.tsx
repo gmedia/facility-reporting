@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { UserShell } from '@/components/user-shell'
 import { queryClient } from '@/app/query-client'
 import { meQueryOptions, type User } from '@/features/auth/auth-query'
+import { PasswordReminder } from '@/features/auth/password-reminder'
 
 async function requireUser(): Promise<User> {
   try {
@@ -23,18 +24,20 @@ function ProtectedLayout() {
         <UserShell user={user}>
           <Outlet />
         </UserShell>
+        <PasswordReminder user={user} />
         <Toaster position="top-right" />
       </>
     )
   }
 
   // Pengelola semuanya berada di rute yang sudah memakai DashboardShell
-  // (/dashboard, /verifikasi, /admin/*) — route-nya sendiri yang menolak
-  // role lain lewat beforeLoad. Karena AppNav (topbar) sudah dihapus,
-  // tinggal Outlet polos di sini.
+  // (/dashboard, /verifikasi, /admin/*, /lokasi-akun) — route-nya sendiri
+  // yang menolak role lain lewat beforeLoad. Karena AppNav (topbar) sudah
+  // dihapus, tinggal Outlet polos di sini.
   return (
     <div className="bg-muted/40 min-h-screen">
       <Outlet />
+      <PasswordReminder user={user} />
       {/* Toaster global untuk semua halaman protected. */}
       <Toaster position="top-right" />
     </div>

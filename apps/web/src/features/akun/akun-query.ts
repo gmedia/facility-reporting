@@ -3,7 +3,13 @@ import { api, initializeCsrf } from '@/lib/api/client'
 import { apiError } from '@/features/laporan/laporan-query'
 import type { components } from '@/lib/api/schema'
 
-export type ChangePasswordInput = components['schemas']['ChangePasswordRequest']
+type ChangePasswordRequest = components['schemas']['ChangePasswordRequest']
+
+export type ChangePasswordInput = Omit<
+  ChangePasswordRequest,
+  'current_password'
+> &
+  Partial<Pick<ChangePasswordRequest, 'current_password'>>
 
 // POST /profile/foto — upload foto profil milik user yang sedang login.
 export function useUpdateFoto() {
@@ -16,7 +22,7 @@ export function useUpdateFoto() {
       const form = new FormData()
       form.append('foto', file)
 
-      // Pola yang sama dengan upload foto laporan: schema ngetik `foto`
+      // Pola yang sama dengan upload foto laporan: schema mengetik `foto`
       // sebagai string (OpenAPI "format: binary"), padahal isi FormData
       // berisi File. Cast sekali di sini — jangan ke file generated.
       const { data, error, response } = await api.POST('/profile/foto', {
@@ -30,21 +36,26 @@ export function useUpdateFoto() {
       return data.data
     },
     onSuccess: (user) => {
-      // Nimpa cache /auth/me — pratinjau foto di halaman /pengaturan langsung
+      // Timpa cache /auth/me — pratinjau foto di halaman /pengaturan langsung
       // berubah tanpa perlu navigasi (komponennya membaca cache yang sama).
       queryClient.setQueryData(['me'], user)
     },
   })
 }
 
-// PATCH /profile/password — ganti password dengan password lama dulu.
+// PATCH /profile/password — ganti password. `current_password` boleh
+// dihilangkan untuk akun hasil reset admin (must_change_password = true).
 export function useChangePassword() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async (input: ChangePasswordInput) => {
       await initializeCsrf()
 
       const { data, error, response } = await api.PATCH('/profile/password', {
-        body: input,
+        // Backend mengizinkan current_password tidak dikirim untuk akun hasil reset.
+        // OpenAPI belum dapat menggambarkan validasi kondisional tersebut.
+        body: input as components['schemas']['ChangePasswordRequest'],
       })
 
       if (error || !data) {
@@ -52,6 +63,11 @@ export function useChangePassword() {
       }
 
       return data.message
+    },
+    onSuccess: () => {
+      // Server mengisi password_changed_at, jadi flag must_change_password
+      // berubah. Muat ulang /auth/me supaya form dan pengingat ikut berubah.
+      void queryClient.invalidateQueries({ queryKey: ['me'] })
     },
   })
 }

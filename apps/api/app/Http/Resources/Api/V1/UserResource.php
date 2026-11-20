@@ -14,7 +14,7 @@ final class UserResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: int, name: string, nim: string|null, email: string|null, role: string, foto: string|null, active: bool}
+     * @return array{id: int, name: string, nim: string|null, email: string|null, role: string, foto: string|null, active: bool, must_change_password: bool}
      */
     public function toArray(Request $request): array
     {
@@ -26,6 +26,9 @@ final class UserResource extends JsonResource
             'role' => $this->resource->role,
             'foto' => $this->resource->foto,
             'active' => (bool) $this->resource->active,
+            // true = belum pernah mengganti password sejak akun dibuat,
+            // artinya masih memakai password awal.
+            'must_change_password' => $this->resource->password_changed_at === null,
         ];
     }
 }

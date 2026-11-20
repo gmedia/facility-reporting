@@ -264,6 +264,113 @@
                 }
             }
         },
+        "/location-settings": {
+            "get": {
+                "operationId": "v1.admin.locationSetting.show_9",
+                "summary": "Ambil titik pusat dan radius saat ini",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/location-settings": {
+            "get": {
+                "operationId": "v1.admin.locationSetting.show_15",
+                "summary": "Ambil titik pusat dan radius saat ini",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "locationSetting.update",
+                "summary": "Simpan titik pusat dan radius baru",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLocationSettingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -368,6 +475,52 @@
                 }
             }
         },
+        "/profile/lokasi": {
+            "post": {
+                "operationId": "v1.meLocation",
+                "summary": "Pelapor mengirim lokasi GPS terakhirnya",
+                "tags": [
+                    "MeLocation"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMyLocationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lokasi tersimpan."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/profile/foto": {
             "post": {
                 "operationId": "profile.updateFoto",
@@ -455,6 +608,130 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/reporter-locations": {
+            "get": {
+                "operationId": "admin.reporterLocation",
+                "summary": "Daftar pelapor beserta jarak dari titik pusat dan status radius",
+                "tags": [
+                    "ReporterLocation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "nim": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "lat": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "lng": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "last_location_at": {
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "distance_m": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "description": "inside | outside | unknown (belum pernah mengirim lokasi)",
+                                                        "enum": [
+                                                            "unknown",
+                                                            "inside",
+                                                            "outside"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "nim",
+                                                    "lat",
+                                                    "lng",
+                                                    "last_location_at",
+                                                    "distance_m",
+                                                    "status"
+                                                ]
+                                            }
+                                        },
+                                        "summary": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "outside": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "inside": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "unknown": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "radius_m": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "outside",
+                                                "inside",
+                                                "unknown",
+                                                "radius_m"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "summary"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -752,12 +1029,12 @@
             "ChangePasswordRequest": {
                 "type": "object",
                 "properties": {
-                    "current_password": {
-                        "type": "string"
-                    },
                     "password": {
                         "type": "string",
                         "minLength": 8
+                    },
+                    "current_password": {
+                        "type": "string"
                     },
                     "password_confirmation": {
                         "type": "string",
@@ -765,8 +1042,8 @@
                     }
                 },
                 "required": [
-                    "current_password",
                     "password",
+                    "current_password",
                     "password_confirmation"
                 ],
                 "title": "ChangePasswordRequest"
@@ -796,6 +1073,18 @@
                     },
                     "lokasi": {
                         "type": "string"
+                    },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
                     },
                     "deskripsi": {
                         "type": "string"
@@ -964,6 +1253,8 @@
                     "user_id",
                     "kategori",
                     "lokasi",
+                    "latitude",
+                    "longitude",
                     "deskripsi",
                     "foto",
                     "status",
@@ -1048,6 +1339,34 @@
                 ],
                 "title": "LaporanStatusHistoryResource"
             },
+            "LocationSettingResource": {
+                "type": "object",
+                "properties": {
+                    "center_lat": {
+                        "type": "number"
+                    },
+                    "center_lng": {
+                        "type": "number"
+                    },
+                    "radius_m": {
+                        "type": "integer"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "center_lat",
+                    "center_lng",
+                    "radius_m",
+                    "updated_at"
+                ],
+                "title": "LocationSettingResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -1087,6 +1406,16 @@
                         "type": "string",
                         "maxLength": 255
                     },
+                    "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
                     "deskripsi": {
                         "type": "string",
                         "minLength": 10,
@@ -1122,6 +1451,8 @@
                 "required": [
                     "kategori",
                     "lokasi",
+                    "latitude",
+                    "longitude",
                     "deskripsi",
                     "foto",
                     "nilai_kerusakan",
@@ -1215,6 +1546,52 @@
                 ],
                 "title": "UpdateLaporanStatusRequest"
             },
+            "UpdateLocationSettingRequest": {
+                "type": "object",
+                "properties": {
+                    "center_lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "center_lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "radius_m": {
+                        "type": "integer",
+                        "minimum": 50,
+                        "maximum": 5000
+                    }
+                },
+                "required": [
+                    "center_lat",
+                    "center_lng",
+                    "radius_m"
+                ],
+                "title": "UpdateLocationSettingRequest"
+            },
+            "UpdateMyLocationRequest": {
+                "type": "object",
+                "properties": {
+                    "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    }
+                },
+                "required": [
+                    "lat",
+                    "lng"
+                ],
+                "title": "UpdateMyLocationRequest"
+            },
             "UpdateProfileFotoRequest": {
                 "type": "object",
                 "properties": {
@@ -1281,6 +1658,10 @@
                     },
                     "active": {
                         "type": "boolean"
+                    },
+                    "must_change_password": {
+                        "type": "boolean",
+                        "description": "true = belum pernah mengganti password sejak akun dibuat,\nartinya masih memakai password awal."
                     }
                 },
                 "required": [
@@ -1290,7 +1671,8 @@
                     "email",
                     "role",
                     "foto",
-                    "active"
+                    "active",
+                    "must_change_password"
                 ],
                 "title": "UserResource"
             }

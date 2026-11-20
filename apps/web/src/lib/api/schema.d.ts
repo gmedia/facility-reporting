@@ -80,6 +80,41 @@ export interface paths {
     patch: operations['laporan.updateBukti']
     trace?: never
   }
+  '/location-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil titik pusat dan radius saat ini */
+    get: operations['v1.admin.locationSetting.show_9']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/location-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil titik pusat dan radius saat ini */
+    get: operations['v1.admin.locationSetting.show_15']
+    /** Simpan titik pusat dan radius baru */
+    put: operations['locationSetting.update']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/auth/login': {
     parameters: {
       query?: never
@@ -128,6 +163,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/profile/lokasi': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pelapor mengirim lokasi GPS terakhirnya */
+    post: operations['v1.meLocation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/profile/foto': {
     parameters: {
       query?: never
@@ -160,6 +212,23 @@ export interface paths {
     head?: never
     /** Ganti password user yang sedang login */
     patch: operations['profile.changePassword']
+    trace?: never
+  }
+  '/admin/reporter-locations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Daftar pelapor beserta jarak dari titik pusat dan status radius */
+    get: operations['admin.reporterLocation']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/status': {
@@ -266,8 +335,8 @@ export interface components {
   schemas: {
     /** ChangePasswordRequest */
     ChangePasswordRequest: {
-      current_password: string
       password: string
+      current_password: string
       password_confirmation: string
     }
     /**
@@ -282,6 +351,8 @@ export interface components {
       user_id: number
       kategori: string
       lokasi: string
+      latitude: number | null
+      longitude: number | null
       deskripsi: string
       foto: string | null
       /** @enum {string} */
@@ -348,6 +419,14 @@ export interface components {
       /** Format: date-time */
       updated_at: string | null
     }
+    /** LocationSettingResource */
+    LocationSettingResource: {
+      center_lat: number
+      center_lng: number
+      radius_m: number
+      /** Format: date-time */
+      updated_at: string | null
+    }
     /** LoginRequest */
     LoginRequest: {
       identifier: string
@@ -361,6 +440,8 @@ export interface components {
     StoreLaporanRequest: {
       kategori: components['schemas']['LaporanKategori']
       lokasi: string
+      latitude: number
+      longitude: number
       deskripsi: string
       /**
        * Format: binary
@@ -401,6 +482,17 @@ export interface components {
        */
       foto_bukti?: string
     }
+    /** UpdateLocationSettingRequest */
+    UpdateLocationSettingRequest: {
+      center_lat: number
+      center_lng: number
+      radius_m: number
+    }
+    /** UpdateMyLocationRequest */
+    UpdateMyLocationRequest: {
+      lat: number
+      lng: number
+    }
     /** UpdateProfileFotoRequest */
     UpdateProfileFotoRequest: {
       /**
@@ -425,6 +517,11 @@ export interface components {
       role: string
       foto: string | null
       active: boolean
+      /**
+       * @description true = belum pernah mengganti password sejak akun dibuat,
+       *     artinya masih memakai password awal.
+       */
+      must_change_password: boolean
     }
   }
   responses: {
@@ -632,6 +729,80 @@ export interface operations {
       422: components['responses']['ValidationException']
     }
   }
+  'v1.admin.locationSetting.show_9': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'v1.admin.locationSetting.show_15': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'locationSetting.update': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateLocationSettingRequest']
+      }
+    }
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
   'auth.login': {
     parameters: {
       query?: never
@@ -705,6 +876,34 @@ export interface operations {
       401: components['responses']['AuthenticationException']
     }
   }
+  'v1.meLocation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateMyLocationRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @constant */
+            message: 'Lokasi tersimpan.'
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
   'profile.updateFoto': {
     parameters: {
       query?: never
@@ -759,6 +958,48 @@ export interface operations {
       }
       401: components['responses']['AuthenticationException']
       422: components['responses']['ValidationException']
+    }
+  }
+  'admin.reporterLocation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: {
+              id: number
+              name: string
+              nim: string | null
+              lat: number | null
+              lng: number | null
+              last_location_at: Record<string, never> | null
+              distance_m: number | null
+              /**
+               * @description inside | outside | unknown (belum pernah mengirim lokasi)
+               * @enum {string}
+               */
+              status: 'unknown' | 'inside' | 'outside'
+            }[]
+            summary: {
+              total: number
+              outside: number
+              inside: number
+              unknown: number
+              radius_m: number
+            }
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
     }
   }
   'v1.status': {

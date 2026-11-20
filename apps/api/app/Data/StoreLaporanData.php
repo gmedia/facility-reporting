@@ -14,6 +14,8 @@ final readonly class StoreLaporanData
         public int $nilai_risiko,
         public int $nilai_dampak,
         public int $nilai_frekuensi,
+        public float $latitude,
+        public float $longitude,
         public ?string $foto = null,
     ) {}
 }

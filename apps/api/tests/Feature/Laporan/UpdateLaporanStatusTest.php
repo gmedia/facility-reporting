@@ -140,6 +140,8 @@ it('cannot be reached through mass assignment on create', function (): void {
         ->post('/api/v1/reports', [
             'kategori' => 'elektronik',
             'lokasi' => 'Lab 3 Lt.2',
+            'latitude' => -7.385942,
+            'longitude' => 109.236755,
             'deskripsi' => 'Proyektor mati total sejak pagi.',
             // Nilai SMART wajib sejak 11 Nov 2026 — hanya syarat lolos
             // validasi, bukan bagian yang diuji di sini.
