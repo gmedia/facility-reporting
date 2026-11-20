@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { fotoUrl } from '@/features/akun/akun-query'
+import { ReporterPasswordSection } from '@/features/admin/reporter-password-section'
 import { UserFormDialog } from '@/features/admin/user-form'
 import {
   adminUsersQueryOptions,
@@ -174,133 +175,146 @@ function AdminUsersPage() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          className={`h-11 text-sm font-semibold ${TOMBOL_UTAMA_CLASS}`}
-          onClick={() => setForm({ open: true, user: null })}
-        >
-          Tambah akun
-        </Button>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold">Akun admin</h2>
+            <p className="text-sm text-neutral-500">
+              Daftar akun admin yang bertugas memverifikasi dan mengelola
+              laporan fasilitas.
+            </p>
+          </div>
+          <Button
+            type="button"
+            className={`h-11 shrink-0 text-sm font-semibold ${TOMBOL_UTAMA_CLASS}`}
+            onClick={() => setForm({ open: true, user: null })}
+          >
+            Tambah akun
+          </Button>
+        </div>
+
+        {users.isPending ? (
+          <section className={`flex flex-col gap-3 p-6 ${CARD_CLASS}`}>
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-5/6" />
+            <Skeleton className="h-8 w-2/3" />
+          </section>
+        ) : users.isError ? (
+          <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
+        ) : (
+          <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
+            <Input
+              type="search"
+              value={cari}
+              onChange={(event) => setCari(event.target.value)}
+              placeholder="Cari nama atau e-mail..."
+              aria-label="Cari akun admin"
+              className="h-11 max-w-md rounded-xl"
+            />
+
+            {users.data.length === 0 ? (
+              <p className="mt-6 py-6 text-center text-sm text-neutral-400">
+                Belum ada akun admin. Klik Tambah akun untuk membuat yang
+                pertama.
+              </p>
+            ) : tampil.length === 0 ? (
+              <p className="mt-6 py-6 text-center text-sm text-neutral-400">
+                Tidak ada akun yang cocok dengan pencarian.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <Table className="min-w-[32rem]">
+                  <TableHeader>
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
+                        Nama
+                      </TableHead>
+                      <TableHead className="text-[15px] font-medium text-neutral-500">
+                        Status
+                      </TableHead>
+                      <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
+                        Aksi
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tampil.map((user) => (
+                      <TableRow
+                        key={user.id}
+                        className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
+                      >
+                        <TableCell className="py-3 pl-3">
+                          <div className="flex items-center gap-3">
+                            <AvatarAkun
+                              key={`${user.id}-${user.foto ?? ''}`}
+                              nama={user.name}
+                              foto={user.foto}
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-base font-medium">
+                                {user.name}
+                              </p>
+                              <p className="truncate text-sm text-neutral-500">
+                                {user.email ?? '-'}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="secondary"
+                            className={`rounded-full px-3 text-xs font-medium ${
+                              user.active
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                                : 'bg-red-100 text-red-700 hover:bg-red-100'
+                            }`}
+                          >
+                            {user.active ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3 pr-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full px-4 text-sm font-medium text-neutral-600"
+                              onClick={() => setForm({ open: true, user })}
+                            >
+                              Edit
+                            </Button>
+                            {/* Label & gaya mengikuti AKSI yang akan dijalankan,
+                                bukan status barisnya: akun aktif ditawari
+                                "Nonaktifkan" (merah), akun nonaktif ditawari
+                                "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className={`rounded-full bg-white px-4 text-sm font-medium ${
+                                user.active
+                                  ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700'
+                                  : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700'
+                              }`}
+                              onClick={() => mintaKonfirmasi(user)}
+                            >
+                              {user.active ? 'Nonaktifkan' : 'Aktifkan'}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
-      {users.isPending ? (
-        <section className={`flex flex-col gap-3 p-6 ${CARD_CLASS}`}>
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-5/6" />
-          <Skeleton className="h-8 w-2/3" />
-        </section>
-      ) : users.isError ? (
-        <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
-      ) : (
-        <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
-          <Input
-            type="search"
-            value={cari}
-            onChange={(event) => setCari(event.target.value)}
-            placeholder="Cari nama atau e-mail..."
-            aria-label="Cari akun admin"
-            className="h-11 max-w-md rounded-xl"
-          />
-
-          {users.data.length === 0 ? (
-            <p className="mt-6 py-6 text-center text-sm text-neutral-400">
-              Belum ada akun admin. Klik Tambah akun untuk membuat yang pertama.
-            </p>
-          ) : tampil.length === 0 ? (
-            <p className="mt-6 py-6 text-center text-sm text-neutral-400">
-              Tidak ada akun yang cocok dengan pencarian.
-            </p>
-          ) : (
-            <div className="mt-4 overflow-x-auto">
-              <Table className="min-w-[32rem]">
-                <TableHeader>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
-                      Nama
-                    </TableHead>
-                    <TableHead className="text-[15px] font-medium text-neutral-500">
-                      Status
-                    </TableHead>
-                    <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
-                      Aksi
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tampil.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
-                    >
-                      <TableCell className="py-3 pl-3">
-                        <div className="flex items-center gap-3">
-                          <AvatarAkun
-                            key={`${user.id}-${user.foto ?? ''}`}
-                            nama={user.name}
-                            foto={user.foto}
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate text-base font-medium">
-                              {user.name}
-                            </p>
-                            <p className="truncate text-sm text-neutral-500">
-                              {user.email ?? '-'}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <Badge
-                          variant="secondary"
-                          className={`rounded-full px-3 text-xs font-medium ${
-                            user.active
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                              : 'bg-red-100 text-red-700 hover:bg-red-100'
-                          }`}
-                        >
-                          {user.active ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-3 pr-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full px-4 text-sm font-medium text-neutral-600"
-                            onClick={() => setForm({ open: true, user })}
-                          >
-                            Edit
-                          </Button>
-                          {/* Label & gaya mengikuti AKSI yang akan dijalankan,
-                              bukan status barisnya: akun aktif ditawari
-                              "Nonaktifkan" (merah), akun nonaktif ditawari
-                              "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className={`rounded-full bg-white px-4 text-sm font-medium ${
-                              user.active
-                                ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700'
-                                : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700'
-                            }`}
-                            onClick={() => mintaKonfirmasi(user)}
-                          >
-                            {user.active ? 'Nonaktifkan' : 'Aktifkan'}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </section>
-      )}
+      {/* Reset password mahasiswa */}
+      <ReporterPasswordSection />
 
       {/* Konfirmasi nonaktifkan / aktifkan: dialog popup dengan latar gelap. */}
       <Dialog

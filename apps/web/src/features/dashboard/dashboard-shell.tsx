@@ -67,7 +67,7 @@ const superAdminNav: NavItem[] = [
   verifikasiItem,
   { label: 'Semua Laporan', to: '/semua-laporan', icon: ClipboardList },
   { label: 'Lokasi Akun', to: '/lokasi-akun', icon: MapPin },
-  { label: 'Akun Admin', to: '/admin', icon: Users },
+  { label: 'Manajemen Akun', to: '/admin', icon: Users },
   pengaturan,
 ]
 
