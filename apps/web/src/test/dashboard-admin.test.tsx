@@ -62,9 +62,9 @@ const laporan = [
   {
     id: 4,
     user_id: 3,
-    kategori: 'mekanik',
-    lokasi: 'toilet lantai 2',
-    deskripsi: 'keran bocor',
+    kategori: 'kelistrikan',
+    lokasi: 'panel listrik gedung c',
+    deskripsi: 'panel listrik berisik dan panas berlebihan',
     foto: null,
     status: 'selesai',
     created_at: '2026-10-23T08:00:00Z',

@@ -46,7 +46,7 @@ export type Laporan = components['schemas']['LaporanResource'] & {
 export const KATEGORI_LABEL: Record<LaporanKategori, string> = {
   elektronik: 'Elektronik',
   furnitur: 'Furnitur',
-  mekanik: 'Mekanik',
+  kelistrikan: 'Kelistrikan',
   bangunan: 'Bangunan',
   lainnya: 'Lainnya',
 }

@@ -1,0 +1,213 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { LupaPassword } from '@/features/auth/lupa-password'
+
+const loginCopy = {
+  brand: 'Facility Reporting',
+  headline: 'Laporkan kerusakan fasilitas kampus dalam hitungan detik',
+  description:
+    'Sistem pelaporan kerusakan fasilitas yang menghubungkan mahasiswa, teknisi, dan pengelola kampus dalam satu alur. Lapor, lacak progresnya, sampai selesai — tanpa chat berantai.',
+  highlights: ['Foto & lokasi', 'Status real time', 'Riwayat laporan'],
+}
+
+const HIJAU_TUA = '#0d3f31'
+const ABU_TERANG = '#f4f4f5'
+
+function LingkaranDekor({ className }: { className?: string }) {
+  return (
+    <div aria-hidden="true" className={className}>
+      <div className="absolute bottom-6 -left-28 size-[24rem] rounded-full bg-white/[0.05]" />
+      <div className="absolute top-10 right-24 size-[16rem] rounded-full bg-white/[0.04]" />
+      <div className="absolute top-[46%] right-[14%] size-[7rem] rounded-full bg-white/[0.08]" />
+    </div>
+  )
+}
+
+// PUBLIK: tanpa _protected, supaya user yang belum login bisa membukanya.
+export const Route = createFileRoute('/lupa-password')({
+  component: LupaPasswordPage,
+})
+
+function LupaPasswordPage() {
+  return (
+    <main
+      className="relative isolate min-h-dvh lg:h-dvh lg:overflow-hidden"
+      style={{ backgroundColor: ABU_TERANG }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 hidden lg:block"
+        style={{
+          backgroundImage: `linear-gradient(to right, ${HIJAU_TUA} 0%, ${HIJAU_TUA} 50%, ${ABU_TERANG} 50%, ${ABU_TERANG} 100%)`,
+        }}
+      />
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 hidden lg:block"
+      >
+        <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
+          <LingkaranDekor className="absolute inset-0" />
+        </div>
+      </div>
+
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[100rem] flex-col justify-center px-6 lg:grid lg:h-dvh lg:grid-cols-2 lg:items-center lg:px-0">
+        {/* KIRI: sama persis dengan /login */}
+        <section className="relative -mx-6 overflow-hidden px-6 py-12 text-white lg:mx-0 lg:py-0 lg:pr-24 lg:pl-28">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 lg:hidden"
+            style={{ backgroundColor: HIJAU_TUA }}
+          />
+          <LingkaranDekor className="pointer-events-none absolute inset-0 lg:hidden" />
+
+          <div className="relative flex w-full max-w-md flex-col items-start gap-3 lg:max-w-none">
+            <p className="text-[11px] font-semibold tracking-[0.25em] text-emerald-300 uppercase lg:text-[10px]">
+              {loginCopy.brand}
+            </p>
+
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 176 128"
+              fill="none"
+              className="hidden w-full max-w-[20rem] lg:block lg:h-[40vh] lg:max-h-72 lg:w-auto lg:max-w-full"
+            >
+              <rect
+                x="4"
+                y="8"
+                width="132"
+                height="100"
+                rx="14"
+                fill="#ecfdf5"
+              />
+              <path
+                d="M4 22A14 14 0 0 1 18 8H122A14 14 0 0 1 136 22V30H4Z"
+                fill="#065f46"
+              />
+              <circle cx="16" cy="19" r="3" fill="#fbbf24" />
+              <circle cx="27" cy="19" r="3" fill="#34d399" />
+              <circle cx="38" cy="19" r="3" fill="#ffffff" fillOpacity="0.75" />
+              <rect
+                x="16"
+                y="44"
+                width="48"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.4"
+              />
+              <rect
+                x="16"
+                y="60"
+                width="34"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.22"
+              />
+              <rect
+                x="16"
+                y="76"
+                width="42"
+                height="8"
+                rx="4"
+                fill="#065f46"
+                fillOpacity="0.22"
+              />
+              <rect
+                x="74"
+                y="68"
+                width="13"
+                height="28"
+                rx="5"
+                fill="#6ee7b7"
+              />
+              <rect
+                x="91"
+                y="52"
+                width="13"
+                height="44"
+                rx="5"
+                fill="#34d399"
+              />
+              <rect
+                x="108"
+                y="76"
+                width="13"
+                height="20"
+                rx="5"
+                fill="#fbbf24"
+              />
+              <rect
+                x="70"
+                y="96"
+                width="54"
+                height="5"
+                rx="2.5"
+                fill="#065f46"
+                fillOpacity="0.25"
+              />
+              <rect
+                x="130"
+                y="4"
+                width="36"
+                height="36"
+                rx="13"
+                fill="#10b981"
+              />
+              <path
+                d="M148 14v16M140 22h16"
+                stroke="#ffffff"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+              <rect
+                x="126"
+                y="80"
+                width="46"
+                height="46"
+                rx="15"
+                fill="#f59e0b"
+              />
+              <path d="M149 93 162 114H136Z" fill="#064e3b" />
+              <rect
+                x="147.2"
+                y="99"
+                width="3.6"
+                height="8"
+                rx="1.8"
+                fill="#fbbf24"
+              />
+              <circle cx="149" cy="111" r="1.9" fill="#fbbf24" />
+            </svg>
+
+            <h1 className="lg:text-1.5xl text-2xl leading-[1.25] font-bold tracking-tight text-balance text-white">
+              {loginCopy.headline}
+            </h1>
+
+            <p className="hidden text-sm leading-relaxed text-emerald-100/75 sm:text-xs lg:block">
+              {loginCopy.description}
+            </p>
+
+            <ul className="mt-1 flex w-full [scrollbar-width:none] gap-2 overflow-x-auto pt-1 pb-3 lg:mt-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pt-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+              {loginCopy.highlights.map((item) => (
+                <li
+                  key={item}
+                  className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-semibold text-[#0d3f31] shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] lg:shrink"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* KANAN: isi Lupa password (bisa scroll sendiri di layar pendek) */}
+        <section className="flex w-full flex-col items-start py-12 lg:max-h-dvh lg:overflow-y-auto lg:py-10 lg:pr-28 lg:pl-24">
+          <div className="w-full max-w-md lg:max-w-none">
+            <LupaPassword />
+          </div>
+        </section>
+      </div>
+    </main>
+  )
+}

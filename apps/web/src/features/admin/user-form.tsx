@@ -156,7 +156,7 @@ export function UserFormDialog({
                 <Input
                   id="admin-email"
                   type="email"
-                  placeholder="admin@facility.test"
+                  placeholder="admin@gmail.com"
                   autoComplete="off"
                   {...field}
                 />

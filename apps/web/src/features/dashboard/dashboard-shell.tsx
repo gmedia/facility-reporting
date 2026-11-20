@@ -19,6 +19,7 @@ import {
   meQueryOptions,
 } from '@/features/auth/auth-query'
 import type { User } from '@/features/auth/auth-query'
+import { api } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 
 // Rute yang boleh muncul di sidebar.
@@ -67,7 +68,7 @@ const superAdminNav: NavItem[] = [
   verifikasiItem,
   { label: 'Semua Laporan', to: '/semua-laporan', icon: ClipboardList },
   { label: 'Lokasi Akun', to: '/lokasi-akun', icon: MapPin },
-  { label: 'Akun Admin', to: '/admin', icon: Users },
+  { label: 'Manajemen Akun', to: '/admin', icon: Users },
   pengaturan,
 ]
 
@@ -118,6 +119,22 @@ export function DashboardShell({
   // setelah diperbarui melalui halaman pengaturan.
   const { data: me } = useQuery(meQueryOptions)
   const akun = me ?? user
+
+  // Jumlah laporan menunggu verifikasi dihitung di shell supaya badge tetap
+  // tampil di semua halaman, bukan hanya yang mengoper prop `menunggu`.
+  // Prop `menunggu` tetap diutamakan kalau halaman memberikannya.
+  const { data: jumlahDariApi } = useQuery({
+    queryKey: ['reports', 'jumlah-menunggu'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/reports')
+      if (error || !data) throw new Error('Gagal memuat laporan.')
+      return data.data.filter((item) => item.status === 'menunggu_verifikasi')
+        .length
+    },
+    retry: false,
+    refetchInterval: 60_000,
+  })
+  const jumlahMenunggu = menunggu ?? jumlahDariApi
 
   const onLogout = async () => {
     try {
@@ -177,7 +194,7 @@ export function DashboardShell({
             <NavLink
               key={item.to}
               {...item}
-              badge={item.to === '/verifikasi' ? menunggu : undefined}
+              badge={item.to === '/verifikasi' ? jumlahMenunggu : undefined}
               onNavigate={() => setMobileOpen(false)}
             />
           ))}

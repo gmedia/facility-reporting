@@ -8,7 +8,7 @@ enum LaporanKategori: string
 {
     case Elektronik = 'elektronik';
     case Furnitur = 'furnitur';
-    case Mekanik = 'mekanik';
+    case Kelistrikan = 'kelistrikan';
     case Bangunan = 'bangunan';
     case Lainnya = 'lainnya';
 }

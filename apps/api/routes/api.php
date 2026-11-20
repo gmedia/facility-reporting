@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\LocationSettingController;
 use App\Http\Controllers\Api\V1\Admin\ReporterLocationController;
+use App\Http\Controllers\Api\V1\Admin\ReporterPasswordController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
@@ -50,6 +51,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('admin/location-settings', [LocationSettingController::class, 'show']);
             Route::put('admin/location-settings', [LocationSettingController::class, 'update']);
             Route::get('admin/reporter-locations', ReporterLocationController::class);
+
+            // Reset password mahasiswa: daftar + reset satu akun.
+            // Reset dibatasi 20 kali per menit supaya tidak bisa diulang massal.
+            Route::get('admin/reporter-passwords', [ReporterPasswordController::class, 'index']);
+            Route::post('admin/reporter-passwords/{user}/reset', [ReporterPasswordController::class, 'reset'])
+                ->middleware('throttle:20,1');
+
             Route::apiResource('admin/users', UserController::class)
                 ->only(['index', 'store', 'update', 'destroy']);
         });
