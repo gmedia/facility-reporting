@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Check, ChevronLeft, ShieldCheck, X } from 'lucide-react'

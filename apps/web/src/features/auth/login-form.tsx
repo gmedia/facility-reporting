@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { homeFor, loginMutationOptions } from '@/features/auth/auth-query'
+import { LupaPassword } from '@/features/auth/lupa-password'
 
 const loginSchema = z.object({
   identifier: z.string().trim().min(1, 'Email atau NIM wajib diisi'),
@@ -134,6 +135,10 @@ export function LoginForm() {
       <Button type="submit" disabled={login.isPending} className={tombolSoft}>
         {login.isPending ? 'Masuk...' : 'Masuk'}
       </Button>
+
+      {/* Terbuka otomatis setelah login gagal, karena itu saat paling
+          mungkin orang butuh petunjuk ini. */}
+      <LupaPassword terbuka={serverError !== null} />
     </form>
   )
 }
