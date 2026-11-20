@@ -13,13 +13,6 @@ use Illuminate\Validation\Rule;
 
 class UpdateLaporanStatusRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * Only admins and super admins may change a report's status. The route
-     * is already guarded by the `admin` middleware; this stays as a second
-     * line of defence.
-     */
     public function authorize(): bool
     {
         $role = $this->user()?->role;
@@ -28,14 +21,53 @@ class UpdateLaporanStatusRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'status' => ['required', Rule::enum(LaporanStatus::class)],
+
+            'nilai_kerusakan' => [
+                'sometimes',
+                'integer',
+                'between:1,5',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Valid->value),
+            ],
+            'nilai_risiko' => [
+                'sometimes',
+                'integer',
+                'between:1,5',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Valid->value),
+            ],
+            'nilai_dampak' => [
+                'sometimes',
+                'integer',
+                'between:1,5',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Valid->value),
+            ],
+            'nilai_frekuensi' => [
+                'sometimes',
+                'integer',
+                'between:1,5',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Valid->value),
+            ],
+
+            'alasan' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Ditolak->value),
+            ],
+
+            'foto_bukti' => [
+                'sometimes',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                Rule::requiredIf(fn () => $this->input('status') === LaporanStatus::Selesai->value),
+            ],
         ];
     }
 
@@ -43,6 +75,12 @@ class UpdateLaporanStatusRequest extends FormRequest
     {
         return new UpdateLaporanStatusData(
             status: LaporanStatus::from($this->validated('status')),
+            nilaiKerusakan: $this->validated('nilai_kerusakan'),
+            nilaiRisiko: $this->validated('nilai_risiko'),
+            nilaiDampak: $this->validated('nilai_dampak'),
+            nilaiFrekuensi: $this->validated('nilai_frekuensi'),
+            alasan: $this->validated('alasan'),
+            fotoBukti: $this->file('foto_bukti'),
         );
     }
 }

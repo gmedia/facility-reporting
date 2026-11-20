@@ -75,8 +75,72 @@ export function useDeleteAdminUser() {
   })
 }
 
+export function useDeactivateAdminUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await initializeCsrf()
+      const { data, error, response } = await api.PUT(
+        '/admin/users/{user}/deactivate',
+        {
+          params: { path: { user: id } },
+        },
+      )
+      if (error || !data)
+        throw apiError(response.status, error, 'Gagal menonaktifkan akun.')
+      return data.data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useActivateAdminUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await initializeCsrf()
+      const { data, error, response } = await api.PUT(
+        '/admin/users/{user}/activate',
+        {
+          params: { path: { user: id } },
+        },
+      )
+      if (error || !data)
+        throw apiError(response.status, error, 'Gagal mengaktifkan akun.')
+      return data.data
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 function apiError(status: number, body: unknown, fallback: string): Error {
-  const message = messageFor(status, fallback)
+  let pesanApi: string | null = null
+
+  if (body && typeof body === 'object') {
+    const msg1 = (body as { message?: unknown }).message
+    if (typeof msg1 === 'string' && msg1.length > 0) {
+      pesanApi = msg1
+    } else if (
+      (body as { data?: unknown }).data &&
+      typeof (body as { data?: unknown }).data === 'object'
+    ) {
+      const msg2 = (
+        (body as { data?: { message?: unknown } }).data as {
+          message?: unknown
+        }
+      ).message
+      if (typeof msg2 === 'string' && msg2.length > 0) {
+        pesanApi = msg2
+      }
+    }
+  }
+
+  const message =
+    status === 422 && pesanApi ? pesanApi : messageFor(status, fallback)
   const error = new Error(message)
   Object.assign(error, { status }, body ?? {})
   error.message = message

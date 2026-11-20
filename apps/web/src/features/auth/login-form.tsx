@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
+import { Eye, EyeOff } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import {
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { homeFor, loginMutationOptions } from '@/features/auth/auth-query'
+import { LupaPassword } from '@/features/auth/lupa-password'
 
 // Zod — tiru validasi backend
 const loginSchema = z.object({
@@ -28,10 +30,14 @@ const inputSoft =
 
 // Tombol "Masuk" — gradient gelap (atas terang → bawah gelap) + shadow ke bawah
 const tombolSoft =
-  'h-11 w-full rounded-full bg-[#1e6a52] text-sm font-medium text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[#1a5f4a] hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] active:translate-y-px active:bg-[#16523f] active:shadow-[0_3px_8px_-3px_rgba(0,0,0,0.3)] disabled:pointer-events-none disabled:opacity-60'
+  'h-11 w-full rounded-full bg-[#0d3f31] text-sm font-medium text-white shadow-[0_6px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[#1a5f4a] hover:shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] active:translate-y-px active:bg-[#16523f] active:shadow-[0_3px_8px_-3px_rgba(0,0,0,0.3)] disabled:pointer-events-none disabled:opacity-60'
+
 export function LoginForm() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [serverError, setServerError] = useState<string | null>(null)
+  // false = password tersembunyi (titik-titik), true = terlihat.
+  const [tampilPassword, setTampilPassword] = useState(false)
   const login = useMutation(loginMutationOptions)
 
   const form = useForm<LoginValues>({
@@ -43,6 +49,11 @@ export function LoginForm() {
     setServerError(null)
     try {
       const user = await login.mutateAsync(values)
+      // Buang semua cache akun sebelumnya (daftar laporan, data user, dll.)
+      // supaya halaman tujuan mengambil data baru sesuai role akun ini.
+      // Tanpa ini, admin bisa melihat data milik mahasiswa yang login
+      // sebelumnya di browser yang sama.
+      queryClient.clear()
       // cast: route /admin & /dashboard belum ada di route tree
       await router.navigate({ to: homeFor(user.role) as never })
     } catch (error) {
@@ -82,15 +93,33 @@ export function LoginForm() {
           Password
         </FieldLabel>
         <FieldContent>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            className={inputSoft}
-            placeholder="Masukkan password"
-            aria-invalid={!!errors.password}
-            {...form.register('password')}
-          />
+          {/* Wadah relative supaya tombol mata bisa ditaruh di dalam input. */}
+          <div className="relative">
+            <Input
+              id="password"
+              type={tampilPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              className={`${inputSoft} pr-12`}
+              placeholder="Masukkan password"
+              aria-invalid={!!errors.password}
+              {...form.register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setTampilPassword((v) => !v)}
+              aria-label={
+                tampilPassword ? 'Sembunyikan password' : 'Tampilkan password'
+              }
+              aria-pressed={tampilPassword}
+              className="absolute top-1/2 right-3 grid size-8 -translate-y-1/2 place-items-center rounded-full text-neutral-500 transition-colors outline-none hover:text-[#0d3f31] focus-visible:ring-2 focus-visible:ring-[#1e6a52]/30"
+            >
+              {tampilPassword ? (
+                <EyeOff aria-hidden="true" className="size-5" />
+              ) : (
+                <Eye aria-hidden="true" className="size-5" />
+              )}
+            </button>
+          </div>
           <FieldError>{errors.password?.message}</FieldError>
         </FieldContent>
       </Field>
@@ -98,12 +127,25 @@ export function LoginForm() {
       <Button type="submit" disabled={login.isPending} className={tombolSoft}>
         {login.isPending ? 'Masuk...' : 'Masuk'}
       </Button>
+
+      {/* Terbuka otomatis setelah login gagal, karena itu saat paling
+          mungkin orang butuh petunjuk ini. */}
+      <LupaPassword terbuka={serverError !== null} />
     </form>
   )
 }
 
-// 422 punya `errors`, 429/401 cuma punya `message`
+// 422 punya `errors`, 429/401 cuma punya `message` (+ `status` dari
+// loginMutationOptions)
 function pesanDariServer(error: unknown): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    error.status === 429
+  ) {
+    return 'Terlalu banyak percobaan masuk. Tunggu beberapa saat lalu coba lagi. Kalau lupa password, hubungi admin (petunjuknya ada di bawah).'
+  }
   if (error && typeof error === 'object' && 'errors' in error) {
     const errors = (error as { errors?: Record<string, string[]> }).errors
     const pesan = Object.values(errors ?? {}).flat()[0]

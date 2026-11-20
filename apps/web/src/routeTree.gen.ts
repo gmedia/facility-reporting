@@ -15,8 +15,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ProtectedAdminRouteRouteImport } from './routes/_protected/admin/route'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedLaporRouteImport } from './routes/_protected/lapor'
+import { Route as ProtectedLokasiAkunRouteImport } from './routes/_protected/lokasi-akun'
+import { Route as ProtectedPengaturanRouteImport } from './routes/_protected/pengaturan'
+import { Route as ProtectedSemuaLaporanRouteImport } from './routes/_protected/semua-laporan'
 import { Route as ProtectedVerifikasiRouteImport } from './routes/_protected/verifikasi'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
+import { Route as ProtectedLaporanSayaRouteImport } from './routes/_protected/laporan/saya'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,6 +51,21 @@ const ProtectedLaporRoute = ProtectedLaporRouteImport.update({
   path: '/lapor',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedLokasiAkunRoute = ProtectedLokasiAkunRouteImport.update({
+  id: '/lokasi-akun',
+  path: '/lokasi-akun',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPengaturanRoute = ProtectedPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedSemuaLaporanRoute = ProtectedSemuaLaporanRouteImport.update({
+  id: '/semua-laporan',
+  path: '/semua-laporan',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedVerifikasiRoute = ProtectedVerifikasiRouteImport.update({
   id: '/verifikasi',
   path: '/verifikasi',
@@ -57,6 +76,11 @@ const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProtectedAdminRouteRoute,
 } as any)
+const ProtectedLaporanSayaRoute = ProtectedLaporanSayaRouteImport.update({
+  id: '/laporan/saya',
+  path: '/laporan/saya',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -64,7 +88,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/lokasi-akun': typeof ProtectedLokasiAkunRoute
+  '/pengaturan': typeof ProtectedPengaturanRoute
+  '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
+  '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -72,7 +100,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/lapor': typeof ProtectedLaporRoute
+  '/lokasi-akun': typeof ProtectedLokasiAkunRoute
+  '/pengaturan': typeof ProtectedPengaturanRoute
+  '/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/verifikasi': typeof ProtectedVerifikasiRoute
+  '/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/admin': typeof ProtectedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -83,7 +115,11 @@ export interface FileRoutesById {
   '/_protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/lapor': typeof ProtectedLaporRoute
+  '/_protected/lokasi-akun': typeof ProtectedLokasiAkunRoute
+  '/_protected/pengaturan': typeof ProtectedPengaturanRoute
+  '/_protected/semua-laporan': typeof ProtectedSemuaLaporanRoute
   '/_protected/verifikasi': typeof ProtectedVerifikasiRoute
+  '/_protected/laporan/saya': typeof ProtectedLaporanSayaRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -94,10 +130,24 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard'
     | '/lapor'
+    | '/lokasi-akun'
+    | '/pengaturan'
+    | '/semua-laporan'
     | '/verifikasi'
+    | '/laporan/saya'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/lapor' | '/verifikasi' | '/admin'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/lapor'
+    | '/lokasi-akun'
+    | '/pengaturan'
+    | '/semua-laporan'
+    | '/verifikasi'
+    | '/laporan/saya'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -106,7 +156,11 @@ export interface FileRouteTypes {
     | '/_protected/admin'
     | '/_protected/dashboard'
     | '/_protected/lapor'
+    | '/_protected/lokasi-akun'
+    | '/_protected/pengaturan'
+    | '/_protected/semua-laporan'
     | '/_protected/verifikasi'
+    | '/_protected/laporan/saya'
     | '/_protected/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -160,6 +214,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedLaporRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/lokasi-akun': {
+      id: '/_protected/lokasi-akun'
+      path: '/lokasi-akun'
+      fullPath: '/lokasi-akun'
+      preLoaderRoute: typeof ProtectedLokasiAkunRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/pengaturan': {
+      id: '/_protected/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof ProtectedPengaturanRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/semua-laporan': {
+      id: '/_protected/semua-laporan'
+      path: '/semua-laporan'
+      fullPath: '/semua-laporan'
+      preLoaderRoute: typeof ProtectedSemuaLaporanRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/verifikasi': {
       id: '/_protected/verifikasi'
       path: '/verifikasi'
@@ -173,6 +248,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof ProtectedAdminIndexRouteImport
       parentRoute: typeof ProtectedAdminRouteRoute
+    }
+    '/_protected/laporan/saya': {
+      id: '/_protected/laporan/saya'
+      path: '/laporan/saya'
+      fullPath: '/laporan/saya'
+      preLoaderRoute: typeof ProtectedLaporanSayaRouteImport
+      parentRoute: typeof ProtectedRoute
     }
   }
 }
@@ -192,14 +274,22 @@ interface ProtectedRouteChildren {
   ProtectedAdminRouteRoute: typeof ProtectedAdminRouteRouteWithChildren
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedLaporRoute: typeof ProtectedLaporRoute
+  ProtectedLokasiAkunRoute: typeof ProtectedLokasiAkunRoute
+  ProtectedPengaturanRoute: typeof ProtectedPengaturanRoute
+  ProtectedSemuaLaporanRoute: typeof ProtectedSemuaLaporanRoute
   ProtectedVerifikasiRoute: typeof ProtectedVerifikasiRoute
+  ProtectedLaporanSayaRoute: typeof ProtectedLaporanSayaRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAdminRouteRoute: ProtectedAdminRouteRouteWithChildren,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedLaporRoute: ProtectedLaporRoute,
+  ProtectedLokasiAkunRoute: ProtectedLokasiAkunRoute,
+  ProtectedPengaturanRoute: ProtectedPengaturanRoute,
+  ProtectedSemuaLaporanRoute: ProtectedSemuaLaporanRoute,
   ProtectedVerifikasiRoute: ProtectedVerifikasiRoute,
+  ProtectedLaporanSayaRoute: ProtectedLaporanSayaRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

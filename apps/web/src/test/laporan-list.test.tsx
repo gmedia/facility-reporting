@@ -1,6 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -35,8 +41,6 @@ const mahasiswa: Akun = {
   role: 'user',
 }
 
-// Ditukar per test. Dibaca pas query-nya jalan (waktu render), bukan pas
-// factory mock-nya dipanggil, jadi aman diganti di dalam `it()`.
 let currentUser: Akun = pengelola
 
 vi.mock('@/features/auth/auth-query', async (importOriginal) => {
@@ -66,44 +70,6 @@ vi.mock('@/lib/api/client', () => ({
 
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
 
-// Base UI DropdownMenu bergantung ke pointer event + portal yang tidak ada
-// di jsdom. Komponennya di-swap jadi HTML sederhana di test ini — produksi
-// tetap DropdownMenu. Konsekuensinya isi menu selalu ada di DOM, jadi test
-// tidak perlu buka popup dulu.
-// Perlu diekspor SEMUA: modul ini di-mock utuh, jadi <AppNav> yang juga
-// ngederender <DropdownMenuLabel>/<DropdownMenuSeparator> ikut kena.
-vi.mock('@/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children?: ReactNode }) => <>{children}</>,
-  DropdownMenuLabel: ({ children }: { children?: ReactNode }) => (
-    <div className="px-2 py-1.5">{children}</div>
-  ),
-  DropdownMenuSeparator: () => <hr />,
-  DropdownMenuTrigger: ({ children }: { children?: ReactNode }) => (
-    <button type="button">{children}</button>
-  ),
-  DropdownMenuContent: ({ children }: { children?: ReactNode }) => (
-    <div role="menu">{children}</div>
-  ),
-  DropdownMenuItem: ({
-    children,
-    onSelect,
-    disabled,
-  }: {
-    children?: ReactNode
-    onSelect?: () => void
-    disabled?: boolean
-  }) => (
-    <button
-      type="button"
-      role="menuitem"
-      disabled={disabled}
-      onClick={onSelect}
-    >
-      {children}
-    </button>
-  ),
-}))
-
 const satuLaporan = [
   {
     id: 1,
@@ -128,7 +94,11 @@ function renderAt(path: string) {
     history: createMemoryHistory({ initialEntries: [path] }),
   })
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
@@ -141,39 +111,163 @@ beforeEach(() => {
   vi.mocked(api.GET).mockResolvedValue(ok({ data: satuLaporan }))
   vi.mocked(api.PATCH).mockResolvedValue(
     ok({
-      data: { ...satuLaporan[0], status: 'selesai', updated_at: null },
+      data: { ...satuLaporan[0], status: 'diproses', updated_at: null },
     }),
   )
 })
 
 afterEach(() => vi.clearAllMocks())
 
+async function getDaftar() {
+  return within(await screen.findByRole('region', { name: 'Daftar laporan' }))
+}
+
 describe('halaman /verifikasi', () => {
-  it('role admin: menampilkan tabel laporan dari GET /reports', async () => {
+  it('role admin: menampilkan daftar laporan dari GET /reports', async () => {
     renderAt('/verifikasi')
 
-    expect(await screen.findByText('gedung h')).toBeInTheDocument()
-    expect(screen.getByText('Bangunan')).toBeInTheDocument()
-    expect(screen.getByText('lampu mati')).toBeInTheDocument()
+    // Kategori, lokasi, dan tanggal ada dalam satu <span> di baris daftar,
+    // jadi dicari pakai regex dan dibatasi ke dalam daftar.
+    const daftar = await getDaftar()
+    expect(await daftar.findByText(/gedung h/)).toBeInTheDocument()
+    expect(daftar.getByText(/Bangunan/)).toBeInTheDocument()
+    expect(daftar.getByText('lampu mati')).toBeInTheDocument()
+
+    // Shell pengelola menaungi halaman /verifikasi. Link punya badge angka
+    // (jumlah menunggu), jadi nama aksesibelnya "Verifikasi1" -> pakai regex.
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
+    expect(nav.getByRole('link', { name: /Verifikasi/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(
+      screen.queryByRole('button', { name: 'Akun' }),
+    ).not.toBeInTheDocument()
 
     // status enum ditampilkan sebagai label, bukan value mentah.
-    // selector 'span' dipakai biar gak ketimpa menuitem (mock dropdown
-    // selalu render isinya di DOM, produksi pakai portal).
-    expect(
-      screen.getByText('Menunggu Verifikasi', { selector: 'span' }),
-    ).toBeInTheDocument()
+    // Dibatasi ke daftar karena panel detail juga menampilkan badge yang sama.
+    expect(daftar.getByText('Menunggu Verifikasi')).toBeInTheDocument()
     expect(screen.queryByText('menunggu_verifikasi')).not.toBeInTheDocument()
 
     expect(api.GET).toHaveBeenCalledWith('/reports')
   })
 
-  it('role admin: bisa ubah status lewat PATCH', async () => {
+  it('menampilkan daftar laporan, filter, dan grafik dari data real', async () => {
     renderAt('/verifikasi')
-    await screen.findByText('gedung h')
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Selesai' }))
+    expect(
+      await screen.findByRole('region', { name: 'Daftar laporan' }),
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByRole('group', { name: 'Filter status' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Laporan per hari')).toBeInTheDocument()
+    expect(api.GET).toHaveBeenCalledWith('/reports')
+  })
+
+  it('klik filter statistik menyaring daftar', async () => {
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({
+        data: [
+          satuLaporan[0],
+          {
+            ...satuLaporan[0],
+            id: 2,
+            kategori: 'furnitur',
+            lokasi: 'kelas a',
+            deskripsi: 'meja rusak',
+            status: 'diproses',
+          },
+        ],
+      }),
+    )
+    renderAt('/verifikasi')
+
+    const daftar = await getDaftar()
+    await daftar.findByText('lampu mati')
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
+
+    // Filter hanya menampilkan: Semua status, Menunggu, Terverifikasi, Diproses
+    // Selesai dan Ditolak tidak pernah ditampilkan dalam filter chip
+    const btnMenunggu = await within(filterGroup).findByRole('button', {
+      name: /Menunggu/,
+    })
+    fireEvent.click(btnMenunggu)
+    // Setelah filter Menunggu, hanya laporan dengan status menunggu_verifikasi yang tampil
+    expect(daftar.getByText('lampu mati')).toBeInTheDocument()
+    expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
+    expect(api.GET).toHaveBeenCalledWith('/reports')
+  })
+
+  it('role admin: tandai selesai mengirim foto bukti lewat POST + _method=PATCH', async () => {
+    // PR #92: status final tidak boleh diubah. Laporan harus sudah
+    // `diproses` baru bisa ditandai `selesai`.
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({ data: [{ ...satuLaporan[0], status: 'diproses' }] }),
+    )
+    vi.mocked(api.POST).mockResolvedValue(
+      ok({ data: { ...satuLaporan[0], status: 'selesai' } }),
+    )
+    renderAt('/verifikasi')
+
+    // Klik item laporan untuk membuka detail panel.
+    const daftar = await getDaftar()
+    await daftar.findByText('lampu mati')
+    fireEvent.click(daftar.getByText('lampu mati'))
+
+    // Buka detail panel lalu cari button di dalam dialog
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Tandai selesai' }),
+    )
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: /Selesaikan laporan/ }),
+    )
+    const foto = new File(['x'], 'bukti.jpg', { type: 'image/jpeg' })
+    fireEvent.change(dialog.getByLabelText('Foto bukti penyelesaian'), {
+      target: { files: [foto] },
+    })
+
+    // Request terkirim dari tombol di dalam dialog.
+    fireEvent.click(dialog.getByRole('button', { name: 'Tandai selesai' }))
+
+    await waitFor(() => expect(api.POST).toHaveBeenCalledTimes(1))
+    expect(api.PATCH).not.toHaveBeenCalled()
+
+    const [path, options] = vi.mocked(api.POST).mock.calls[0] as unknown as [
+      string,
+      { params: { path: { laporan: number } }; body: FormData },
+    ]
+    expect(path).toBe('/reports/{laporan}/status')
+    expect(options.params.path.laporan).toBe(1)
+    expect(options.body).toBeInstanceOf(FormData)
+    expect(options.body.get('_method')).toBe('PATCH')
+    expect(options.body.get('status')).toBe('selesai')
+    expect(options.body.get('foto_bukti')).toBeInstanceOf(File)
+  })
+
+  it('role admin: verifikasi tanpa foto tetap lewat api.PATCH', async () => {
+    vi.mocked(api.PATCH).mockResolvedValue(
+      ok({ data: { ...satuLaporan[0], status: 'valid' } }),
+    )
+    renderAt('/verifikasi')
+    const user = userEvent.setup()
+
+    const daftar = await getDaftar()
+    await daftar.findByText('lampu mati')
+
+    // Klik baris laporan untuk membuka detail dialog.
+    fireEvent.click(daftar.getByText('lampu mati'))
+
+    // Klik tombol "Verifikasi" di dalam dialog detail.
+    await user.click(await screen.findByRole('button', { name: 'Verifikasi' }))
 
     await waitFor(() => expect(api.PATCH).toHaveBeenCalledTimes(1))
+    expect(api.POST).not.toHaveBeenCalled()
 
     const [path, options] = vi.mocked(api.PATCH).mock.calls[0] as unknown as [
       string,
@@ -181,7 +275,7 @@ describe('halaman /verifikasi', () => {
     ]
     expect(path).toBe('/reports/{laporan}/status')
     expect(options.params.path.laporan).toBe(1)
-    expect(options.body.status).toBe('selesai')
+    expect(options.body.status).toBe('valid')
   })
 
   it('role user: diarahkan ke /dashboard', async () => {
@@ -194,12 +288,103 @@ describe('halaman /verifikasi', () => {
     expect(screen.queryByText('gedung h')).not.toBeInTheDocument()
   })
 
+  it('filter status menyaring daftar sesuai pilihan', async () => {
+    vi.mocked(api.GET).mockResolvedValue(
+      ok({
+        data: [
+          satuLaporan[0],
+          {
+            ...satuLaporan[0],
+            id: 2,
+            kategori: 'furnitur',
+            lokasi: 'kelas a',
+            deskripsi: 'meja rusak',
+            status: 'diproses',
+          },
+        ],
+      }),
+    )
+    renderAt('/verifikasi')
+
+    const daftar = await getDaftar()
+    await daftar.findByText('lampu mati')
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
+
+    // Semua pengecekan lewat `daftar`, karena judul laporan terpilih juga
+    // tampil di panel detail.
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Menunggu/ }),
+    )
+    expect(daftar.getByText('lampu mati')).toBeInTheDocument()
+    expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
+
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Terverifikasi/ }),
+    )
+    // Terverifikasi has count 0, so empty state should appear
+    expect(daftar.queryByText('lampu mati')).not.toBeInTheDocument()
+    expect(daftar.queryByText('meja rusak')).not.toBeInTheDocument()
+
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Semua status/ }),
+    )
+    const daftar2 = await getDaftar()
+    expect(await daftar2.findByText('lampu mati')).toBeInTheDocument()
+    expect(await daftar2.findByText('meja rusak')).toBeInTheDocument()
+  })
+
+  it('filter tanpa hasil: empty state mengikuti filter aktif', async () => {
+    renderAt('/verifikasi')
+
+    const daftar = await getDaftar()
+    await daftar.findByText('lampu mati')
+    const filterGroup = await screen.findByRole('group', {
+      name: 'Filter status',
+    })
+
+    fireEvent.click(
+      await within(filterGroup).findByRole('button', { name: /Terverifikasi/ }),
+    )
+
+    expect(
+      screen.getByText(
+        'Tidak ada laporan yang cocok. Ubah filter atau kata kunci.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset filter' }))
+    expect(await daftar.findByText('lampu mati')).toBeInTheDocument()
+  })
+
+  it('loading state: menampilkan pesan memuat', async () => {
+    vi.mocked(api.GET).mockReturnValue(new Promise(() => {}) as never)
+    renderAt('/verifikasi')
+
+    expect(await screen.findByText('Memuat laporan…')).toBeInTheDocument()
+  })
+
+  it('error state: menampilkan pesan dan tombol coba lagi', async () => {
+    vi.mocked(api.GET).mockRejectedValue(new Error('jaringan putus'))
+    renderAt('/verifikasi')
+
+    expect(
+      await screen.findByText('Gagal memuat daftar laporan.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('jaringan putus')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Coba lagi' }),
+    ).toBeInTheDocument()
+  })
+
   it('data kosong: menampilkan pesan, bukan tabel kosong', async () => {
     vi.mocked(api.GET).mockResolvedValue(ok({ data: [] }))
     renderAt('/verifikasi')
 
     expect(
-      await screen.findByText('Belum ada laporan masuk.'),
+      await screen.findByText(/Belum ada laporan di antrian/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })

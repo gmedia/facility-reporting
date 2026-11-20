@@ -1,7 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
-import type { ReactNode } from 'react'
+import { Children, isValidElement, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   RouterProvider,
@@ -18,6 +24,25 @@ const fakeUser = {
   email: 'user@facility.test',
   role: 'user',
 }
+
+// Posisi pelapor di-mock: jsdom tidak punya GPS. Tiap tes bisa mengganti
+// `posisiMock.nilai` untuk mensimulasikan izin ditolak atau di luar radius.
+const { posisiMock, POSISI_DALAM } = vi.hoisted(() => {
+  const dalam = {
+    status: 'dalam' as const,
+    gps: { lat: -7.3859479, lng: 109.236801, akurasi: 10 },
+    jarak: 149,
+    radius: 400,
+    bisaKirim: true,
+    ulangi: () => {},
+    muatUlangBatas: () => {},
+  }
+  return { POSISI_DALAM: dalam, posisiMock: { nilai: dalam as unknown } }
+})
+
+vi.mock('@/features/laporan/lokasi-pelapor', () => ({
+  usePosisiPelapor: () => posisiMock.nilai,
+}))
 
 vi.mock('@/features/auth/auth-query', async (importOriginal) => {
   const actual =
@@ -55,11 +80,25 @@ vi.mock('@/components/ui/select', () => {
     onValueChange?: (value: string) => void
     children?: ReactNode
   }) {
+    // id-nya diambil dari <SelectTrigger> supaya <FieldLabel htmlFor>
+    // tetap nyambung ke <select> stub ini — sama seperti produksi, di
+    // mana id itu dipasang di trigger Base UI. Tanpa ini, Kategori dan
+    // Lokasi (dua-duanya pakai Select) bakal sama-sama kebaca tanpa
+    // label dan getByLabelText('Lokasi') jadi nihil.
+    let id: string | undefined
+    Children.forEach(children, (child) => {
+      if (isValidElement<{ id?: string }>(child) && child.props.id) {
+        id = child.props.id
+      }
+    })
+
     return (
       <select
-        aria-label="Kategori"
+        id={id}
         value={value ?? ''}
-        onChange={(event) => onValueChange?.(event.target.value)}
+        onChange={(event) => {
+          onValueChange?.(event.target.value)
+        }}
       >
         {children}
       </select>
@@ -117,26 +156,56 @@ function renderAt(path: string) {
   return router
 }
 
-// Kategori diisi lewat fireEvent karena komponen Select-nya di-stub jadi
-// <select> native (lihat mock di atas). Lokasi & Deskripsi pakai user-event
-// supaya ngelakuin apa yang beneran dilakuin user: ngetik karakter per
-// karakter, bukan sekali set nilai.
+// Kategori & Lokasi diisi lewat fireEvent karena komponen Select-nya
+// di-stub jadi <select> native (lihat mock di atas). Deskripsi pakai
+// user-event supaya ngelakuin apa yang beneran dilakuin user: ngetik
+// karakter per karakter, bukan sekali set nilai.
 async function isiForm(user: UserEvent) {
-  fireEvent.change(screen.getByLabelText('Kategori'), {
-    target: { value: 'elektronik' },
-  })
-  await user.type(
-    screen.getByLabelText('Lokasi'),
-    'Gedung B lantai 2 ruang 205',
-  )
+  const kategoriLabel = screen.getByLabelText('Kategori') as HTMLLabelElement
+  const kategoriSelect = document.getElementById(kategoriLabel.htmlFor!)
+  fireEvent.change(kategoriSelect!, { target: { value: 'elektronik' } })
+  const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
+  const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+  fireEvent.change(lokasiSelect!, { target: { value: 'Gedung D' } })
   await user.type(
     screen.getByLabelText('Deskripsi'),
     'Proyektor kelas mati total dan kabelnya terkelupas.',
   )
+  pilihFoto()
+
+  // defaultValues skala SMART sekarang 0 — harus dipilih eksplisit agar
+  // form lolos validasi .min(1) (lihat laporan-form.tsx defaultValues).
+  // Nama aksesibel radio sekarang "1 Rendah", "3 Sedang", dst. (label arah
+  // ditambahkan di dalam <label>), jadi cari radio berdasarkan value atribut.
+  const pilihNilai = async (label: RegExp, nilai: number) => {
+    const rg = screen.getByRole('radiogroup', { name: label })
+    const radio = within(rg)
+      .getAllByRole('radio')
+      .find((r) => (r as HTMLInputElement).value === String(nilai))
+    await user.click(radio as Element)
+  }
+  await pilihNilai(/Nilai Kerusakan/, 3)
+  await pilihNilai(/Nilai Risiko/, 3)
+  await pilihNilai(/Nilai Dampak/, 3)
+  await pilihNilai(/Nilai Frekuensi/, 3)
+}
+
+// Foto sekarang wajib, jadi tiap test yang mau submit harus nempelkin file.
+// `files` di-properti jsdom read-only, jadi ditimpa lewat defineProperty —
+// sama dengan yang dilakukan library upload pada umumnya.
+function pilihFoto(nama = 'foto.png', tipe = 'image/png') {
+  const input = screen.getByLabelText('Foto laporan')
+  const file = new File(['isi-foto'], nama, { type: tipe })
+  Object.defineProperty(input, 'files', {
+    value: [file],
+    configurable: true,
+  })
+  fireEvent.change(input)
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  posisiMock.nilai = POSISI_DALAM
   vi.mocked(api.POST).mockResolvedValue(
     ok({ data: { id: 1, status: 'MENUNGGU_VERIFIKASI' } }),
   )
@@ -154,9 +223,19 @@ describe('halaman /lapor', () => {
       await screen.findByText('Laporkan Kerusakan Fasilitas'),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Kategori')).toBeInTheDocument()
-    expect(screen.getByLabelText('Lokasi')).toBeInTheDocument()
     expect(screen.getByLabelText('Deskripsi')).toBeInTheDocument()
-    expect(screen.getByLabelText('Foto (opsional)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Foto')).toBeInTheDocument()
+
+    // Lokasi berupa dropdown, bukan ketikan bebas: pilihannya terkunci
+    // di LOKASI_VALUES (permintaan 3 Nov 2026).
+    const lokasiLabel = screen.getByLabelText('Lokasi') as HTMLLabelElement
+    expect(lokasiLabel).toBeInTheDocument()
+    const lokasiSelect = document.getElementById(lokasiLabel.htmlFor!)
+    expect(
+      within(lokasiSelect!)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Gedung D', 'Gedung S'])
   })
 
   it('menampilkan error validasi kalau form kosong', async () => {
@@ -169,6 +248,10 @@ describe('halaman /lapor', () => {
     expect(await screen.findByText('Lokasi wajib diisi')).toBeInTheDocument()
     expect(
       await screen.findByText('Deskripsi minimal 10 karakter'),
+    ).toBeInTheDocument()
+    // Kontrak baru: foto tidak lagi opsional.
+    expect(
+      await screen.findByText('Foto wajib dilampirkan'),
     ).toBeInTheDocument()
   })
 
@@ -190,7 +273,13 @@ describe('halaman /lapor', () => {
     expect(path).toBe('/reports')
     expect(options.body).toBeInstanceOf(FormData)
     expect(options.body.get('kategori')).toBe('elektronik')
-    expect(options.body.get('lokasi')).toBe('Gedung B lantai 2 ruang 205')
+    expect(options.body.get('lokasi')).toBe('Gedung D')
+    expect(options.body.get('nilai_kerusakan')).toBe('3')
+    expect(options.body.get('nilai_risiko')).toBe('3')
+    expect(options.body.get('nilai_dampak')).toBe('3')
+    expect(options.body.get('nilai_frekuensi')).toBe('3')
+    expect(options.body.get('latitude')).toBe('-7.3859479')
+    expect(options.body.get('longitude')).toBe('109.2368010')
 
     await waitFor(() =>
       expect(router.state.location.pathname).toBe('/dashboard'),
@@ -214,6 +303,36 @@ describe('halaman /lapor', () => {
     expect(
       await screen.findByText('Deskripsi minimal 10 karakter.'),
     ).toBeInTheDocument()
+  })
+
+  it('izin lokasi ditolak → banner tampil dan tombol kirim terkunci', async () => {
+    posisiMock.nilai = {
+      ...POSISI_DALAM,
+      status: 'ditolak',
+      gps: null,
+      jarak: null,
+      bisaKirim: false,
+    }
+    renderAt('/lapor')
+
+    expect(await screen.findByText(/Izin lokasi ditolak/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Kirim Laporan' })).toBeDisabled()
+    expect(api.POST).not.toHaveBeenCalled()
+  })
+
+  it('di luar radius → pesan jarak tampil dan tombol kirim terkunci', async () => {
+    posisiMock.nilai = {
+      ...POSISI_DALAM,
+      status: 'luar',
+      jarak: 1200,
+      bisaKirim: false,
+    }
+    renderAt('/lapor')
+
+    expect(
+      await screen.findByText(/Di luar radius 400 m dari kampus \(1200 m\)/),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Kirim Laporan' })).toBeDisabled()
   })
 
   it('melempar role selain user ke /dashboard', async () => {

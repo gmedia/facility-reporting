@@ -11,7 +11,7 @@ use Illuminate\Database\Seeder;
 class DemoUserSeeder extends Seeder
 {
     /**
-     * Create a demo account with the "user" role.
+     * Create demo accounts: one "user" and one "admin".
      */
     public function run(): void
     {
@@ -22,6 +22,16 @@ class DemoUserSeeder extends Seeder
                 'email' => 'mahasiswa@facility.test',
                 'password' => 'password',
                 'role' => UserRole::User->value,
+            ],
+        );
+
+        User::updateOrCreate(
+            ['email' => 'admin@facility.test'],
+            [
+                'name' => 'Admin Demo',
+                'nim' => null,
+                'password' => 'password',
+                'role' => UserRole::Admin->value,
             ],
         );
     }

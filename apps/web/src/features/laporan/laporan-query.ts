@@ -3,7 +3,43 @@ import { api, initializeCsrf } from '@/lib/api/client'
 import type { components } from '@/lib/api/schema'
 
 export type LaporanKategori = components['schemas']['LaporanKategori']
-export type Laporan = components['schemas']['LaporanResource']
+
+// Data pelapor hanya dikirim backend untuk admin/super admin.
+export type Pelapor = {
+  id: number
+  name: string
+  email: string | null
+  nim: string | null
+  foto: string | null
+}
+
+// Intersection supaya aman sebelum dan sesudah types:generate dijalankan.
+// `foto_bukti` = foto bukti penyelesaian yang diunggah admin saat status
+// diubah ke selesai (path relatif di disk public, seperti `foto`).
+// `updated_at` = waktu terakhir laporan berubah, dipakai tab Tertahan.
+// `diverifikasi_*`, `diproses_*`, dan `diselesaikan_*` = nama, foto profil,
+// dan waktu admin saat laporan diverifikasi (atau ditolak), mulai diproses,
+// dan diselesaikan. Opsional: dipakai halaman Semua Laporan (kolom & filter
+// Admin) dan panel Aktivitas terbaru. Kalau backend belum mengirimnya,
+// bagian itu otomatis tidak tampil (foto kembali ke lingkaran inisial).
+// `latitude`/`longitude` = koordinat pelapor saat laporan dikirim. Null untuk
+// laporan lama yang dibuat sebelum fitur lokasi ada.
+export type Laporan = components['schemas']['LaporanResource'] & {
+  pelapor?: Pelapor | null
+  foto_bukti?: string | null
+  updated_at?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  diverifikasi_oleh?: string | null
+  diverifikasi_oleh_foto?: string | null
+  diverifikasi_pada?: string | null
+  diproses_oleh?: string | null
+  diproses_oleh_foto?: string | null
+  diproses_pada?: string | null
+  diselesaikan_oleh?: string | null
+  diselesaikan_oleh_foto?: string | null
+  diselesaikan_pada?: string | null
+}
 
 // Kunci objek ini = nilai enum di backend. Kalau backend nambah kategori,
 // tambah di sini + jalankan `pnpm --dir apps/web types:generate`.
@@ -24,6 +60,16 @@ export type LaporanFormValues = {
   lokasi: string
   deskripsi: string
   foto?: FileList
+  // Skala SMART 1–5, wajib diisi oleh pelapor saat membuat laporan
+  // (backend mewajibkannya sejak 11 Nov 2026, lihat StoreLaporanRequest).
+  nilai_kerusakan: number
+  nilai_risiko: number
+  nilai_dampak: number
+  nilai_frekuensi: number
+  // Posisi GPS pelapor. Diisi otomatis oleh form (bukan input user), dan
+  // dicek ulang jaraknya oleh backend terhadap titik pusat + radius.
+  latitude: number
+  longitude: number
 }
 
 // Sama dengan validasi backend (Billy, PR #33)
@@ -60,7 +106,7 @@ export const STATUS_LABEL: Record<LaporanStatus, string> = {
 
 export const STATUS_VALUES = Object.keys(STATUS_LABEL) as LaporanStatus[]
 
-// Tones dipakai laporan-list.tsx buat nge-style badge-nya.
+// Tones dipakai status-badge.tsx buat nge-style badge-nya.
 export const STATUS_TONE: Record<LaporanStatus, string> = {
   menunggu_verifikasi: 'bg-amber-100 text-amber-800 ring-amber-200',
   valid: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
@@ -69,9 +115,55 @@ export const STATUS_TONE: Record<LaporanStatus, string> = {
   selesai: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
 }
 
+// ============================================================
+// Prioritas laporan (M2)
+//
+// Nilai di-hitung backend dari skor (LaporanResource): ≥4.00 → tinggi,
+// ≥3.00 → sedang, selain itu → rendah. Field `null` kalau belum pernah
+// diproses — badge prioritas tidak boleh dipaksa tampil.
+// ============================================================
+export type PrioritasKategori = 'tinggi' | 'sedang' | 'rendah'
+
+export const PRIORITAS_LABEL: Record<PrioritasKategori, string> = {
+  tinggi: 'Tinggi',
+  sedang: 'Sedang',
+  rendah: 'Rendah',
+}
+
+export const PRIORITAS_VALUES = Object.keys(
+  PRIORITAS_LABEL,
+) as PrioritasKategori[]
+
+export const PRIORITAS_TONE: Record<PrioritasKategori, string> = {
+  tinggi: 'bg-red-100 text-red-800 ring-red-200',
+  sedang: 'bg-amber-100 text-amber-800 ring-amber-200',
+  rendah: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+}
+
+// Riwayat perubahan status satu laporan — dipanggil hanya saat panel
+// detail dibuka, bukan saat halaman dimuat.
+export function useLaporanHistory(id: number) {
+  return useQuery({
+    queryKey: ['laporan', 'history', id],
+    queryFn: async () => {
+      const { data, error, response } = await api.GET(
+        '/reports/{laporan}/history',
+        { params: { path: { laporan: id } } },
+      )
+      if (error || !data) {
+        throw apiError(response.status, error, 'Gagal memuat riwayat status.')
+      }
+      return data.data
+    },
+    enabled: id > 0, // nilai default setelah `new Query(...)` — aman
+  })
+}
+
 // Daftar laporan. Backend sudah menyeleksi per role:
 //   user → cuma laporannya sendiri, admin/super_admin → semua.
 // Jadi gak perlu difilter lagi di sisi klien.
+//
+// Polling: laporan dari user lain muncul otomatis tanpa refresh manual.
 export function useLaporanList() {
   return useQuery({
     queryKey: ['laporan', 'list'],
@@ -82,10 +174,17 @@ export function useLaporanList() {
       }
       return data.data
     },
+    refetchInterval: 15_000, // cek ulang tiap 15 detik
+    refetchIntervalInBackground: false, // berhenti saat tab tidak aktif
+    refetchOnWindowFocus: true, // refetch saat kembali ke tab
+    refetchOnMount: 'always', // selalu ambil data segar saat halaman dibuka
   })
 }
 
 // Aksi admin: ubah status lewat PATCH /reports/{laporan}/status.
+// - `alasan` wajib dari backend kalau status = ditolak.
+// - `foto` (bukti) wajib dari backend kalau status = selesai; di request
+//   multipart namanya `foto_bukti`.
 export function useUpdateLaporanStatus() {
   const queryClient = useQueryClient()
 
@@ -93,16 +192,53 @@ export function useUpdateLaporanStatus() {
     mutationFn: async ({
       id,
       status,
+      alasan,
+      foto,
     }: {
       id: number
       status: LaporanStatus
+      alasan?: string
+      foto?: File
     }) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
 
-      const { data, error, response } = await api.PATCH(
-        '/reports/{laporan}/status',
-        { params: { path: { laporan: id } }, body: { status } },
-      )
+      let result: {
+        data?: { data: Laporan }
+        error?: unknown
+        response: Response
+      }
+
+      if (foto) {
+        // Laravel tidak mem-parse multipart di request PATCH, jadi dikirim
+        // sebagai POST + `_method=PATCH` (method spoofing). Dicast karena
+        // schema.d.ts hanya mengenal PATCH untuk path ini.
+        const form = new FormData()
+        form.append('_method', 'PATCH')
+        form.append('status', status)
+        if (alasan) form.append('alasan', alasan)
+        form.append('foto_bukti', foto) // nama field di backend: foto_bukti
+
+        result = await (
+          api as unknown as {
+            POST: (url: string, init: unknown) => Promise<typeof result>
+          }
+        ).POST('/reports/{laporan}/status', {
+          params: { path: { laporan: id } },
+          body: form,
+        })
+      } else {
+        const body = {
+          status,
+          ...(alasan ? { alasan } : {}),
+        } as { status: LaporanStatus }
+
+        result = (await api.PATCH('/reports/{laporan}/status', {
+          params: { path: { laporan: id } },
+          body,
+        })) as typeof result
+      }
+
+      const { data, error, response } = result
 
       if (error || !data) {
         throw apiError(response.status, error, 'Gagal mengubah status laporan.')
@@ -119,6 +255,8 @@ export function useUpdateLaporanStatus() {
 }
 
 export function useCreateLaporan() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async (values: LaporanFormValues) => {
       await initializeCsrf() // wajib — lupa = 419 Page Expired
@@ -127,6 +265,13 @@ export function useCreateLaporan() {
       form.append('kategori', values.kategori)
       form.append('lokasi', values.lokasi)
       form.append('deskripsi', values.deskripsi)
+      form.append('nilai_kerusakan', String(values.nilai_kerusakan))
+      form.append('nilai_risiko', String(values.nilai_risiko))
+      form.append('nilai_dampak', String(values.nilai_dampak))
+      form.append('nilai_frekuensi', String(values.nilai_frekuensi))
+      // 7 desimal = presisi kolom decimal(10,7) di backend (~1 cm).
+      form.append('latitude', values.latitude.toFixed(7))
+      form.append('longitude', values.longitude.toFixed(7))
 
       const file = values.foto?.[0]
       if (file) form.append('foto', file)
@@ -148,6 +293,11 @@ export function useCreateLaporan() {
 
       return data.data
     },
+    onSuccess: () => {
+      // Tanpa ini, dashboard setelah submit masih menampilkan cache lama
+      // sampai di-refresh manual.
+      void queryClient.invalidateQueries({ queryKey: ['laporan'] })
+    },
   })
 }
 
@@ -155,9 +305,27 @@ export function useCreateLaporan() {
 // Helper error. Sengaja diduplikat dari features/admin/users-query.ts
 // supaya nggak nyasar ke folder Anas. Debt kecil — kalau nanti mau
 // digabung, bikin lib/api/errors.ts dulu bareng tim.
+//
+// Di-export untuk features/akun/akun-query.ts (folder sendiri, bukan
+// Anas) supaya pesan error 401/422/500 seragam antar halaman user.
 // ============================================================
-function apiError(status: number, body: unknown, fallback: string): Error {
-  const error = new Error(messageFor(status, fallback))
+export function apiError(
+  status: number,
+  body: unknown,
+  fallback: string,
+): Error {
+  // 422: pakai pesan dari backend (mis. transisi status tidak sah) biar
+  // toast nggak cuma bilang "data tidak valid".
+  const pesanApi =
+    body && typeof body === 'object' && 'message' in body
+      ? (body as { message?: unknown }).message
+      : null
+
+  const error = new Error(
+    status === 422 && typeof pesanApi === 'string' && pesanApi.length > 0
+      ? pesanApi
+      : messageFor(status, fallback),
+  )
   Object.assign(error, { status }, body ?? {})
   return error
 }
@@ -165,7 +333,7 @@ function apiError(status: number, body: unknown, fallback: string): Error {
 function messageFor(status: number, fallback: string): string {
   if (status === 401) return 'Sesi Anda sudah berakhir. Silakan login ulang.'
   if (status === 403) return 'Akses ditolak.'
-  if (status === 422) return 'Data yang dikirim tidak valid.'
+  if (status === 422) return fallback
   if (status === 429) return 'Terlalu banyak permintaan. Coba lagi nanti.'
   if (status >= 500) return 'Server sedang bermasalah. Coba lagi nanti.'
   return fallback

@@ -1,0 +1,227 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRouter,
+} from '@tanstack/react-router'
+import { routeTree } from '../routeTree.gen'
+import { api } from '@/lib/api/client'
+
+type Role = 'user' | 'admin' | 'super_admin'
+type Akun = { id: number; name: string; nim: string; email: string; role: Role }
+
+const mahasiswa: Akun = {
+  id: 1,
+  name: 'Mahasiswa Baru',
+  nim: '12345',
+  email: 'user@facility.test',
+  role: 'user',
+}
+
+const admin: Akun = {
+  ...mahasiswa,
+  id: 2,
+  name: 'Admin Satu',
+  email: 'admin@facility.test',
+  role: 'admin',
+}
+
+const superAdmin: Akun = {
+  ...mahasiswa,
+  id: 3,
+  name: 'Super Admin',
+  email: 'superadmin@facility.test',
+  role: 'super_admin',
+}
+
+// Ditukar per test. `currentUser` dibaca pas query-nya jalan (waktu render),
+// bukan pas factory mock-nya dipanggil, jadi aman diganti di dalam `it()`.
+let currentUser: Akun = mahasiswa
+
+vi.mock('@/features/auth/auth-query', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/features/auth/auth-query')>()
+  return {
+    ...actual,
+    meQueryOptions: {
+      queryKey: ['me'],
+      queryFn: async () => currentUser,
+      retry: false,
+      staleTime: 0,
+    },
+  }
+})
+
+vi.mock('@/lib/api/client', () => ({
+  api: { GET: vi.fn(), POST: vi.fn(), PUT: vi.fn(), DELETE: vi.fn() },
+  initializeCsrf: vi.fn(() => Promise.resolve()),
+}))
+
+vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
+
+function renderAt(path: string) {
+  const router = createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  })
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  )
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  currentUser = mahasiswa
+  // openapi-fetch selalu balikin objek { data, error, response } — kalau
+  // mock-nya return undefined, destructuring di mutation jadi error.
+  vi.mocked(api.POST).mockResolvedValue({
+    data: { message: 'Logged out' },
+    response: new Response(null, { status: 200 }),
+  } as never)
+})
+
+afterEach(() => vi.clearAllMocks())
+
+// Inti dari issue #37: "menu yang menampilkan menu beda per role".
+//
+// Sejak halaman user pindah ke sidebar (UserShell), menu per role tersebar
+// di dua tempat — UserShell untuk mahasiswa, DashboardShell untuk
+// pengelola — dan keduanya diuji di file ini.
+//
+// Yang dites cuma menu-item yang routenya SUDAH ADA. /prioritas,
+// /admin/statistik dll. belum dibuat, jadi belum dimasukkan.
+describe('Navigasi per role', () => {
+  it('role user: sidebar punya Beranda, Lapor Kerusakan, Riwayat Laporan, dan Pengaturan', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    // Scope ke sidebar — tombol aksi di hero juga berlabel
+    // "Laporkan Kerusakan", jadi jangan query seluruh halaman.
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi utama' }),
+    )
+
+    expect(nav.getByRole('link', { name: 'Beranda' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
+
+    // Ini pembeda utamanya — role lain gak boleh lihat ini.
+    expect(nav.getByRole('link', { name: 'Lapor Kerusakan' })).toHaveAttribute(
+      'href',
+      '/lapor',
+    )
+    expect(nav.getByRole('link', { name: 'Riwayat Laporan' })).toHaveAttribute(
+      'href',
+      '/laporan/saya',
+    )
+
+    // Issue #93: menu Akun — sejak #113 berganti jadi Pengaturan
+    // (foto profil, password, dan Bantuan) di /pengaturan.
+    expect(nav.getByRole('link', { name: 'Pengaturan' })).toHaveAttribute(
+      'href',
+      '/pengaturan',
+    )
+
+    // Issue #42: /verifikasi khusus pengelola, user biasa gak boleh lihat.
+    expect(
+      nav.queryByRole('link', { name: 'Verifikasi' }),
+    ).not.toBeInTheDocument()
+    expect(
+      nav.queryByRole('link', { name: 'Akun Admin' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('role admin: dashboard memakai sidebar tanpa menu Lapor Kerusakan', async () => {
+    currentUser = admin
+    renderAt('/dashboard')
+
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
+
+    expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
+    expect(
+      nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
+    ).not.toBeInTheDocument()
+    // Menu khusus mahasiswa (Lapor/Riwayat) tidak ada untuk pengelola,
+    // tapi Pengaturan tetap ada — halamannya memang untuk semua role (#113).
+    expect(
+      nav.queryByRole('link', { name: 'Riwayat Laporan' }),
+    ).not.toBeInTheDocument()
+    expect(nav.getByRole('link', { name: 'Pengaturan' })).toHaveAttribute(
+      'href',
+      '/pengaturan',
+    )
+
+    // Issue #42: admin boleh buka halaman daftar laporan di /verifikasi.
+    expect(nav.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
+      'href',
+      '/verifikasi',
+    )
+    expect(
+      nav.queryByRole('link', { name: 'Akun Admin' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('role super_admin: sidebar dapat Akun Admin, bukan Lapor Kerusakan', async () => {
+    currentUser = superAdmin
+    renderAt('/dashboard')
+
+    const nav = within(
+      await screen.findByRole('complementary', { name: 'Navigasi admin' }),
+    )
+
+    expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    )
+    expect(nav.getByRole('link', { name: 'Akun Admin' })).toHaveAttribute(
+      'href',
+      '/admin',
+    )
+    expect(
+      nav.queryByRole('link', { name: 'Lapor Kerusakan' }),
+    ).not.toBeInTheDocument()
+
+    // Issue #42: super_admin juga boleh buka /verifikasi.
+    expect(nav.getByRole('link', { name: 'Verifikasi' })).toHaveAttribute(
+      'href',
+      '/verifikasi',
+    )
+  })
+
+  // Dropdown akun di topbar ikut hilang bersama AppNav, jadi logout pindah
+  // jadi tombol biasa di kaki sidebar. Tanpa portal Base UI, mount-nya jauh
+  // lebih sederhana — tapi tetap diuji biar tombolnya gak cuma hiasan.
+  it('sidebar user: tombol Keluar tampil tanpa crash', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    expect(
+      await screen.findByRole('button', { name: 'Keluar' }),
+    ).toBeInTheDocument()
+  })
+
+  it('sidebar user: tombol Keluar benar-benar ngejalanin logout', async () => {
+    currentUser = mahasiswa
+    renderAt('/dashboard')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }))
+
+    await waitFor(() => expect(api.POST).toHaveBeenCalled())
+  })
+})

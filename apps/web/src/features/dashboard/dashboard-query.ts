@@ -1,55 +1,7 @@
-import { queryOptions } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
-import type { components } from '@/lib/api/schema'
-
-export type Laporan = components['schemas']['LaporanResource']
-export type LaporanStatus = components['schemas']['LaporanStatus']
-
-// TODO(setelah PR #44 merge): hapus STATUS_LABEL lokal ini, lalu import
-// dari '@/features/laporan/laporan-query'. Lihat §11 sketsa.
-// Sengaja belum diubah sekarang biar gak konflik sama PR #44.
-export const STATUS_LABEL: Record<LaporanStatus, string> = {
-  menunggu_verifikasi: 'Menunggu Verifikasi',
-  valid: 'Valid',
-  ditolak: 'Ditolak',
-  diproses: 'Diproses',
-  selesai: 'Selesai',
-}
-
-// Backend udah nge-scope: user biasa cuma dapet laporannya sendiri,
-// admin/super_admin dapet semua. Jadi gak perlu filter di frontend.
-export const dashboardQueryOptions = queryOptions({
-  queryKey: ['dashboard', 'laporan'],
-  queryFn: async (): Promise<Laporan[]> => {
-    const { data, error, response } = await api.GET('/reports')
-
-    if (error || !data) {
-      throw new Error(
-        response.status === 401
-          ? 'Sesi Anda sudah berakhir.'
-          : 'Gagal memuat laporan.',
-      )
-    }
-
-    return data.data
-  },
-})
-
-export type Statistik = {
-  total: number
-  menunggu: number
-  diproses: number
-  selesai: number
-}
-
-export function hitungStatistik(laporan: Laporan[]): Statistik {
-  return {
-    total: laporan.length,
-    menunggu: laporan.filter((l) => l.status === 'menunggu_verifikasi').length,
-    diproses: laporan.filter((l) => l.status === 'diproses').length,
-    selesai: laporan.filter((l) => l.status === 'selesai').length,
-  }
-}
+// Statistik + hitungStatistik() pindah ke
+// features/laporan/ringkasan-laporan.tsx — sekarang dipakai dua halaman
+// (Beranda dan Riwayat), jadi rumusnya tidak boleh tinggal di fitur
+// dashboard saja.
 
 const tanggalFormat = new Intl.DateTimeFormat('id-ID', {
   day: 'numeric',
@@ -57,9 +9,46 @@ const tanggalFormat = new Intl.DateTimeFormat('id-ID', {
   year: 'numeric',
 })
 
+const jamFormat = new Intl.DateTimeFormat('id-ID', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
 export function formatTanggal(iso: string | null): string {
   if (!iso) return '-'
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return '-'
+  return tanggalFormat.format(date)
+}
+
+// "17 Nov 2026, 12:30". Dipakai untuk jejak verifikasi / penyelesaian.
+export function formatWaktu(iso: string | null | undefined): string {
+  if (!iso) return '-'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '-'
+  return `${tanggalFormat.format(date)}, ${jamFormat.format(date).replace('.', ':')}`
+}
+
+// "baru saja", "5 menit lalu", "3 jam lalu", "2 hari lalu". Lewat 7 hari
+// jatuh ke tanggal biasa.
+export function waktuRelatif(
+  iso: string | null | undefined,
+  now = new Date(),
+): string {
+  if (!iso) return '-'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '-'
+
+  const menit = Math.floor((now.getTime() - date.getTime()) / 60000)
+  if (menit < 1) return 'baru saja'
+  if (menit < 60) return `${menit} menit lalu`
+
+  const jam = Math.floor(menit / 60)
+  if (jam < 24) return `${jam} jam lalu`
+
+  const hari = Math.floor(jam / 24)
+  if (hari < 7) return `${hari} hari lalu`
+
   return tanggalFormat.format(date)
 }

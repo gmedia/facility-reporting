@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             DemoUserSeeder::class,
             MahasiswaSeeder::class,
+            DemoLaporanSeeder::class,
         ]);
     }
 }

@@ -24,16 +24,16 @@ final class Login
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|bool>
      */
     private function credentials(LoginData $data): array
     {
         $identifier = $data->identifier;
 
         if (str_contains($identifier, '@')) {
-            return ['email' => $identifier, 'password' => $data->password];
+            return ['email' => $identifier, 'password' => $data->password, 'active' => true];
         }
 
-        return ['nim' => $identifier, 'password' => $data->password];
+        return ['nim' => $identifier, 'password' => $data->password, 'active' => true];
     }
 }

@@ -25,6 +25,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/reports/{laporan}/history': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil riwayat perubahan status suatu laporan */
+    get: operations['laporan.history']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reports/{laporan}/status': {
     parameters: {
       query?: never
@@ -44,6 +61,58 @@ export interface paths {
      *     can reach this method.
      */
     patch: operations['laporan.updateStatus']
+    trace?: never
+  }
+  '/reports/{laporan}/bukti': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Upload foto bukti untuk laporan */
+    patch: operations['laporan.updateBukti']
+    trace?: never
+  }
+  '/location-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil titik pusat dan radius saat ini */
+    get: operations['v1.admin.locationSetting.show_9']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/location-settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Ambil titik pusat dan radius saat ini */
+    get: operations['v1.admin.locationSetting.show_15']
+    /** Simpan titik pusat dan radius baru */
+    put: operations['locationSetting.update']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/auth/login': {
@@ -94,6 +163,74 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/profile/lokasi': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Pelapor mengirim lokasi GPS terakhirnya */
+    post: operations['v1.meLocation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/profile/foto': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Upload foto profil milik user yang sedang login */
+    post: operations['profile.updateFoto']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/profile/password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Ganti password user yang sedang login */
+    patch: operations['profile.changePassword']
+    trace?: never
+  }
+  '/admin/reporter-locations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Daftar pelapor beserta jarak dari titik pusat dan status radius */
+    get: operations['admin.reporterLocation']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/status': {
     parameters: {
       query?: never
@@ -103,6 +240,52 @@ export interface paths {
     }
     get: operations['v1.status']
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/users/{user}/deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Deactivate an admin account
+     * @description Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan
+     *     dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     *     Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     *     dengan update/destroy di atas.
+     */
+    put: operations['user.deactivate']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/users/{user}/activate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Activate an admin account
+     * @description Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan
+     *     dirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman
+     *     Akun Admin. Selain role admin dianggap tidak ada (404), konsisten
+     *     dengan update/destroy di atas.
+     */
+    put: operations['user.activate']
     post?: never
     delete?: never
     options?: never
@@ -150,6 +333,12 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** ChangePasswordRequest */
+    ChangePasswordRequest: {
+      password: string
+      current_password: string
+      password_confirmation: string
+    }
     /**
      * LaporanKategori
      * @enum {string}
@@ -162,13 +351,53 @@ export interface components {
       user_id: number
       kategori: string
       lokasi: string
+      latitude: number | null
+      longitude: number | null
       deskripsi: string
       foto: string | null
-      status: string
+      /** @enum {string} */
+      status:
+        'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
+      skor_prioritas: string | null
+      /** @enum {string|null} */
+      prioritas_kategori: 'rendah' | 'sedang' | 'tinggi' | null
+      nilai_kerusakan: number | null
+      nilai_risiko: number | null
+      nilai_dampak: number | null
+      nilai_frekuensi: number | null
+      foto_bukti: string | null
       /** Format: date-time */
       created_at: string | null
       /** Format: date-time */
       updated_at: string | null
+      /**
+       * @description Data pelapor: hanya untuk admin. loadMissing() menjaga agar
+       *     respons updateStatus/updateBukti (yang tidak eager load user)
+       *     tetap menyertakan pelapor.
+       */
+      pelapor?: {
+        id: number
+        name: string
+        email: string | null
+        nim: string | null
+        foto: string | null
+      } | null
+      /**
+       * @description Admin yang pertama kali memverifikasi (valid) atau menolak
+       *     laporan, beserta foto dan waktunya. Null kalau belum pernah.
+       */
+      diverifikasi_oleh?: string | null
+      diverifikasi_oleh_foto?: string | null
+      /** Format: date-time */
+      diverifikasi_pada?: string | null
+      /**
+       * @description Admin yang terakhir mengubah status ke selesai, beserta
+       *     foto dan waktunya. Null kalau laporan belum selesai.
+       */
+      diselesaikan_oleh?: string | null
+      diselesaikan_oleh_foto?: string | null
+      /** Format: date-time */
+      diselesaikan_pada?: string | null
     }
     /**
      * LaporanStatus
@@ -176,6 +405,28 @@ export interface components {
      */
     LaporanStatus:
       'menunggu_verifikasi' | 'valid' | 'ditolak' | 'diproses' | 'selesai'
+    /** LaporanStatusHistoryResource */
+    LaporanStatusHistoryResource: {
+      id: number
+      laporan_id: number
+      status_from: string | null
+      status_to: string
+      alasan: string | null
+      changed_by: number
+      changed_by_name: string
+      /** Format: date-time */
+      created_at: string | null
+      /** Format: date-time */
+      updated_at: string | null
+    }
+    /** LocationSettingResource */
+    LocationSettingResource: {
+      center_lat: number
+      center_lng: number
+      radius_m: number
+      /** Format: date-time */
+      updated_at: string | null
+    }
     /** LoginRequest */
     LoginRequest: {
       identifier: string
@@ -189,12 +440,18 @@ export interface components {
     StoreLaporanRequest: {
       kategori: components['schemas']['LaporanKategori']
       lokasi: string
+      latitude: number
+      longitude: number
       deskripsi: string
       /**
        * Format: binary
        * @description Maximum file size: 2048 kilobytes.
        */
-      foto?: string | null
+      foto: string
+      nilai_kerusakan: number
+      nilai_risiko: number
+      nilai_dampak: number
+      nilai_frekuensi: number
     }
     /** StoreUserRequest */
     StoreUserRequest: {
@@ -203,9 +460,46 @@ export interface components {
       email: string
       password: string
     }
+    /** UpdateLaporanBuktiRequest */
+    UpdateLaporanBuktiRequest: {
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti: string
+    }
     /** UpdateLaporanStatusRequest */
     UpdateLaporanStatusRequest: {
       status: components['schemas']['LaporanStatus']
+      nilai_kerusakan?: number
+      nilai_risiko?: number
+      nilai_dampak?: number
+      nilai_frekuensi?: number
+      alasan?: string | null
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto_bukti?: string
+    }
+    /** UpdateLocationSettingRequest */
+    UpdateLocationSettingRequest: {
+      center_lat: number
+      center_lng: number
+      radius_m: number
+    }
+    /** UpdateMyLocationRequest */
+    UpdateMyLocationRequest: {
+      lat: number
+      lng: number
+    }
+    /** UpdateProfileFotoRequest */
+    UpdateProfileFotoRequest: {
+      /**
+       * Format: binary
+       * @description Maximum file size: 2048 kilobytes.
+       */
+      foto: string
     }
     /** UpdateUserRequest */
     UpdateUserRequest: {
@@ -221,6 +515,13 @@ export interface components {
       nim: string | null
       email: string | null
       role: string
+      foto: string | null
+      active: boolean
+      /**
+       * @description true = belum pernah mengganti password sejak akun dibuat,
+       *     artinya masih memakai password awal.
+       */
+      must_change_password: boolean
     }
   }
   responses: {
@@ -335,6 +636,33 @@ export interface operations {
       422: components['responses']['ValidationException']
     }
   }
+  'laporan.history': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Array of `LaporanStatusHistoryResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanStatusHistoryResource'][]
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
+    }
+  }
   'laporan.updateStatus': {
     parameters: {
       query?: never
@@ -347,7 +675,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['UpdateLaporanStatusRequest']
+        'multipart/form-data': components['schemas']['UpdateLaporanStatusRequest']
       }
     }
     responses: {
@@ -365,6 +693,113 @@ export interface operations {
       401: components['responses']['AuthenticationException']
       403: components['responses']['AuthorizationException']
       404: components['responses']['ModelNotFoundException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'laporan.updateBukti': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The laporan ID */
+        laporan: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['UpdateLaporanBuktiRequest']
+      }
+    }
+    responses: {
+      /** @description `LaporanResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LaporanResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      403: components['responses']['AuthorizationException']
+      404: components['responses']['ModelNotFoundException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'v1.admin.locationSetting.show_9': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'v1.admin.locationSetting.show_15': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
+  'locationSetting.update': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateLocationSettingRequest']
+      }
+    }
+    responses: {
+      /** @description `LocationSettingResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['LocationSettingResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
       422: components['responses']['ValidationException']
     }
   }
@@ -441,6 +876,132 @@ export interface operations {
       401: components['responses']['AuthenticationException']
     }
   }
+  'v1.meLocation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateMyLocationRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @constant */
+            message: 'Lokasi tersimpan.'
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'profile.updateFoto': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['UpdateProfileFotoRequest']
+      }
+    }
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'profile.changePassword': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @constant */
+            message: 'Password berhasil diperbarui.'
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      422: components['responses']['ValidationException']
+    }
+  }
+  'admin.reporterLocation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: {
+              id: number
+              name: string
+              nim: string | null
+              lat: number | null
+              lng: number | null
+              last_location_at: Record<string, never> | null
+              distance_m: number | null
+              /**
+               * @description inside | outside | unknown (belum pernah mengirim lokasi)
+               * @enum {string}
+               */
+              status: 'unknown' | 'inside' | 'outside'
+            }[]
+            summary: {
+              total: number
+              outside: number
+              inside: number
+              unknown: number
+              radius_m: number
+            }
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+    }
+  }
   'v1.status': {
     parameters: {
       query?: never
@@ -461,6 +1022,60 @@ export interface operations {
           }
         }
       }
+    }
+  }
+  'user.deactivate': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
+    }
+  }
+  'user.activate': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The user ID */
+        user: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description `UserResource` */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            data: components['schemas']['UserResource']
+          }
+        }
+      }
+      401: components['responses']['AuthenticationException']
+      404: components['responses']['ModelNotFoundException']
     }
   }
   'users.index': {

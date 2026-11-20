@@ -90,6 +90,55 @@
                 }
             }
         },
+        "/reports/{laporan}/history": {
+            "get": {
+                "operationId": "laporan.history",
+                "summary": "Ambil riwayat perubahan status suatu laporan",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `LaporanStatusHistoryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/LaporanStatusHistoryResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/reports/{laporan}/status": {
             "patch": {
                 "operationId": "laporan.updateStatus",
@@ -112,7 +161,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "$ref": "#/components/schemas/UpdateLaporanStatusRequest"
                             }
@@ -149,6 +198,175 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/reports/{laporan}/bukti": {
+            "patch": {
+                "operationId": "laporan.updateBukti",
+                "summary": "Upload foto bukti untuk laporan",
+                "tags": [
+                    "Laporan"
+                ],
+                "parameters": [
+                    {
+                        "name": "laporan",
+                        "in": "path",
+                        "required": true,
+                        "description": "The laporan ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLaporanBuktiRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LaporanResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LaporanResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/location-settings": {
+            "get": {
+                "operationId": "v1.admin.locationSetting.show_9",
+                "summary": "Ambil titik pusat dan radius saat ini",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/location-settings": {
+            "get": {
+                "operationId": "v1.admin.locationSetting.show_15",
+                "summary": "Ambil titik pusat dan radius saat ini",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "locationSetting.update",
+                "summary": "Simpan titik pusat dan radius baru",
+                "tags": [
+                    "LocationSetting"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLocationSettingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`LocationSettingResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/LocationSettingResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -257,6 +475,267 @@
                 }
             }
         },
+        "/profile/lokasi": {
+            "post": {
+                "operationId": "v1.meLocation",
+                "summary": "Pelapor mengirim lokasi GPS terakhirnya",
+                "tags": [
+                    "MeLocation"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMyLocationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lokasi tersimpan."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/foto": {
+            "post": {
+                "operationId": "profile.updateFoto",
+                "summary": "Upload foto profil milik user yang sedang login",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileFotoRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/password": {
+            "patch": {
+                "operationId": "profile.changePassword",
+                "summary": "Ganti password user yang sedang login",
+                "tags": [
+                    "Profile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Password berhasil diperbarui."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/reporter-locations": {
+            "get": {
+                "operationId": "admin.reporterLocation",
+                "summary": "Daftar pelapor beserta jarak dari titik pusat dan status radius",
+                "tags": [
+                    "ReporterLocation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "nim": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "lat": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "lng": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "last_location_at": {
+                                                        "type": [
+                                                            "object",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "distance_m": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "description": "inside | outside | unknown (belum pernah mengirim lokasi)",
+                                                        "enum": [
+                                                            "unknown",
+                                                            "inside",
+                                                            "outside"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "nim",
+                                                    "lat",
+                                                    "lng",
+                                                    "last_location_at",
+                                                    "distance_m",
+                                                    "status"
+                                                ]
+                                            }
+                                        },
+                                        "summary": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "outside": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "inside": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "unknown": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "radius_m": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "outside",
+                                                "inside",
+                                                "unknown",
+                                                "radius_m"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "summary"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/status": {
             "get": {
                 "operationId": "v1.status",
@@ -281,6 +760,100 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/admin/users/{user}/deactivate": {
+            "put": {
+                "operationId": "user.deactivate",
+                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh menonaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+                "summary": "Deactivate an admin account",
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "description": "The user ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/users/{user}/activate": {
+            "put": {
+                "operationId": "user.activate",
+                "description": "Sengaja hanya menyasar role admin: super admin tidak boleh mengaktifkan\ndirinya sendiri lewat endpoint ini, dan user biasa bukan objek halaman\nAkun Admin. Selain role admin dianggap tidak ada (404), konsisten\ndengan update/destroy di atas.",
+                "summary": "Activate an admin account",
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "required": true,
+                        "description": "The user ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -453,6 +1026,28 @@
     },
     "components": {
         "schemas": {
+            "ChangePasswordRequest": {
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "minLength": 8
+                    },
+                    "current_password": {
+                        "type": "string"
+                    },
+                    "password_confirmation": {
+                        "type": "string",
+                        "minLength": 8
+                    }
+                },
+                "required": [
+                    "password",
+                    "current_password",
+                    "password_confirmation"
+                ],
+                "title": "ChangePasswordRequest"
+            },
             "LaporanKategori": {
                 "type": "string",
                 "enum": [
@@ -479,6 +1074,18 @@
                     "lokasi": {
                         "type": "string"
                     },
+                    "latitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "longitude": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
                     "deskripsi": {
                         "type": "string"
                     },
@@ -489,6 +1096,219 @@
                         ]
                     },
                     "status": {
+                        "type": "string",
+                        "enum": [
+                            "menunggu_verifikasi",
+                            "valid",
+                            "ditolak",
+                            "diproses",
+                            "selesai"
+                        ]
+                    },
+                    "skor_prioritas": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "prioritas_kategori": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "rendah",
+                            "sedang",
+                            "tinggi",
+                            null
+                        ]
+                    },
+                    "nilai_kerusakan": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_risiko": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_dampak": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "nilai_frekuensi": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "foto_bukti": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "pelapor": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "Data pelapor: hanya untuk admin. loadMissing() menjaga agar\nrespons updateStatus/updateBukti (yang tidak eager load user)\ntetap menyertakan pelapor.",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "email": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "nim": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "foto": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "email",
+                            "nim",
+                            "foto"
+                        ]
+                    },
+                    "diverifikasi_oleh": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Admin yang pertama kali memverifikasi (valid) atau menolak\nlaporan, beserta foto dan waktunya. Null kalau belum pernah."
+                    },
+                    "diverifikasi_oleh_foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "diverifikasi_pada": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "diselesaikan_oleh": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Admin yang terakhir mengubah status ke selesai, beserta\nfoto dan waktunya. Null kalau laporan belum selesai."
+                    },
+                    "diselesaikan_oleh_foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "diselesaikan_pada": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "user_id",
+                    "kategori",
+                    "lokasi",
+                    "latitude",
+                    "longitude",
+                    "deskripsi",
+                    "foto",
+                    "status",
+                    "skor_prioritas",
+                    "prioritas_kategori",
+                    "nilai_kerusakan",
+                    "nilai_risiko",
+                    "nilai_dampak",
+                    "nilai_frekuensi",
+                    "foto_bukti",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LaporanResource"
+            },
+            "LaporanStatus": {
+                "type": "string",
+                "enum": [
+                    "menunggu_verifikasi",
+                    "valid",
+                    "ditolak",
+                    "diproses",
+                    "selesai"
+                ],
+                "title": "LaporanStatus"
+            },
+            "LaporanStatusHistoryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "laporan_id": {
+                        "type": "integer"
+                    },
+                    "status_from": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status_to": {
+                        "type": "string"
+                    },
+                    "alasan": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "changed_by": {
+                        "type": "integer"
+                    },
+                    "changed_by_name": {
                         "type": "string"
                     },
                     "created_at": {
@@ -508,27 +1328,44 @@
                 },
                 "required": [
                     "id",
-                    "user_id",
-                    "kategori",
-                    "lokasi",
-                    "deskripsi",
-                    "foto",
-                    "status",
+                    "laporan_id",
+                    "status_from",
+                    "status_to",
+                    "alasan",
+                    "changed_by",
+                    "changed_by_name",
                     "created_at",
                     "updated_at"
                 ],
-                "title": "LaporanResource"
+                "title": "LaporanStatusHistoryResource"
             },
-            "LaporanStatus": {
-                "type": "string",
-                "enum": [
-                    "menunggu_verifikasi",
-                    "valid",
-                    "ditolak",
-                    "diproses",
-                    "selesai"
+            "LocationSettingResource": {
+                "type": "object",
+                "properties": {
+                    "center_lat": {
+                        "type": "number"
+                    },
+                    "center_lng": {
+                        "type": "number"
+                    },
+                    "radius_m": {
+                        "type": "integer"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "center_lat",
+                    "center_lng",
+                    "radius_m",
+                    "updated_at"
                 ],
-                "title": "LaporanStatus"
+                "title": "LocationSettingResource"
             },
             "LoginRequest": {
                 "type": "object",
@@ -569,25 +1406,59 @@
                         "type": "string",
                         "maxLength": 255
                     },
+                    "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
                     "deskripsi": {
                         "type": "string",
                         "minLength": 10,
                         "maxLength": 2000
                     },
                     "foto": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "format": "binary",
                         "contentMediaType": "application/octet-stream",
                         "description": "Maximum file size: 2048 kilobytes."
+                    },
+                    "nilai_kerusakan": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_risiko": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_dampak": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_frekuensi": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
                     }
                 },
                 "required": [
                     "kategori",
                     "lokasi",
-                    "deskripsi"
+                    "latitude",
+                    "longitude",
+                    "deskripsi",
+                    "foto",
+                    "nilai_kerusakan",
+                    "nilai_risiko",
+                    "nilai_dampak",
+                    "nilai_frekuensi"
                 ],
                 "title": "StoreLaporanRequest"
             },
@@ -615,17 +1486,126 @@
                 ],
                 "title": "StoreUserRequest"
             },
+            "UpdateLaporanBuktiRequest": {
+                "type": "object",
+                "properties": {
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
+                    }
+                },
+                "required": [
+                    "foto_bukti"
+                ],
+                "title": "UpdateLaporanBuktiRequest"
+            },
             "UpdateLaporanStatusRequest": {
                 "type": "object",
                 "properties": {
                     "status": {
                         "$ref": "#/components/schemas/LaporanStatus"
+                    },
+                    "nilai_kerusakan": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_risiko": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_dampak": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "nilai_frekuensi": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                    },
+                    "alasan": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "foto_bukti": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
                     }
                 },
                 "required": [
                     "status"
                 ],
                 "title": "UpdateLaporanStatusRequest"
+            },
+            "UpdateLocationSettingRequest": {
+                "type": "object",
+                "properties": {
+                    "center_lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "center_lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "radius_m": {
+                        "type": "integer",
+                        "minimum": 50,
+                        "maximum": 5000
+                    }
+                },
+                "required": [
+                    "center_lat",
+                    "center_lng",
+                    "radius_m"
+                ],
+                "title": "UpdateLocationSettingRequest"
+            },
+            "UpdateMyLocationRequest": {
+                "type": "object",
+                "properties": {
+                    "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "lng": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    }
+                },
+                "required": [
+                    "lat",
+                    "lng"
+                ],
+                "title": "UpdateMyLocationRequest"
+            },
+            "UpdateProfileFotoRequest": {
+                "type": "object",
+                "properties": {
+                    "foto": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 2048 kilobytes."
+                    }
+                },
+                "required": [
+                    "foto"
+                ],
+                "title": "UpdateProfileFotoRequest"
             },
             "UpdateUserRequest": {
                 "type": "object",
@@ -669,6 +1649,19 @@
                     },
                     "role": {
                         "type": "string"
+                    },
+                    "foto": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "must_change_password": {
+                        "type": "boolean",
+                        "description": "true = belum pernah mengganti password sejak akun dibuat,\nartinya masih memakai password awal."
                     }
                 },
                 "required": [
@@ -676,7 +1669,10 @@
                     "name",
                     "nim",
                     "email",
-                    "role"
+                    "role",
+                    "foto",
+                    "active",
+                    "must_change_password"
                 ],
                 "title": "UserResource"
             }

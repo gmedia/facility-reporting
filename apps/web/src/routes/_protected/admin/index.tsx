@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { CircleCheck, TriangleAlert, User as UserIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
@@ -21,50 +23,162 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { fotoUrl } from '@/features/akun/akun-query'
 import { UserFormDialog } from '@/features/admin/user-form'
 import {
   adminUsersQueryOptions,
   errorMessage,
   errorStatus,
-  useDeleteAdminUser,
+  useActivateAdminUser,
+  useDeactivateAdminUser,
   type AdminUser,
 } from '@/features/admin/users-query'
 
+type SearchSchema = { filter?: string }
+
 export const Route = createFileRoute('/_protected/admin/')({
+  // Halaman ini belum punya filter, tapi tombol "Kelola Akun" di dashboard
+  // mengirim ?filter=semua (lihat dashboard-actions.tsx). Parameter itu
+  // diterima lalu diabaikan: SearchSchema hanya mengenal 'filter' supaya link
+  // tetap type-safe, dan AdminUsersPage tidak membacanya sama sekali.
+  // Kalau nanti filter status aktif/nonaktif dibuat, pakai nilai ini di UI.
+  validateSearch: (search: Record<string, unknown>): SearchSchema => ({
+    filter: typeof search.filter === 'string' ? search.filter : undefined,
+  }),
   component: AdminUsersPage,
 })
 
+// Gaya kartu disamakan dengan dashboard dan verifikasi.
+const CARD_CLASS =
+  'rounded-[26px] border border-neutral-200/70 bg-white shadow-sm'
+
+// Tombol utama hijau tua, sama dengan halaman Pengaturan.
+const TOMBOL_UTAMA_CLASS =
+  'rounded-xl bg-[#0d3f31] px-5 text-white hover:bg-[#0a3127]'
+
+type PendingAction = {
+  user: AdminUser | null
+  type: 'activate' | 'deactivate' | null
+}
+
+const TANPA_AKSI: PendingAction = { user: null, type: null }
+
+function inisial(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
+// Avatar: foto profil kalau ada. Kalau belum ada foto atau gagal dimuat,
+// tampil inisial (di tabel) atau ikon orang (di dialog, `ikon`).
+function AvatarAkun({
+  nama,
+  foto,
+  ikon = false,
+}: {
+  nama: string
+  foto?: string | null
+  ikon?: boolean
+}) {
+  const [gagal, setGagal] = useState(false)
+
+  if (foto && !gagal) {
+    return (
+      <img
+        src={fotoUrl(foto)}
+        alt={`Foto profil ${nama}`}
+        onError={() => setGagal(true)}
+        className="size-11 shrink-0 rounded-full object-cover ring-1 ring-black/5"
+      />
+    )
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[#0d3f31]"
+    >
+      {ikon ? <UserIcon className="size-5" /> : inisial(nama)}
+    </span>
+  )
+}
+
 function AdminUsersPage() {
   const users = useQuery(adminUsersQueryOptions)
-  const deleteMutation = useDeleteAdminUser()
+  const deactivateMutation = useDeactivateAdminUser()
+  const activateMutation = useActivateAdminUser()
   const [form, setForm] = useState<{ open: boolean; user: AdminUser | null }>({
     open: false,
     user: null,
   })
-  const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
+  // `pendingAction` menentukan dialog terbuka atau tidak (dan di-reset saat
+  // selesai). `terakhir` menyimpan aksi yang terakhir dipilih, khusus untuk
+  // isi dialog, supaya judul dan teksnya tidak berganti saat dialog sedang
+  // menutup.
+  const [pendingAction, setPendingAction] = useState<PendingAction>(TANPA_AKSI)
+  const [terakhir, setTerakhir] = useState<PendingAction>(TANPA_AKSI)
+  const [cari, setCari] = useState('')
 
-  function handleDelete() {
-    if (!pendingDelete) return
-    deleteMutation.mutate(pendingDelete.id, {
+  function mintaKonfirmasi(user: AdminUser) {
+    const aksi: PendingAction = {
+      user,
+      type: user.active ? 'deactivate' : 'activate',
+    }
+    setPendingAction(aksi)
+    setTerakhir(aksi)
+  }
+
+  function handleActivate() {
+    const user = pendingAction.user
+    if (!user) return
+    activateMutation.mutate(user.id, {
       onSuccess: () => {
-        toast.success(`Akun ${pendingDelete.name} dihapus`)
-        setPendingDelete(null)
+        toast.success('Akun berhasil diaktifkan', {
+          description: `Akun ${user.name} sekarang berstatus Aktif. Kamu bisa menonaktifkannya kembali kapan saja.`,
+        })
+        setPendingAction(TANPA_AKSI)
       },
       onError: (error) => toast.error(errorMessage(error)),
     })
   }
 
+  function handleDeactivate() {
+    const user = pendingAction.user
+    if (!user) return
+    deactivateMutation.mutate(user.id, {
+      onSuccess: () => {
+        toast.success('Akun berhasil dinonaktifkan', {
+          description: `Akun ${user.name} sekarang berstatus Nonaktif. Kamu bisa mengaktifkannya kembali kapan saja.`,
+        })
+        setPendingAction(TANPA_AKSI)
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    })
+  }
+
+  const isPending = deactivateMutation.isPending || activateMutation.isPending
+  const aktifkan = terakhir.type === 'activate'
+  const userDialog = terakhir.user
+
+  // Pencarian by nama atau e-mail, tidak peka huruf besar/kecil.
+  const kata = cari.trim().toLowerCase()
+  const tampil = (users.data ?? []).filter(
+    (user) =>
+      kata === '' ||
+      user.name.toLowerCase().includes(kata) ||
+      (user.email ?? '').toLowerCase().includes(kata),
+  )
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Akun Admin</h1>
-          <p className="text-muted-foreground text-sm">
-            Kelola akun dengan role admin.
-          </p>
-        </div>
+      <div className="flex justify-end">
         <Button
           type="button"
+          className={`h-11 text-sm font-semibold ${TOMBOL_UTAMA_CLASS}`}
           onClick={() => setForm({ open: true, user: null })}
         >
           Tambah akun
@@ -72,66 +186,110 @@ function AdminUsersPage() {
       </div>
 
       {users.isPending ? (
-        <Card>
-          <CardContent className="flex flex-col gap-3 py-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-5/6" />
-            <Skeleton className="h-8 w-2/3" />
-          </CardContent>
-        </Card>
+        <section className={`flex flex-col gap-3 p-6 ${CARD_CLASS}`}>
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-5/6" />
+          <Skeleton className="h-8 w-2/3" />
+        </section>
       ) : users.isError ? (
         <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Daftar akun</CardTitle>
-            <CardDescription>
-              {users.data.length} akun terdaftar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {users.data.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Belum ada akun admin. Klik Tambah akun untuk membuat yang
-                pertama.
-              </p>
-            ) : (
-              <Table>
+        <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
+          <Input
+            type="search"
+            value={cari}
+            onChange={(event) => setCari(event.target.value)}
+            placeholder="Cari nama atau e-mail..."
+            aria-label="Cari akun admin"
+            className="h-11 max-w-md rounded-xl"
+          />
+
+          {users.data.length === 0 ? (
+            <p className="mt-6 py-6 text-center text-sm text-neutral-400">
+              Belum ada akun admin. Klik Tambah akun untuk membuat yang pertama.
+            </p>
+          ) : tampil.length === 0 ? (
+            <p className="mt-6 py-6 text-center text-sm text-neutral-400">
+              Tidak ada akun yang cocok dengan pencarian.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <Table className="min-w-[32rem]">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>NIM</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
+                      Nama
+                    </TableHead>
+                    <TableHead className="text-[15px] font-medium text-neutral-500">
+                      Status
+                    </TableHead>
+                    <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
+                      Aksi
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.data.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email ?? '-'}</TableCell>
-                      <TableCell>{user.nim ?? '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{user.role}</Badge>
+                  {tampil.map((user) => (
+                    <TableRow
+                      key={user.id}
+                      className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
+                    >
+                      <TableCell className="py-3 pl-3">
+                        <div className="flex items-center gap-3">
+                          <AvatarAkun
+                            key={`${user.id}-${user.foto ?? ''}`}
+                            nama={user.name}
+                            foto={user.foto}
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-base font-medium">
+                              {user.name}
+                            </p>
+                            <p className="truncate text-sm text-neutral-500">
+                              {user.email ?? '-'}
+                            </p>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-3">
+                        <Badge
+                          variant="secondary"
+                          className={`rounded-full px-3 text-xs font-medium ${
+                            user.active
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                              : 'bg-red-100 text-red-700 hover:bg-red-100'
+                          }`}
+                        >
+                          {user.active ? 'Aktif' : 'Nonaktif'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-3 pr-3 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="rounded-full px-4 text-sm font-medium text-neutral-600"
                             onClick={() => setForm({ open: true, user })}
                           >
                             Edit
                           </Button>
+                          {/* Label & gaya mengikuti AKSI yang akan dijalankan,
+                              bukan status barisnya: akun aktif ditawari
+                              "Nonaktifkan" (merah), akun nonaktif ditawari
+                              "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
                           <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
-                            onClick={() => setPendingDelete(user)}
+                            variant="outline"
+                            className={`rounded-full bg-white px-4 text-sm font-medium ${
+                              user.active
+                                ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700'
+                                : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700'
+                            }`}
+                            onClick={() => mintaKonfirmasi(user)}
                           >
-                            Hapus
+                            {user.active ? 'Nonaktifkan' : 'Aktifkan'}
                           </Button>
                         </div>
                       </TableCell>
@@ -139,39 +297,103 @@ function AdminUsersPage() {
                   ))}
                 </TableBody>
               </Table>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </section>
       )}
 
-      {pendingDelete && (
-        <Alert variant="destructive">
-          <AlertTitle>Hapus akun {pendingDelete.name}?</AlertTitle>
-          <AlertDescription>
-            Tindakan ini tidak bisa dibatalkan.
-            <div className="mt-3 flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setPendingDelete(null)}
-                disabled={deleteMutation.isPending}
+      {/* Konfirmasi nonaktifkan / aktifkan: dialog popup dengan latar gelap. */}
+      <Dialog
+        open={pendingAction.user !== null}
+        onOpenChange={(open) => {
+          if (!open && !isPending) setPendingAction(TANPA_AKSI)
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-lg">
+              {aktifkan ? (
+                <CircleCheck
+                  aria-hidden="true"
+                  className="size-5 text-emerald-600"
+                />
+              ) : (
+                <TriangleAlert
+                  aria-hidden="true"
+                  className="size-5 text-amber-600"
+                />
+              )}
+              {aktifkan ? 'Aktifkan akun admin?' : 'Nonaktifkan akun admin?'}
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-base">
+              {aktifkan
+                ? 'Apakah kamu yakin ingin mengaktifkan akun berikut?'
+                : 'Apakah kamu yakin ingin menonaktifkan akun berikut?'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {userDialog && (
+            <div className="flex items-center gap-3 rounded-2xl bg-neutral-100 p-3.5">
+              <AvatarAkun
+                key={`${userDialog.id}-${userDialog.foto ?? ''}`}
+                nama={userDialog.name}
+                foto={userDialog.foto}
+                ikon
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{userDialog.name}</p>
+                <p className="truncate text-sm text-neutral-500">
+                  {userDialog.email ?? '-'}
+                </p>
+              </div>
+              <Badge
+                variant="secondary"
+                className={`shrink-0 rounded-full px-3 text-xs font-semibold ${
+                  userDialog.active
+                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                    : 'bg-red-100 text-red-700 hover:bg-red-100'
+                }`}
               >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Menghapus...' : 'Ya, hapus'}
-              </Button>
+                {userDialog.active ? 'Aktif' : 'Nonaktif'}
+              </Badge>
             </div>
-          </AlertDescription>
-        </Alert>
-      )}
+          )}
+
+          <p className="text-sm text-neutral-500">
+            {aktifkan
+              ? 'Akun yang diaktifkan dapat digunakan kembali untuk masuk ke sistem.'
+              : 'Akun yang dinonaktifkan tidak dapat digunakan untuk masuk ke sistem sampai diaktifkan kembali.'}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 rounded-full text-sm font-semibold"
+              onClick={() => setPendingAction(TANPA_AKSI)}
+              disabled={isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              className={`h-11 rounded-full text-sm font-semibold text-white ${
+                aktifkan
+                  ? 'bg-[#0d3f31] hover:bg-[#0a3127]'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+              onClick={aktifkan ? handleActivate : handleDeactivate}
+              disabled={isPending}
+            >
+              {isPending
+                ? 'Memproses...'
+                : aktifkan
+                  ? 'Ya, Aktifkan'
+                  : 'Ya, Nonaktifkan'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <UserFormDialog
         key={form.user?.id ?? 'create'}

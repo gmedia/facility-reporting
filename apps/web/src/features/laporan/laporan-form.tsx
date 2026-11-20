@@ -1,11 +1,11 @@
 import { Controller, useForm } from 'react-hook-form'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -14,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FotoInput } from './foto-input'
+import { LokasiKotak } from './lokasi-kotak'
+import { usePosisiPelapor } from './lokasi-pelapor'
 import {
   BATAS_FOTO_BYTE,
-  FOTO_ACCEPT,
   FOTO_MIME_IZIN,
   KATEGORI_LABEL,
   KATEGORI_VALUES,
@@ -26,9 +28,9 @@ import {
   type LaporanKategori,
 } from './laporan-query'
 
+const LOKASI_VALUES = ['Gedung D', 'Gedung S'] as const
+
 const formSchema = z.object({
-  // z.string() dulu, baru refine — biar pesannya manusiawi.
-  // (z.enum dengan config kedua-nya berisiko beda antar versi zod.)
   kategori: z
     .string()
     .min(1, 'Kategori wajib dipilih')
@@ -46,17 +48,28 @@ const formSchema = z.object({
     .trim()
     .min(10, 'Deskripsi minimal 10 karakter')
     .max(2000, 'Deskripsi maksimal 2000 karakter'),
-  // validasi ukuran/tipe file ditangani manual di onSubmit
-  foto: z.custom<FileList>().optional(),
+  foto: z
+    .custom<FileList>()
+    .optional()
+    .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
+  nilai_kerusakan: z.coerce
+    .number()
+    .min(1, 'Nilai kerusakan wajib diisi (1–5)')
+    .max(5, 'Nilai kerusakan maksimal 5'),
+  nilai_risiko: z.coerce
+    .number()
+    .min(1, 'Nilai risiko wajib diisi (1–5)')
+    .max(5, 'Nilai risiko maksimal 5'),
+  nilai_dampak: z.coerce
+    .number()
+    .min(1, 'Nilai dampak wajib diisi (1–5)')
+    .max(5, 'Nilai dampak maksimal 5'),
+  nilai_frekuensi: z.coerce
+    .number()
+    .min(1, 'Nilai frekuensi wajib diisi (1–5)')
+    .max(5, 'Nilai frekuensi maksimal 5'),
 })
 
-// Beda tipenya, dan ini penting:
-//   z.input  → sebelum resolver jalan. `kategori` masih `string`,
-//              karena itu yang diketik user lewat UI.
-//   z.output → sesudah `.refine` jalan. `kategori` sudah sempit ke
-//              union enum, jadi aman dikirim ke POST /reports.
-// useForm butuh dua-duanya (generic ke-3 = transformed values),
-// kalau cuma dikasih satu, zodResolver bakal bentrok di tsc.
 type FormInput = z.input<typeof formSchema>
 type FormValues = z.output<typeof formSchema>
 
@@ -65,75 +78,228 @@ const FIELD_SERVER: ReadonlyArray<keyof FormValues> = [
   'lokasi',
   'deskripsi',
   'foto',
+  'nilai_kerusakan',
+  'nilai_risiko',
+  'nilai_dampak',
+  'nilai_frekuensi',
 ]
+
+const SKALA_NILAI = [1, 2, 3, 4, 5] as const
+
+const NILAI_ARAH: Record<number, string> = {
+  1: 'Rendah',
+  2: 'Rendah',
+  3: 'Sedang',
+  4: 'Tinggi',
+  5: 'Tinggi',
+}
+
+const NILAI_FIELDS = [
+  {
+    name: 'nilai_kerusakan',
+    label: 'Nilai Kerusakan',
+    hint: 'Seberapa parah kondisinya.',
+  },
+  {
+    name: 'nilai_risiko',
+    label: 'Nilai Risiko',
+    hint: 'Seberapa berbahaya jika dibiarkan.',
+  },
+  {
+    name: 'nilai_dampak',
+    label: 'Nilai Dampak',
+    hint: 'Seberapa banyak yang terganggu.',
+  },
+  {
+    name: 'nilai_frekuensi',
+    label: 'Nilai Frekuensi',
+    hint: 'Seberapa sering terjadi.',
+  },
+] as const
+
+function Wajib() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 text-red-600">
+      *
+    </span>
+  )
+}
+
+function SkalaNilai({
+  name,
+  value,
+  onChange,
+  onBlur,
+}: {
+  name: string
+  value: number
+  onChange: (value: number) => void
+  onBlur: () => void
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-required="true"
+      aria-labelledby={`${name}-label`}
+      aria-describedby={`${name}-hint`}
+      className="grid grid-cols-5 gap-2"
+    >
+      {SKALA_NILAI.map((n) => (
+        <label
+          key={n}
+          className="flex cursor-pointer flex-col items-center gap-1.5"
+        >
+          <input
+            type="radio"
+            name={name}
+            value={n}
+            checked={value === n}
+            onChange={() => onChange(n)}
+            onBlur={onBlur}
+            className="peer sr-only"
+          />
+
+          <span className="grid size-10 place-items-center rounded-full border border-[#d7e2dc] bg-white text-sm font-medium text-[#183c30] transition-all peer-checked:border-[#0d3f31] peer-checked:bg-[#0d3f31] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#0d3f31]/40 peer-focus-visible:ring-offset-2 hover:border-[#0d3f31]">
+            {n}
+          </span>
+
+          <span className="text-center text-[11px] leading-tight text-neutral-500">
+            {NILAI_ARAH[n]}
+          </span>
+        </label>
+      ))}
+    </div>
+  )
+}
 
 export function LaporanForm() {
   const navigate = useNavigate()
   const create = useCreateLaporan()
 
+  // Meminta izin lokasi begitu form terbuka. Tombol kirim terkunci sampai
+  // pelapor terdeteksi di dalam radius kampus.
+  const posisi = usePosisiPelapor()
+
   const {
     control,
     handleSubmit,
     setError,
+    clearErrors,
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { kategori: '', lokasi: '', deskripsi: '', foto: undefined },
+    defaultValues: {
+      kategori: '',
+      lokasi: '',
+      deskripsi: '',
+      foto: undefined,
+      nilai_kerusakan: 0,
+      nilai_risiko: 0,
+      nilai_dampak: 0,
+      nilai_frekuensi: 0,
+    },
   })
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
   const onSubmit = handleSubmit(async (values) => {
+    // Pengaman kedua: tombol sudah terkunci, tapi submit lewat Enter atau
+    // devtools tetap harus ditolak. Server tetap memvalidasi ulang jaraknya.
+    if (!posisi.gps || !posisi.bisaKirim) {
+      toast.error('Lokasimu belum terdeteksi di dalam radius kampus.')
+      return
+    }
+
     const file = values.foto?.[0]
+
     if (file && file.size > BATAS_FOTO_BYTE) {
       setError('foto', { message: 'Ukuran foto maksimal 2 MB' })
       return
     }
-    // Validasi formatnya di sini, bukan di Zod — `z.custom<FileList>()` cuma
-    // ngecek keberadaan file-nya. Kalau dilewatin, user baru ngetahuinya
-    // sebagai 422 dari server, dan itu jauh lebih membingungkan.
+
     if (file && !FOTO_MIME_IZIN.includes(file.type)) {
-      setError('foto', { message: 'Format foto harus JPG, PNG, atau WebP' })
+      setError('foto', {
+        message: 'Format foto harus JPG, PNG, atau WebP',
+      })
       return
     }
 
     try {
-      await create.mutateAsync(values)
+      await create.mutateAsync({
+        ...values,
+        latitude: posisi.gps.lat,
+        longitude: posisi.gps.lng,
+      })
       toast.success('Laporan berhasil dikirim')
-      // /laporan/saya belum ada (target 28 Okt) — sementara ke /dashboard.
-      // Cek dulu di database atau lewat /laporan/saya kalau sudah jadi.
       await navigate({ to: '/dashboard' })
     } catch (error) {
-      // 422 → taruh pesan per field, sesuai field-nya
       const serverErrors = fieldErrors(error)
       let applied = false
 
       if (serverErrors) {
         for (const [field, messages] of Object.entries(serverErrors)) {
           const message = messages[0]
+
           if (message && FIELD_SERVER.includes(field as keyof FormValues)) {
             setError(field as keyof FormValues, { message })
             applied = true
           }
         }
+
+        // Penolakan jarak dari server (di luar radius) tidak punya field di
+        // form, jadi ditampilkan lewat toast.
+        const pesanLokasi =
+          serverErrors.latitude?.[0] ?? serverErrors.longitude?.[0]
+        if (pesanLokasi) {
+          toast.error(pesanLokasi)
+          applied = true
+        }
       }
 
-      if (!applied) toast.error(errorMessage(error))
+      if (!applied) {
+        toast.error(errorMessage(error))
+      }
     }
   })
 
   const busy = isSubmitting || create.isPending
 
+  const inputClass =
+    'h-11 w-full rounded-xl border-[#d7e2dc] bg-white px-4 text-sm shadow-none transition-colors focus-visible:border-[#0d3f31] focus-visible:ring-[#0d3f31]/20'
+
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
+      {/* Keterangan field wajib */}
+      <p className="text-muted-foreground text-xs">
+        <span aria-hidden="true" className="text-red-600">
+          *
+        </span>{' '}
+        Wajib diisi
+      </p>
+
+      {/* LOKASI PELAPOR (izin lokasi + jarak ke kampus) */}
+      <LokasiKotak posisi={posisi} />
+
+      {/* KATEGORI */}
       <Controller
         control={control}
         name="kategori"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-kategori">Kategori</FieldLabel>
+            <FieldLabel htmlFor="laporan-kategori" aria-label="Kategori">
+              Kategori
+              <Wajib />
+            </FieldLabel>
+
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="laporan-kategori" className="w-full">
+              <SelectTrigger
+                id="laporan-kategori"
+                aria-required="true"
+                className={inputClass}
+              >
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
+
               <SelectContent>
                 {KATEGORI_VALUES.map((value) => (
                   <SelectItem key={value} value={value}>
@@ -142,6 +308,7 @@ export function LaporanForm() {
                 ))}
               </SelectContent>
             </Select>
+
             <FieldError
               errors={fieldState.error ? [fieldState.error] : undefined}
             />
@@ -149,18 +316,35 @@ export function LaporanForm() {
         )}
       />
 
+      {/* LOKASI */}
       <Controller
         control={control}
         name="lokasi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-lokasi">Lokasi</FieldLabel>
-            <Input
-              id="laporan-lokasi"
-              placeholder="gedung / lantai / ruangan"
-              autoComplete="off"
-              {...field}
-            />
+            <FieldLabel htmlFor="laporan-lokasi" aria-label="Lokasi">
+              Lokasi
+              <Wajib />
+            </FieldLabel>
+
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger
+                id="laporan-lokasi"
+                aria-required="true"
+                className={inputClass}
+              >
+                <SelectValue placeholder="Pilih lokasi" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {LOKASI_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <FieldError
               errors={fieldState.error ? [fieldState.error] : undefined}
             />
@@ -168,18 +352,26 @@ export function LaporanForm() {
         )}
       />
 
+      {/* DESKRIPSI */}
       <Controller
         control={control}
         name="deskripsi"
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-deskripsi">Deskripsi</FieldLabel>
+            <FieldLabel htmlFor="laporan-deskripsi" aria-label="Deskripsi">
+              Deskripsi
+              <Wajib />
+            </FieldLabel>
+
             <Textarea
               id="laporan-deskripsi"
-              rows={5}
+              rows={3}
+              aria-required="true"
               placeholder="Ceritakan kerusakannya. Contoh: lampu AC di ruang 301 mati total sejak Senin."
+              className="min-h-[84px] resize-y rounded-xl border-[#d7e2dc] bg-white px-4 py-3 text-sm shadow-none focus-visible:border-[#0d3f31] focus-visible:ring-[#0d3f31]/20"
               {...field}
             />
+
             <FieldError
               errors={fieldState.error ? [fieldState.error] : undefined}
             />
@@ -187,32 +379,149 @@ export function LaporanForm() {
         )}
       />
 
+      {/* FOTO */}
       <Controller
         control={control}
         name="foto"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid || undefined}>
-            <FieldLabel htmlFor="laporan-foto">Foto (opsional)</FieldLabel>
-            <Input
-              id="laporan-foto"
-              type="file"
-              accept={FOTO_ACCEPT}
-              onChange={(event) => field.onChange(event.target.files)}
-              onBlur={field.onBlur}
-            />
-            <p className="text-muted-foreground text-xs">
-              JPG, PNG, atau WebP. Maksimal 2 MB.
-            </p>
-            <FieldError
-              errors={fieldState.error ? [fieldState.error] : undefined}
-            />
-          </Field>
-        )}
+        render={({ field, fieldState }) => {
+          const terpilih = field.value?.[0] ?? null
+
+          return (
+            <Field data-invalid={fieldState.invalid || undefined}>
+              <FieldLabel htmlFor="laporan-foto" aria-label="Foto">
+                Foto
+                <Wajib />
+              </FieldLabel>
+
+              <FotoInput
+                varian="kartu"
+                kosong="pill"
+                petunjuk="Arahkan ke kerusakan, lalu tekan tombol bulat"
+                inputId="laporan-foto"
+                value={terpilih}
+                previewUrl={previewUrl}
+                disabled={busy}
+                ariaLabel="Foto laporan"
+                onFile={(file) => {
+                  clearErrors('foto')
+
+                  if (!file) {
+                    field.onChange(undefined)
+                    setPreviewUrl(null)
+                    return
+                  }
+
+                  if (!FOTO_MIME_IZIN.includes(file.type)) {
+                    setError('foto', {
+                      message: 'Format foto harus JPG, PNG, atau WebP',
+                    })
+                    return
+                  }
+
+                  if (file.size > BATAS_FOTO_BYTE) {
+                    setError('foto', {
+                      message: 'Ukuran foto maksimal 2 MB',
+                    })
+                    return
+                  }
+
+                  // Preview menggunakan FileReader, bukan object URL.
+                  const reader = new FileReader()
+
+                  reader.onload = () => {
+                    setPreviewUrl(
+                      typeof reader.result === 'string' ? reader.result : null,
+                    )
+                  }
+
+                  reader.readAsDataURL(file)
+
+                  // Membungkus File ke dalam FileList.
+                  const dt = new DataTransfer()
+                  dt.items.add(file)
+                  field.onChange(dt.files)
+                }}
+              />
+
+              <p className="text-muted-foreground text-xs">
+                Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
+              </p>
+
+              <FieldError
+                errors={fieldState.error ? [fieldState.error] : undefined}
+              />
+            </Field>
+          )
+        }}
       />
 
-      <Button type="submit" disabled={busy}>
-        {busy ? 'Mengirim...' : 'Kirim Laporan'}
-      </Button>
+      {/* PENILAIAN SMART */}
+      <div className="border-t border-[#e5ece8] pt-6">
+        <div className="mb-5">
+          <h3 className="text-sm font-semibold text-[#173d30]">
+            Penilaian Kerusakan
+          </h3>
+
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            Berikan nilai berdasarkan kondisi fasilitas yang dilaporkan.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-x-8 gap-y-7 sm:grid-cols-2">
+          {NILAI_FIELDS.map((item) => (
+            <Controller
+              key={item.name}
+              control={control}
+              name={item.name}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid || undefined}>
+                  <FieldLabel id={`${item.name}-label`} aria-label={item.label}>
+                    {item.label}
+                    <Wajib />
+                  </FieldLabel>
+
+                  <p
+                    id={`${item.name}-hint`}
+                    className="text-muted-foreground text-xs leading-relaxed"
+                  >
+                    {item.hint}
+                  </p>
+
+                  <div className="mt-1">
+                    <SkalaNilai
+                      name={item.name}
+                      value={Number(field.value)}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  </div>
+
+                  <FieldError
+                    errors={fieldState.error ? [fieldState.error] : undefined}
+                  />
+                </Field>
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* TOMBOL KIRIM */}
+      <div className="flex flex-col gap-2">
+        <Button
+          type="submit"
+          disabled={busy || !posisi.bisaKirim}
+          className="h-11 w-full rounded-xl bg-[#0d3f31] text-sm font-semibold text-white shadow-none transition-colors hover:bg-[#0a3127] disabled:opacity-60"
+        >
+          {busy ? 'Mengirim...' : 'Kirim Laporan'}
+        </Button>
+
+        {!posisi.bisaKirim && (
+          <p className="text-muted-foreground text-center text-xs">
+            Tombol aktif setelah lokasimu terdeteksi di dalam radius kampus.
+          </p>
+        )}
+      </div>
     </form>
   )
 }
