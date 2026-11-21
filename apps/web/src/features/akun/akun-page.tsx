@@ -420,9 +420,7 @@ function TabProfil({ user }: { user: User }) {
           <img
             src={srcAvatar}
             alt={
-              preview
-                ? 'Pratinjau foto profil baru'
-                : `Foto profil ${user.name}`
+              preview ? 'Pratinjau foto profil baru' : 'Foto profil pengguna'
             }
             className="size-[108px] shrink-0 rounded-full object-cover ring-1 ring-black/5"
           />
