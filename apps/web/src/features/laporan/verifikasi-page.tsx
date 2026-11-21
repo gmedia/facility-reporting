@@ -1557,13 +1557,13 @@ function BuktiDialog({
           />
 
           {galat ? (
-            <p role="alert" className="mt-2.5 text-xs text-red-600">
+            <p role="alert" className="mt-2.5 text-sm text-red-600">
               {galat}
             </p>
           ) : (
-            <p className="mt-2.5 text-xs text-neutral-500">
+            <p className="mt-2.5 text-sm text-neutral-500">
               {webcamAktif
-                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol bulat.'
+                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol kamera.'
                 : 'Format JPG, PNG, atau WebP. Maksimal 2 MB.'}
             </p>
           )}

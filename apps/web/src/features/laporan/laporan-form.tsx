@@ -416,7 +416,7 @@ export function LaporanForm() {
               <FotoInput
                 varian="kartu"
                 kosong="pill"
-                petunjuk="Arahkan ke kerusakan, lalu tekan tombol bulat"
+                petunjuk="Arahkan ke kerusakan, lalu tekan tombol kamera"
                 inputId="laporan-foto"
                 value={terpilih}
                 previewUrl={previewUrl}
