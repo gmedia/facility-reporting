@@ -108,6 +108,63 @@ function AvatarAkun({
   )
 }
 
+function BadgeStatusAkun({ active }: { active: boolean }) {
+  return (
+    <Badge
+      variant="secondary"
+      className={`rounded-full px-3 text-xs font-medium ${
+        active
+          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+          : 'bg-red-100 text-red-700 hover:bg-red-100'
+      }`}
+    >
+      {active ? 'Aktif' : 'Nonaktif'}
+    </Badge>
+  )
+}
+
+function TombolAksiAkun({
+  user,
+  onEdit,
+  onToggle,
+  className = '',
+}: {
+  user: AdminUser
+  onEdit: () => void
+  onToggle: () => void
+  className?: string
+}) {
+  return (
+    <div className={`flex gap-2 ${className}`}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="rounded-full px-4 text-sm font-medium text-neutral-600"
+        onClick={onEdit}
+      >
+        Edit
+      </Button>
+      {/* Label & gaya mengikuti AKSI yang akan dijalankan, bukan status
+          barisnya: akun aktif ditawari "Nonaktifkan" (merah), akun nonaktif
+          ditawari "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className={`rounded-full bg-white px-4 text-sm font-medium ${
+          user.active
+            ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700'
+            : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700'
+        }`}
+        onClick={onToggle}
+      >
+        {user.active ? 'Nonaktifkan' : 'Aktifkan'}
+      </Button>
+    </div>
+  )
+}
+
 function AdminUsersPage() {
   const users = useQuery(adminUsersQueryOptions)
   const deactivateMutation = useDeactivateAdminUser()
@@ -177,7 +234,7 @@ function AdminUsersPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold">Akun admin</h2>
             <p className="text-sm text-neutral-500">
@@ -203,7 +260,7 @@ function AdminUsersPage() {
         ) : users.isError ? (
           <ErrorAlert error={users.error} onRetry={() => users.refetch()} />
         ) : (
-          <section className={`min-w-0 p-6 ${CARD_CLASS}`}>
+          <section className={`min-w-0 p-4 sm:p-6 ${CARD_CLASS}`}>
             <Input
               type="search"
               value={cari}
@@ -223,91 +280,96 @@ function AdminUsersPage() {
                 Tidak ada akun yang cocok dengan pencarian.
               </p>
             ) : (
-              <div className="mt-4 overflow-x-auto">
-                <Table className="min-w-[32rem]">
-                  <TableHeader>
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
-                        Nama
-                      </TableHead>
-                      <TableHead className="text-[15px] font-medium text-neutral-500">
-                        Status
-                      </TableHead>
-                      <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
-                        Aksi
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tampil.map((user) => (
-                      <TableRow
-                        key={user.id}
-                        className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
-                      >
-                        <TableCell className="py-3 pl-3">
-                          <div className="flex items-center gap-3">
-                            <AvatarAkun
-                              key={`${user.id}-${user.foto ?? ''}`}
-                              nama={user.name}
-                              foto={user.foto}
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-base font-medium">
-                                {user.name}
-                              </p>
-                              <p className="truncate text-sm text-neutral-500">
-                                {user.email ?? '-'}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3">
-                          <Badge
-                            variant="secondary"
-                            className={`rounded-full px-3 text-xs font-medium ${
-                              user.active
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                                : 'bg-red-100 text-red-700 hover:bg-red-100'
-                            }`}
-                          >
-                            {user.active ? 'Aktif' : 'Nonaktif'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-3 pr-3 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full px-4 text-sm font-medium text-neutral-600"
-                              onClick={() => setForm({ open: true, user })}
-                            >
-                              Edit
-                            </Button>
-                            {/* Label & gaya mengikuti AKSI yang akan dijalankan,
-                                bukan status barisnya: akun aktif ditawari
-                                "Nonaktifkan" (merah), akun nonaktif ditawari
-                                "Aktifkan" (hijau). Issue #115 — dulu kebalik. */}
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className={`rounded-full bg-white px-4 text-sm font-medium ${
-                                user.active
-                                  ? 'border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700'
-                                  : 'border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700'
-                              }`}
-                              onClick={() => mintaKonfirmasi(user)}
-                            >
-                              {user.active ? 'Nonaktifkan' : 'Aktifkan'}
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                {/* ===== HP: daftar kartu ===== */}
+                <ul className="mt-4 flex flex-col gap-3 md:hidden">
+                  {tampil.map((user) => (
+                    <li
+                      key={user.id}
+                      className="rounded-2xl border border-neutral-200/70 p-3.5"
+                    >
+                      <div className="flex items-start gap-3">
+                        <AvatarAkun
+                          key={`${user.id}-${user.foto ?? ''}`}
+                          nama={user.name}
+                          foto={user.foto}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-medium break-words">
+                            {user.name}
+                          </p>
+                          <p className="text-sm break-all text-neutral-500">
+                            {user.email ?? '-'}
+                          </p>
+                        </div>
+                        <BadgeStatusAkun active={user.active} />
+                      </div>
+                      <TombolAksiAkun
+                        user={user}
+                        className="mt-3 justify-end border-t border-neutral-100 pt-3"
+                        onEdit={() => setForm({ open: true, user })}
+                        onToggle={() => mintaKonfirmasi(user)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+
+                {/* ===== Tablet/desktop: tabel ===== */}
+                <div className="mt-4 hidden overflow-x-auto md:block">
+                  <Table className="min-w-[32rem]">
+                    <TableHeader>
+                      <TableRow className="border-0 hover:bg-transparent">
+                        <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
+                          Nama
+                        </TableHead>
+                        <TableHead className="text-[15px] font-medium text-neutral-500">
+                          Status
+                        </TableHead>
+                        <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
+                          Aksi
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {tampil.map((user) => (
+                        <TableRow
+                          key={user.id}
+                          className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
+                        >
+                          <TableCell className="py-3 pl-3">
+                            <div className="flex items-center gap-3">
+                              <AvatarAkun
+                                key={`${user.id}-${user.foto ?? ''}`}
+                                nama={user.name}
+                                foto={user.foto}
+                              />
+                              <div className="min-w-0">
+                                <p className="truncate text-base font-medium">
+                                  {user.name}
+                                </p>
+                                <p className="truncate text-sm text-neutral-500">
+                                  {user.email ?? '-'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <BadgeStatusAkun active={user.active} />
+                          </TableCell>
+                          <TableCell className="py-3 pr-3 text-right">
+                            <TombolAksiAkun
+                              user={user}
+                              className="justify-end"
+                              onEdit={() => setForm({ open: true, user })}
+                              onToggle={() => mintaKonfirmasi(user)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </section>
         )}

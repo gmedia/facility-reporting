@@ -50,9 +50,10 @@ function LupaPasswordPage() {
         </div>
       </div>
 
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[100rem] flex-col justify-center px-6 lg:grid lg:h-dvh lg:grid-cols-2 lg:items-center lg:px-0">
+      {/* Mobile: kolom biasa, mulai dari atas. Desktop: grid 2 kolom. */}
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[100rem] flex-col px-6 lg:grid lg:h-dvh lg:grid-cols-2 lg:items-center lg:px-0">
         {/* KIRI: sama persis dengan /login */}
-        <section className="relative -mx-6 overflow-hidden px-6 py-12 text-white lg:mx-0 lg:py-0 lg:pr-24 lg:pl-28">
+        <section className="relative -mx-6 overflow-hidden px-6 py-6 text-white lg:mx-0 lg:py-0 lg:pr-24 lg:pl-28">
           <div
             aria-hidden="true"
             className="absolute inset-0 -z-10 lg:hidden"
@@ -180,7 +181,7 @@ function LupaPasswordPage() {
               <circle cx="149" cy="111" r="1.9" fill="#fbbf24" />
             </svg>
 
-            <h1 className="lg:text-1.5xl text-2xl leading-[1.25] font-bold tracking-tight text-balance text-white">
+            <h1 className="lg:text-1.5xl text-xl leading-[1.25] font-bold tracking-tight text-balance text-white">
               {loginCopy.headline}
             </h1>
 
@@ -188,11 +189,12 @@ function LupaPasswordPage() {
               {loginCopy.description}
             </p>
 
-            <ul className="mt-1 flex w-full [scrollbar-width:none] gap-2 overflow-x-auto pt-1 pb-3 lg:mt-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pt-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+            {/* Chip: selalu 3 kolom rata, tanpa scroll samping. */}
+            <ul className="mt-1 grid w-full grid-cols-3 gap-2 lg:mt-0">
               {loginCopy.highlights.map((item) => (
                 <li
                   key={item}
-                  className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-semibold text-[#0d3f31] shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] lg:shrink"
+                  className="rounded-full bg-white px-2 py-1.5 text-center text-[11px] leading-tight font-semibold text-[#0d3f31] shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] sm:text-xs lg:px-3.5"
                 >
                   {item}
                 </li>
@@ -201,8 +203,9 @@ function LupaPasswordPage() {
           </div>
         </section>
 
-        {/* KANAN: isi Lupa password (bisa scroll sendiri di layar pendek) */}
-        <section className="flex w-full flex-col items-start py-12 lg:max-h-dvh lg:overflow-y-auto lg:py-10 lg:pr-28 lg:pl-24">
+        {/* KANAN: isi Lupa password. Mobile ikut scroll halaman,
+            desktop scroll sendiri di layar pendek. */}
+        <section className="flex w-full flex-1 flex-col items-start pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] lg:max-h-dvh lg:flex-none lg:overflow-y-auto lg:py-10 lg:pr-28 lg:pl-24">
           <div className="w-full max-w-md lg:max-w-none">
             <LupaPassword />
           </div>

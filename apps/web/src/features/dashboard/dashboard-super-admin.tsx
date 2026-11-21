@@ -152,10 +152,10 @@ function DashboardIntro({ user }: { user: User }) {
   return (
     <div className="flex w-full items-center justify-between gap-3 py-2">
       <div className="min-w-0">
-        <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+        <h1 className="line-clamp-2 text-base leading-tight font-bold tracking-tight break-words sm:text-lg">
           Halo, {user.name}
         </h1>
-        <p className="truncate text-xs text-neutral-500">
+        <p className="line-clamp-2 text-xs break-words text-neutral-500">
           {identitas(user)} · Semua gedung
         </p>
       </div>
@@ -165,7 +165,6 @@ function DashboardIntro({ user }: { user: User }) {
     </div>
   )
 }
-
 function DashboardContent({
   laporan,
   onBukaFoto,
@@ -286,7 +285,7 @@ function Heatmap({ laporan }: { laporan: Laporan[] }) {
   const { gedung, kategori, jumlah, maks } = hitungHeatmap(laporan)
 
   return (
-    <section className={cn('p-6', CARD)}>
+    <section className={cn('p-4 sm:p-6', CARD)}>
       <h2 className="text-base font-semibold">Heatmap gedung × kategori</h2>
       <p className="text-sm text-neutral-500">
         Makin gelap, makin banyak laporan. Titik rawan langsung terlihat.
@@ -295,26 +294,31 @@ function Heatmap({ laporan }: { laporan: Laporan[] }) {
       {gedung.length === 0 ? (
         <p className="mt-4 text-sm text-neutral-400">Belum ada data.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4">
           <div
-            className="grid min-w-[480px] gap-1 text-sm"
+            className="grid gap-1 text-sm"
             style={{
-              gridTemplateColumns: `110px repeat(${kategori.length}, minmax(0, 1fr))`,
+              gridTemplateColumns: `auto repeat(${kategori.length}, minmax(0, 1fr))`,
             }}
           >
             <div />
             {kategori.map((k) => (
               <div
                 key={k}
-                className="p-1 text-center text-xs font-medium text-neutral-500"
+                className="flex items-end justify-center px-0.5 pb-1 text-[10px] font-medium text-neutral-500 sm:text-xs"
               >
-                {KATEGORI_LABEL[k]}
+                {/* HP: teks diputar vertikal supaya tidak pecah per huruf */}
+                <span className="rotate-180 whitespace-nowrap [writing-mode:vertical-rl] sm:rotate-0 sm:[writing-mode:horizontal-tb]">
+                  {KATEGORI_LABEL[k]}
+                </span>
               </div>
             ))}
 
             {gedung.map((g) => (
               <Fragment key={g}>
-                <div className="flex items-center text-sm font-medium">{g}</div>
+                <div className="flex items-center pr-2 text-xs font-medium whitespace-nowrap sm:text-sm">
+                  {g}
+                </div>
                 {kategori.map((k) => {
                   const c = jumlah(g, k)
                   const rasio = c / maks
@@ -323,7 +327,7 @@ function Heatmap({ laporan }: { laporan: Laporan[] }) {
                       key={k}
                       title={`${g} · ${KATEGORI_LABEL[k]}: ${c} laporan`}
                       className={cn(
-                        'rounded-lg border border-neutral-200/70 py-2.5 text-center font-semibold tabular-nums',
+                        'rounded-lg border border-neutral-200/70 py-2 text-center text-sm font-semibold tabular-nums sm:py-2.5',
                         rasio > 0.55 && 'text-white',
                       )}
                       style={{
@@ -451,11 +455,13 @@ function PanelTertahan({
 
 // Jejak terbaru: siapa memverifikasi / memproses / menolak / menyelesaikan
 // laporan apa dan kapan. Hanya tampil kalau backend sudah mengirim data admin.
+// Jejak terbaru: siapa memverifikasi / memproses / menolak / menyelesaikan
+// laporan apa dan kapan. Hanya tampil kalau backend sudah mengirim data admin.
 function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
   const aktivitas = susunAktivitas(laporan)
 
   return (
-    <section className={cn('p-6', CARD)}>
+    <section className={cn('p-4 sm:p-6', CARD)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold">Aktivitas terbaru</h2>
@@ -479,21 +485,21 @@ function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
       ) : (
         <ul className="mt-4 divide-y divide-neutral-100">
           {aktivitas.map((a) => (
-            <li key={a.key} className="flex items-center gap-3 py-3">
+            <li key={a.key} className="flex items-start gap-3 py-3">
               <AvatarAdmin
                 nama={a.admin}
                 foto={a.adminFoto}
-                className="size-8"
+                className="mt-0.5 size-8 shrink-0"
               />
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm">
+                <p className="line-clamp-2 text-sm break-words">
                   <b className="font-semibold">{a.admin}</b> {a.aksi} laporan{' '}
                   <span className="font-medium">
                     &ldquo;{a.laporan.deskripsi}&rdquo;
                   </span>
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="mt-0.5 text-xs break-words text-neutral-500">
                   {a.laporan.lokasi} ·{' '}
                   {KATEGORI_LABEL[a.laporan.kategori as LaporanKategori] ??
                     a.laporan.kategori}
@@ -507,11 +513,19 @@ function AktivitasTerbaru({ laporan }: { laporan: Laporan[] }) {
                     </>
                   )}
                 </p>
+                {/* HP: waktu di bawah teks supaya teks dapat lebar penuh */}
+                <span
+                  title={formatWaktu(a.waktu)}
+                  className="mt-1 block text-xs text-neutral-400 sm:hidden"
+                >
+                  {waktuRelatif(a.waktu)}
+                </span>
               </div>
 
+              {/* Layar >= sm: waktu di kanan seperti semula */}
               <span
                 title={formatWaktu(a.waktu)}
-                className="shrink-0 text-xs text-neutral-500"
+                className="hidden shrink-0 text-xs whitespace-nowrap text-neutral-500 sm:block"
               >
                 {waktuRelatif(a.waktu)}
               </span>

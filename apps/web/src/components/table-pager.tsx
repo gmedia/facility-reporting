@@ -4,7 +4,7 @@ import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
 } from 'lucide-react'
-import { useId } from 'react'
+import { PilihBaris } from '@/components/pilih-baris'
 import { cn } from '@/lib/utils'
 
 const OPSI_PER_HALAMAN = [5, 10, 20, 50]
@@ -26,7 +26,6 @@ export function TablePager({
   onUbahPerHalaman,
   label = 'Halaman daftar',
 }: Props) {
-  const selectId = useId()
   const aktif = halaman + 1
   const nomor = susunNomor(totalHalaman, aktif)
 
@@ -36,21 +35,11 @@ export function TablePager({
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex items-center gap-3 text-sm">
-        <label htmlFor={selectId} className="sr-only">
-          Jumlah baris per halaman
-        </label>
-        <select
-          id={selectId}
-          value={perHalaman}
-          onChange={(event) => onUbahPerHalaman(Number(event.target.value))}
-          className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-        >
-          {OPSI_PER_HALAMAN.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        <PilihBaris
+          nilai={perHalaman}
+          opsi={OPSI_PER_HALAMAN}
+          onPilih={onUbahPerHalaman}
+        />
         <span aria-hidden="true">Jumlah baris per halaman</span>
       </div>
 

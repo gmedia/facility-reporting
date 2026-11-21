@@ -4,6 +4,7 @@ import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
 } from 'lucide-react'
+import { PilihBaris } from '@/components/pilih-baris'
 import { cn } from '@/lib/utils'
 
 const OPSI_PER_HALAMAN = [5, 10, 20, 50]
@@ -30,32 +31,25 @@ export function VerifikasiPager({
     'grid size-10 place-items-center rounded-xl border-[1.5px] border-[#efe9d8] bg-white text-sm font-medium tabular-nums transition-colors outline-none hover:bg-[#faf3e5] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25 disabled:pointer-events-none disabled:opacity-40'
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pb-2 md:justify-between">
       <div className="flex items-center gap-3 text-sm">
-        <label htmlFor="verifikasi-per-halaman" className="sr-only">
-          Jumlah baris per halaman
-        </label>
-        <select
-          id="verifikasi-per-halaman"
-          value={perHalaman}
-          onChange={(event) => onUbahPerHalaman(Number(event.target.value))}
-          className="h-10 rounded-xl border-[1.5px] border-[#efe9d8] bg-white px-3 text-sm outline-none focus-visible:border-[#1f6b4f] focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/20"
-        >
-          {OPSI_PER_HALAMAN.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+        <PilihBaris
+          nilai={perHalaman}
+          opsi={OPSI_PER_HALAMAN}
+          onPilih={onUbahPerHalaman}
+        />
         <span aria-hidden="true">Jumlah baris per halaman</span>
       </div>
 
       <nav
         aria-label="Halaman daftar laporan"
-        className="flex flex-wrap items-center gap-2"
+        className="flex flex-wrap items-center justify-center gap-2"
       >
         {/* Template literal: spasi tidak hilang walau Prettier memecah baris. */}
-        <span aria-live="polite" className="mr-2 text-sm font-medium">
+        <span
+          aria-live="polite"
+          className="w-full text-center text-sm font-medium sm:mr-2 sm:w-auto"
+        >
           {`Halaman ${aktif} dari ${totalHalaman}`}
         </span>
 
@@ -127,8 +121,8 @@ export function VerifikasiPager({
   )
 }
 
-// Sama dengan susunNomor di riwayat-list.tsx: penuh kalau ≤ 7, selain itu
-// jendela ±1 di sekitar halaman aktif + halaman pertama/terakhir.
+// Penuh kalau ≤ 7, selain itu jendela ±1 di sekitar halaman aktif +
+// halaman pertama/terakhir.
 function susunNomor(total: number, aktif: number): Array<number | '…'> {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
 

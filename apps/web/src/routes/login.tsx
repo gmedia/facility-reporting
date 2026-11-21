@@ -25,10 +25,7 @@ const ABU_TERANG = '#f4f4f5'
 //
 // ATURAN POSISI (jangan dilanggar, nanti kepotong lagi):
 //   • vertikal  → HARUS muat di dalam. Pakai top-* / bottom-* positif.
-//                 Gak boleh ada minus di atas/bawah, karena itu yang
-//                 bikin garis horizontal kena gunting.
-//   • horizontal→ boleh minus di kiri (bleed ke tepi layar), karena
-//                 layer-nya emang dipotong di x=0.
+//   • horizontal→ boleh minus di kiri (bleed ke tepi layar).
 //
 // Dipakai 2 tempat:
 //   • desktop → anak dari layer yang lebarnya persis 50vw (panel hijau)
@@ -37,11 +34,8 @@ const ABU_TERANG = '#f4f4f5'
 function LingkaranDekor({ className }: { className?: string }) {
   return (
     <div aria-hidden="true" className={className}>
-      {/* gede, nyembul dari pojok kiri bawah — cuma kiri yang dipotong */}
       <div className="absolute bottom-6 -left-28 size-[24rem] rounded-full bg-white/[0.05]" />
-      {/* sedang, pojok kanan atas — muat penuh, gak nyentuh garis split */}
       <div className="absolute top-10 right-24 size-[16rem] rounded-full bg-white/[0.04]" />
-      {/* kecil, full ngambang di sela ilustrasi */}
       <div className="absolute top-[46%] right-[14%] size-[7rem] rounded-full bg-white/[0.08]" />
     </div>
   )
@@ -66,11 +60,7 @@ function LoginPage() {
         }}
       />
 
-      {/* ===== Lingkaran desktop =====
-          W-1/2 dari main = 0 → 50vw = PERSIS panel hijau.
-          overflow-hidden di sini ngediemin lingkaran di tepi layar kiri,
-          tapi vertikal-nya inset-y-0 = viewport penuh, jadi atas-bawah
-          gak pernah kena potong (posisinya juga emang muat). */}
+      {/* ===== Lingkaran desktop ===== */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 hidden lg:block"
@@ -80,12 +70,11 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* Container max-w di-center → midpoint-nya SELALU = tengah viewport.
-          grid-cols-2 → batas kolom = garis split. */}
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[100rem] flex-col justify-center px-6 lg:grid lg:h-dvh lg:grid-cols-2 lg:items-center lg:px-0">
-        {/* ============ KIRI: panel hijau ============
-            luar 112px | ke-split 96px */}
-        <section className="relative -mx-6 overflow-hidden px-6 py-12 text-white lg:mx-0 lg:py-0 lg:pr-24 lg:pl-28">
+      {/* Mobile: kolom biasa, mulai dari atas (gak di-center).
+          Desktop: grid 2 kolom, tengah layar. */}
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[100rem] flex-col px-6 lg:grid lg:h-dvh lg:grid-cols-2 lg:items-center lg:px-0">
+        {/* ============ KIRI: panel hijau ============ */}
+        <section className="relative -mx-6 overflow-hidden px-6 py-6 text-white lg:mx-0 lg:py-0 lg:pr-24 lg:pl-28">
           {/* panel hijau di mobile (desktop ngandelin gradient main) */}
           <div
             aria-hidden="true"
@@ -93,8 +82,6 @@ function LoginPage() {
             style={{ backgroundColor: HIJAU_TUA }}
           />
 
-          {/* lingkaran mobile — di sini aman karena section-nya
-              full-width & tingginya pas sama kontennya */}
           <LingkaranDekor className="pointer-events-none absolute inset-0 lg:hidden" />
 
           <div className="relative flex w-full max-w-md flex-col items-start gap-3 lg:max-w-none">
@@ -229,7 +216,7 @@ function LoginPage() {
               <circle cx="149" cy="111" r="1.9" fill="#fbbf24" />
             </svg>
 
-            <h1 className="lg:text-1.5xl text-2xl leading-[1.25] font-bold tracking-tight text-balance text-white">
+            <h1 className="lg:text-1.5xl text-xl leading-[1.25] font-bold tracking-tight text-balance text-white">
               {loginCopy.headline}
             </h1>
 
@@ -238,13 +225,13 @@ function LoginPage() {
               {loginCopy.description}
             </p>
 
-            {/* Pills PUTIH — di panel hijau, hijau pasti tenggelam.
-                w-full biar grid-cols-3 nya kebagi dari lebar kolom. */}
-            <ul className="mt-1 flex w-full [scrollbar-width:none] gap-2 overflow-x-auto pt-1 pb-3 lg:mt-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pt-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+            {/* Pills: selalu 3 kolom rata, TANPA scroll samping,
+                jadi gak ada yang kepotong di HP. */}
+            <ul className="mt-1 grid w-full grid-cols-3 gap-2 lg:mt-0">
               {loginCopy.highlights.map((item) => (
                 <li
                   key={item}
-                  className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-center text-xs font-semibold text-[#0d3f31] shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] lg:shrink"
+                  className="rounded-full bg-white px-2 py-1.5 text-center text-[11px] leading-tight font-semibold text-[#0d3f31] shadow-[0_4px_10px_-4px_rgba(0,0,0,0.35)] sm:text-xs lg:px-3.5"
                 >
                   {item}
                 </li>
@@ -254,17 +241,18 @@ function LoginPage() {
         </section>
 
         {/* ============ KANAN: form TANPA card ============
-            ke-split 96px | luar 112px  →  MIRROR dari kolom kiri */}
-        <section className="flex w-full flex-col items-start py-12 lg:py-0 lg:pr-28 lg:pl-24">
+            Mobile: flex-1 + center → sisa layar dipakai form.
+            pb ngikutin safe-area iPhone biar tombol gak mepet bar bawah. */}
+        <section className="flex w-full flex-1 flex-col items-start justify-center pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] lg:flex-none lg:justify-start lg:py-0 lg:pr-28 lg:pl-24">
           <div className="w-full max-w-md lg:max-w-none">
             <h2 className="text-foreground text-2xl font-bold tracking-tight">
               Masuk
             </h2>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-neutral-500 lg:mt-2">
               Gunakan email atau NIM akun Anda.
             </p>
 
-            <div className="mt-8">
+            <div className="mt-5 lg:mt-8">
               <LoginForm />
             </div>
           </div>

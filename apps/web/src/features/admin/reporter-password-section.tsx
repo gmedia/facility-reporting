@@ -108,7 +108,7 @@ export function ReporterPasswordSection() {
         </p>
       </div>
 
-      <div className={`min-w-0 p-6 ${CARD_CLASS}`}>
+      <div className={`min-w-0 p-4 sm:p-6 ${CARD_CLASS}`}>
         <Input
           type="search"
           value={cari}
@@ -143,81 +143,138 @@ export function ReporterPasswordSection() {
               : 'Belum ada akun mahasiswa.'}
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <Table className="min-w-[36rem]">
-              <TableHeader>
-                <TableRow className="border-0 hover:bg-transparent">
-                  <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
-                    Nama
-                  </TableHead>
-                  <TableHead className="text-[15px] font-medium text-neutral-500">
-                    NIM
-                  </TableHead>
-                  <TableHead className="text-[15px] font-medium text-neutral-500">
-                    Status
-                  </TableHead>
-                  <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
-                    Aksi
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {baris.map((mhs) => (
-                  <TableRow
-                    key={mhs.id}
-                    className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
-                  >
-                    <TableCell className="py-3 pl-3">
-                      <div className="flex items-center gap-3">
-                        <span
-                          aria-hidden="true"
-                          className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[#0d3f31]"
-                        >
-                          {inisial(mhs.name)}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-medium">
-                            {mhs.name}
-                          </p>
-                          <p className="truncate text-sm text-neutral-500">
-                            {mhs.email ?? '-'}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3 text-sm text-neutral-600">
-                      {mhs.nim ?? '-'}
-                    </TableCell>
-                    <TableCell className="py-3">
-                      <Badge
-                        variant="secondary"
-                        className={`rounded-full px-3 text-xs font-medium ${
-                          mhs.must_change_password
-                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-100'
-                            : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                        }`}
-                      >
-                        {mhs.must_change_password
-                          ? 'Belum ganti password'
-                          : 'Sudah ganti password'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-3 pr-3 text-right">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="rounded-full border-[#0d3f31] bg-white px-4 text-sm font-medium text-[#0d3f31] hover:bg-emerald-50 hover:text-[#0d3f31]"
-                        onClick={() => setTarget(mhs)}
-                      >
-                        Reset password
-                      </Button>
-                    </TableCell>
+          <>
+            {/* ===== HP: daftar kartu ===== */}
+            <ul className="mt-4 flex flex-col gap-3 md:hidden">
+              {baris.map((mhs) => (
+                <li
+                  key={mhs.id}
+                  className="rounded-2xl border border-neutral-200/70 p-3.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[#0d3f31]"
+                    >
+                      {inisial(mhs.name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-medium break-words">
+                        {mhs.name}
+                      </p>
+                      <p className="text-sm break-all text-neutral-500">
+                        {mhs.email ?? '-'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        NIM {mhs.nim ?? '-'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+                    <Badge
+                      variant="secondary"
+                      className={`rounded-full px-3 text-xs font-medium ${
+                        mhs.must_change_password
+                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-100'
+                          : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                      }`}
+                    >
+                      {mhs.must_change_password
+                        ? 'Belum ganti password'
+                        : 'Sudah ganti password'}
+                    </Badge>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full border-[#0d3f31] bg-white px-4 text-sm font-medium text-[#0d3f31] hover:bg-emerald-50 hover:text-[#0d3f31]"
+                      onClick={() => setTarget(mhs)}
+                    >
+                      Reset password
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* ===== Tablet/desktop: tabel ===== */}
+            <div className="mt-4 hidden overflow-x-auto md:block">
+              <Table className="min-w-[36rem]">
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className="pl-3 text-[15px] font-medium text-neutral-500">
+                      Nama
+                    </TableHead>
+                    <TableHead className="text-[15px] font-medium text-neutral-500">
+                      NIM
+                    </TableHead>
+                    <TableHead className="text-[15px] font-medium text-neutral-500">
+                      Status
+                    </TableHead>
+                    <TableHead className="pr-3 text-right text-[15px] font-medium text-neutral-500">
+                      Aksi
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {baris.map((mhs) => (
+                    <TableRow
+                      key={mhs.id}
+                      className="border-t border-neutral-100 hover:bg-[#f7f9f8]"
+                    >
+                      <TableCell className="py-3 pl-3">
+                        <div className="flex items-center gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-[#0d3f31]"
+                          >
+                            {inisial(mhs.name)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-base font-medium">
+                              {mhs.name}
+                            </p>
+                            <p className="truncate text-sm text-neutral-500">
+                              {mhs.email ?? '-'}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 text-sm text-neutral-600">
+                        {mhs.nim ?? '-'}
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <Badge
+                          variant="secondary"
+                          className={`rounded-full px-3 text-xs font-medium ${
+                            mhs.must_change_password
+                              ? 'bg-amber-100 text-amber-800 hover:bg-amber-100'
+                              : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                          }`}
+                        >
+                          {mhs.must_change_password
+                            ? 'Belum ganti password'
+                            : 'Sudah ganti password'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-3 pr-3 text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full border-[#0d3f31] bg-white px-4 text-sm font-medium text-[#0d3f31] hover:bg-emerald-50 hover:text-[#0d3f31]"
+                          onClick={() => setTarget(mhs)}
+                        >
+                          Reset password
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
 
         {meta && meta.total > 0 && (
