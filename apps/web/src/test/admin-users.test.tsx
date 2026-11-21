@@ -141,7 +141,9 @@ describe('dashboard CRUD admin', () => {
     ).toHaveLength(2)
 
     expect(
-      within(await baris('superadmin@facility.test')).getByText('superadmin@facility.test'),
+      within(await baris('superadmin@facility.test')).getByText(
+        'superadmin@facility.test',
+      ),
     ).toBeInTheDocument()
 
     const nav = within(
@@ -233,11 +235,15 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     renderAt('/admin')
 
     expect(
-      within(await baris('superadmin@facility.test')).getByRole('button', { name: 'Nonaktifkan' }),
+      within(await baris('superadmin@facility.test')).getByRole('button', {
+        name: 'Nonaktifkan',
+      }),
     ).toBeInTheDocument()
 
     expect(
-      within(await baris('superadmin@facility.test')).queryByRole('button', { name: 'Aktifkan' }),
+      within(await baris('superadmin@facility.test')).queryByRole('button', {
+        name: 'Aktifkan',
+      }),
     ).not.toBeInTheDocument()
   })
 
@@ -263,7 +269,10 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     renderAt('/admin')
 
     fireEvent.click(
-      await within(await baris('superadmin@facility.test')).findByRole('button', { name: 'Nonaktifkan' }),
+      await within(await baris('superadmin@facility.test')).findByRole(
+        'button',
+        { name: 'Nonaktifkan' },
+      ),
     )
 
     expect(
@@ -277,7 +286,9 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
 
     fireEvent.click(
-      await within(await baris('nonaktif@facility.test')).findByRole('button', { name: 'Aktifkan' }),
+      await within(await baris('nonaktif@facility.test')).findByRole('button', {
+        name: 'Aktifkan',
+      }),
     )
 
     expect(await screen.findByText('Aktifkan akun admin?')).toBeInTheDocument()
@@ -294,7 +305,10 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     renderAt('/admin')
 
     fireEvent.click(
-      await within(await baris('superadmin@facility.test')).findByRole('button', { name: 'Nonaktifkan' }),
+      await within(await baris('superadmin@facility.test')).findByRole(
+        'button',
+        { name: 'Nonaktifkan' },
+      ),
     )
 
     fireEvent.click(
@@ -308,12 +322,12 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     )
 
     fireEvent.click(
-      await within(await baris('nonaktif@facility.test')).findByRole('button', { name: 'Aktifkan' }),
+      await within(await baris('nonaktif@facility.test')).findByRole('button', {
+        name: 'Aktifkan',
+      }),
     )
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Ya, Aktifkan' }),
-    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Ya, Aktifkan' }))
 
     await waitFor(() =>
       expect(api.PUT).toHaveBeenCalledWith('/admin/users/{user}/activate', {
