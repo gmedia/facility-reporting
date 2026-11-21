@@ -486,8 +486,8 @@ function TabProfil({ user }: { user: User }) {
 
           {preview && !galat && (
             <p className="text-sm text-neutral-500">
-              Ini baru pratinjau. Klik &quot;Simpan foto&quot; untuk
-              memakainya, atau &quot;Batal&quot; kalau tidak jadi ganti.
+              Ini baru pratinjau. Klik &quot;Simpan foto&quot; untuk memakainya,
+              atau &quot;Batal&quot; kalau tidak jadi ganti.
             </p>
           )}
 
