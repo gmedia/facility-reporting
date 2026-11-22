@@ -111,15 +111,6 @@ export function FotoInput({
 
   const adaKamera = perangkatSentuh || adaWebcam
 
-  // URL preview eksternal harus lolos validasi.
-  const previewUrlValid = sanitasiUrl(previewUrl)
-
-  // Hasil preview hanya digunakan untuk File yang sedang dipilih.
-  // Ini mencegah preview file sebelumnya muncul saat file berubah.
-  const urlPratinjau =
-    previewUrlValid ||
-    (value && hasilPreview?.file === value ? hasilPreview.url : '')
-
   // Object URL dibuat segera (saat render) biar pratinjau muncul tanpa
   // menunggu FileReader selesai baca data URL.
   const objectUrl = useMemo(() => {
@@ -133,6 +124,18 @@ export function FotoInput({
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
   }, [objectUrl])
+
+  // URL preview eksternal harus lolos validasi.
+  const previewUrlValid = sanitasiUrl(previewUrl)
+
+  // Hasil preview hanya digunakan untuk File yang sedang dipilih.
+  // Ini mencegah preview file sebelumnya muncul saat file berubah.
+  // Fallback ke objectUrl (dibuat dari value) biar pratinjau selalu muncul
+  // meski previewUrl dari parent belum siap.
+  const urlPratinjau =
+    previewUrlValid ||
+    objectUrl ||
+    (value && hasilPreview?.file === value ? hasilPreview.url : '')
 
   // FileReader untuk pratinjau kualitas lebih tinggi (async, setState di
   // callback bukan di body effect, jadi aman).
