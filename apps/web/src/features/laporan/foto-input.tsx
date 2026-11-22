@@ -315,13 +315,18 @@ export function FotoInput({
     } else if (value) {
       isi = (
         <div className="relative grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-2xl bg-black">
-          {urlPratinjau && (
+          {urlPratinjau ? (
             <img
               src={urlPratinjau}
               alt="Pratinjau foto terpilih"
               className="size-full object-cover"
               decoding="async"
             />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-4 text-sm text-neutral-400">
+              <ImageIcon className="mb-2 size-8 opacity-50" />
+              <span>{value.name}</span>
+            </div>
           )}
 
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 bg-gradient-to-t from-[#050f0a]/75 to-transparent p-3.5">
@@ -412,13 +417,18 @@ export function FotoInput({
   } else if (value) {
     isi = (
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2.5">
-        {urlPratinjau && (
+        {urlPratinjau ? (
           <img
             src={urlPratinjau}
             alt="Pratinjau foto terpilih"
             className="size-12 shrink-0 rounded-lg object-cover"
             decoding="async"
           />
+        ) : (
+          <div className="flex items-center gap-2 px-2 text-sm text-neutral-400">
+            <ImageIcon className="size-6 opacity-50" />
+            <span>{value.name}</span>
+          </div>
         )}
 
         <div className="min-w-0 flex-1">
