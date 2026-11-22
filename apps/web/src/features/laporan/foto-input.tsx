@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
 
-import { FOTO_ACCEPT } from './laporan-query'
+import { BATAS_FOTO_BYTE, FOTO_ACCEPT } from './laporan-query'
 
 const LEBAR_MAKS = 1600
+
+// Target ukuran hasil kompres, dibuat sedikit di bawah batas server (2 MB)
+// supaya ada ruang aman.
+const TARGET_BYTE = Math.floor(BATAS_FOTO_BYTE * 0.92)
 
 // Mengubah frame video menjadi File JPEG.
 function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
@@ -41,6 +45,100 @@ function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
       0.85,
     )
   })
+}
+
+function canvasKeBlob(
+  canvas: HTMLCanvasElement,
+  kualitas: number,
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', kualitas)
+  })
+}
+
+// Memuat gambar dengan orientasi EXIF yang benar (foto kamera HP sering
+// disimpan miring dan diputar lewat metadata).
+async function muatGambar(
+  file: File,
+): Promise<{ sumber: CanvasImageSource; lebar: number; tinggi: number } | null> {
+  try {
+    const bitmap = await createImageBitmap(file, {
+      imageOrientation: 'from-image',
+    })
+    return { sumber: bitmap, lebar: bitmap.width, tinggi: bitmap.height }
+  } catch {
+    // Fallback untuk browser yang belum mendukung opsi di atas.
+  }
+
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve({
+        sumber: img,
+        lebar: img.naturalWidth,
+        tinggi: img.naturalHeight,
+      })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(null)
+    }
+    img.src = url
+  })
+}
+
+// Memperkecil foto supaya lolos batas 2 MB. Kalau sudah kecil, dikembalikan
+// apa adanya. Kalau gagal diproses (mis. format HEIC yang tidak bisa
+// didecode browser), file asli dikembalikan dan validasi biasa yang menolak.
+async function kompresFoto(file: File): Promise<File> {
+  if (!file.type.startsWith('image/')) return file
+
+  const gambar = await muatGambar(file)
+  if (!gambar) return file
+
+  const { sumber, lebar, tinggi } = gambar
+
+  // Sudah kecil dan dimensinya wajar: tidak perlu diproses.
+  if (file.size <= TARGET_BYTE && Math.max(lebar, tinggi) <= LEBAR_MAKS) {
+    return file
+  }
+
+  let skala = Math.min(1, LEBAR_MAKS / Math.max(lebar, tinggi))
+  const kualitasUrut = [0.85, 0.75, 0.65, 0.55, 0.45]
+
+  for (let percobaan = 0; percobaan < 4; percobaan++) {
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(lebar * skala))
+    canvas.height = Math.max(1, Math.round(tinggi * skala))
+
+    const context = canvas.getContext('2d')
+    if (!context) return file
+
+    // Latar putih supaya PNG transparan tidak jadi hitam saat jadi JPEG.
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(sumber, 0, 0, canvas.width, canvas.height)
+
+    for (const kualitas of kualitasUrut) {
+      const blob = await canvasKeBlob(canvas, kualitas)
+
+      if (blob && blob.size <= TARGET_BYTE) {
+        const namaDasar = file.name.replace(/\.[^.]+$/, '') || 'foto'
+        return new File([blob], `${namaDasar}.jpg`, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        })
+      }
+    }
+
+    // Masih terlalu besar: perkecil dimensi lalu coba lagi.
+    skala *= 0.8
+  }
+
+  return file
 }
 
 function formatUkuran(byte: number): string {
@@ -115,8 +213,10 @@ export function FotoInput({
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
   const [hasilPreview, setHasilPreview] = useState<HasilPreview | null>(null)
+  const [memproses, setMemproses] = useState(false)
 
   const kartu = varian === 'kartu'
+  const nonaktif = disabled || memproses
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -237,6 +337,22 @@ export function FotoInput({
     }
   }
 
+  // Menerima file dari input galeri/kamera HP, mengompresnya dulu, baru
+  // diteruskan ke pemanggil sehingga validasi 2 MB memakai ukuran akhir.
+  const terimaFile = async (file: File) => {
+    setGalat(null)
+    setMemproses(true)
+
+    try {
+      const hasil = await kompresFoto(file)
+      onFile(hasil)
+    } catch {
+      setGalat('Foto gagal diproses. Coba pilih foto lain.')
+    } finally {
+      setMemproses(false)
+    }
+  }
+
   // Tombol kamera: HP menggunakan kamera bawaan,
   // laptop menggunakan webcam browser.
   const bukaKamera = () => {
@@ -258,7 +374,7 @@ export function FotoInput({
       {perangkatSentuh ? (
         <button
           type="button"
-          disabled={disabled}
+          disabled={nonaktif}
           onClick={() => kameraHpRef.current?.click()}
           className={tombol}
         >
@@ -269,7 +385,7 @@ export function FotoInput({
         adaWebcam && (
           <button
             type="button"
-            disabled={disabled}
+            disabled={nonaktif}
             onClick={() => void nyalakanWebcam()}
             className={tombol}
           >
@@ -281,7 +397,7 @@ export function FotoInput({
 
       <button
         type="button"
-        disabled={disabled}
+        disabled={nonaktif}
         onClick={() => galeriRef.current?.click()}
         className={tombol}
       >
@@ -363,7 +479,7 @@ export function FotoInput({
 
             <button
               type="button"
-              disabled={disabled}
+              disabled={nonaktif}
               onClick={() => onFile(null)}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -387,7 +503,7 @@ export function FotoInput({
               {adaKamera && (
                 <button
                   type="button"
-                  disabled={disabled}
+                  disabled={nonaktif}
                   onClick={bukaKamera}
                   className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#1f6b4f] px-2 py-3.5 text-sm font-medium text-white transition hover:bg-[#0f3d2e] disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -398,7 +514,7 @@ export function FotoInput({
 
               <button
                 type="button"
-                disabled={disabled}
+                disabled={nonaktif}
                 onClick={() => galeriRef.current?.click()}
                 className="flex flex-1 flex-col items-center gap-1 rounded-2xl bg-[#e3f1ea] px-2 py-3.5 text-sm font-medium text-[#1f6b4f] transition hover:bg-[#d3e9de] disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -463,7 +579,7 @@ export function FotoInput({
 
         <button
           type="button"
-          disabled={disabled}
+          disabled={nonaktif}
           onClick={() => onFile(null)}
           className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -483,6 +599,12 @@ export function FotoInput({
     <div className={pakaiJarak ? 'mt-3' : undefined}>
       {isi}
 
+      {memproses && (
+        <p role="status" className="mt-2 text-sm text-neutral-500">
+          Memproses foto…
+        </p>
+      )}
+
       {/* Input galeri/file */}
       <input
         ref={galeriRef}
@@ -497,7 +619,7 @@ export function FotoInput({
           e.target.value = ''
 
           if (file) {
-            onFile(file)
+            void terimaFile(file)
           }
         }}
       />
@@ -516,7 +638,7 @@ export function FotoInput({
           e.target.value = ''
 
           if (file) {
-            onFile(file)
+            void terimaFile(file)
           }
         }}
       />
