@@ -189,10 +189,13 @@ export function FotoInput({
     }
   }
 
-  // Menghubungkan stream ke elemen video.
+  // Menghubungkan stream ke elemen video dan memutarnya.
   useEffect(() => {
     if (webcamAktif && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
+      void videoRef.current.play().catch((e) => {
+        console.warn('Gagal memutar video:', e)
+      })
     }
   }, [webcamAktif])
 
