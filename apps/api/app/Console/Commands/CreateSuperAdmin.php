@@ -21,7 +21,8 @@ class CreateSuperAdmin extends Command
     protected $signature = 'app:create-superadmin
         {--email= : Email superadmin}
         {--name= : Nama yang ditampilkan}
-        {--password= : Password (kosongkan untuk input interaktif)}';
+        {--password= : Password (kosongkan untuk input interaktif)}
+        {--force : Timpa akun yang sudah ada (reset password & role)}';
 
     protected $description = 'Buat (atau perbarui) akun superadmin dengan password yang aman';
 

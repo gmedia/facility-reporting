@@ -19,16 +19,30 @@ export const api = createClient<paths>({
   headers: { Accept: 'application/json' },
 })
 
+// Token CSRF terakhir dari /sanctum/csrf-cookie.
+// Saat web dan API beda domain (Vercel ↔ Railway) cookie `XSRF-TOKEN`
+// tersimpan di domain API, sehingga `document.cookie` di halaman web TIDAK
+// bisa membacanya. Karena itu API mengirim token yang sama sebagai header
+// respons `XSRF-TOKEN` (lihat ExposeCsrfTokenHeader di API) dan header itu
+// dibaca di sini lalu disimpan di memori.
+let csrfToken: string | null = null
+
+function tokenDariCookie(): string | null {
+  const raw = document.cookie
+    .split('; ')
+    .find((part) => part.startsWith('XSRF-TOKEN='))
+    ?.slice('XSRF-TOKEN='.length)
+
+  return raw ? decodeURIComponent(raw) : null
+}
+
 api.use({
   onRequest({ request }) {
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) return request
 
-    const token = document.cookie
-      .split('; ')
-      .find((part) => part.startsWith('XSRF-TOKEN='))
-      ?.slice('XSRF-TOKEN='.length)
-
-    if (token) request.headers.set('X-XSRF-TOKEN', decodeURIComponent(token))
+    // Cookie hanya jadi cadangan (mis. saat dev, API satu domain).
+    const token = csrfToken ?? tokenDariCookie()
+    if (token) request.headers.set('X-XSRF-TOKEN', token)
     return request
   },
 })
@@ -38,4 +52,7 @@ export async function initializeCsrf(): Promise<void> {
     credentials: 'include',
   })
   if (!response.ok) throw new Error('CSRF initialization failed')
+
+  const dariHeader = response.headers.get('XSRF-TOKEN')
+  csrfToken = dariHeader ? decodeURIComponent(dariHeader) : tokenDariCookie()
 }

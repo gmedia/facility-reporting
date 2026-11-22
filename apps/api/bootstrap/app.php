@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsSuperAdmin;
+use App\Http\Middleware\ExposeCsrfTokenHeader;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(replace: [
             Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class => EnsureFrontendRequestsAreStateful::class,
         ]);
+        // Beda domain (Vercel ↔ Railway): cookie `XSRF-TOKEN` tidak bisa dibaca
+        // dari halaman web, jadi nilainya juga dikirim sebagai header respons.
+        $middleware->append(ExposeCsrfTokenHeader::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'super_admin' => EnsureUserIsSuperAdmin::class,
