@@ -2,13 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
 
-import { BATAS_FOTO_BYTE, FOTO_ACCEPT } from './laporan-query'
-
-const LEBAR_MAKS = 1600
-
-// Target ukuran hasil kompres, dibuat sedikit di bawah batas server (2 MB)
-// supaya ada ruang aman.
-const TARGET_BYTE = Math.floor(BATAS_FOTO_BYTE * 0.92)
+import { FOTO_ACCEPT } from './laporan-query'
 
 // Mengubah frame video menjadi File JPEG.
 function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
@@ -16,11 +10,10 @@ function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
     return Promise.resolve(null)
   }
 
-  const skala = Math.min(1, LEBAR_MAKS / video.videoWidth)
   const canvas = document.createElement('canvas')
 
-  canvas.width = Math.round(video.videoWidth * skala)
-  canvas.height = Math.round(video.videoHeight * skala)
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
 
   const context = canvas.getContext('2d')
 
@@ -47,141 +40,30 @@ function frameKeFile(video: HTMLVideoElement): Promise<File | null> {
   })
 }
 
-function canvasKeBlob(
-  canvas: HTMLCanvasElement,
-  kualitas: number,
-): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', kualitas)
-  })
-}
-
-// Memuat gambar dengan orientasi EXIF yang benar (foto kamera HP sering
-// disimpan miring dan diputar lewat metadata).
-async function muatGambar(file: File): Promise<{
-  sumber: CanvasImageSource
-  lebar: number
-  tinggi: number
-} | null> {
-  try {
-    const bitmap = await createImageBitmap(file, {
-      imageOrientation: 'from-image',
-    })
-    return { sumber: bitmap, lebar: bitmap.width, tinggi: bitmap.height }
-  } catch {
-    // Fallback untuk browser yang belum mendukung opsi di atas.
-  }
-
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve({
-        sumber: img,
-        lebar: img.naturalWidth,
-        tinggi: img.naturalHeight,
-      })
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
-    img.src = url
-  })
-}
-
-// Memperkecil foto supaya lolos batas 2 MB. Kalau sudah kecil, dikembalikan
-// apa adanya. Kalau gagal diproses (mis. format HEIC yang tidak bisa
-// didecode browser), file asli dikembalikan dan validasi biasa yang menolak.
-async function kompresFoto(file: File): Promise<File> {
-  if (!file.type.startsWith('image/')) return file
-
-  const gambar = await muatGambar(file)
-  if (!gambar) return file
-
-  const { sumber, lebar, tinggi } = gambar
-
-  // Sudah kecil dan dimensinya wajar: tidak perlu diproses.
-  if (file.size <= TARGET_BYTE && Math.max(lebar, tinggi) <= LEBAR_MAKS) {
-    return file
-  }
-
-  let skala = Math.min(1, LEBAR_MAKS / Math.max(lebar, tinggi))
-  const kualitasUrut = [0.85, 0.75, 0.65, 0.55, 0.45]
-
-  for (let percobaan = 0; percobaan < 4; percobaan++) {
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.max(1, Math.round(lebar * skala))
-    canvas.height = Math.max(1, Math.round(tinggi * skala))
-
-    const context = canvas.getContext('2d')
-    if (!context) return file
-
-    // Latar putih supaya PNG transparan tidak jadi hitam saat jadi JPEG.
-    context.fillStyle = '#ffffff'
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    context.drawImage(sumber, 0, 0, canvas.width, canvas.height)
-
-    for (const kualitas of kualitasUrut) {
-      const blob = await canvasKeBlob(canvas, kualitas)
-
-      if (blob && blob.size <= TARGET_BYTE) {
-        const namaDasar = file.name.replace(/\.[^.]+$/, '') || 'foto'
-        return new File([blob], `${namaDasar}.jpg`, {
-          type: 'image/jpeg',
-          lastModified: Date.now(),
-        })
-      }
-    }
-
-    // Masih terlalu besar: perkecil dimensi lalu coba lagi.
-    skala *= 0.8
-  }
-
-  return file
-}
-
 function formatUkuran(byte: number): string {
   if (byte < 1024 * 1024) {
     return `${Math.max(1, Math.round(byte / 1024))} KB`
   }
-
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Validasi URL gambar sebelum digunakan pada img.src.
-// Hanya menerima blob dari origin aplikasi sendiri atau data image Base64.
-function sanitasiUrl(url: string | null | undefined): string {
-  if (!url) return ''
-
-  // Data URL hanya menerima format gambar yang diperbolehkan.
-  if (/^data:image\/(jpeg|png|webp);base64,/i.test(url)) {
-    return url
-  }
-
+function sanitasiUrl(url: string | null | undefined): string | null {
+  if (!url) return null
   try {
-    const parsed = new URL(url)
-
-    if (
-      parsed.protocol === 'blob:' &&
-      parsed.origin === window.location.origin
-    ) {
-      return parsed.href
-    }
-
-    return ''
+    const u = new URL(url)
+    return u.protocol === 'https:' || u.protocol === 'http:' ? url : null
   } catch {
-    return ''
+    return null
   }
 }
 
-type FotoInputProps = {
-  value: File | null
+type HasilPreview = { file: File; url: string }
+
+interface FotoInputProps {
+  value?: File | null
   previewUrl?: string | null
   onFile: (file: File | null) => void
-  inputId: string
+  inputId?: string
   disabled?: boolean
   onWebcamAktif?: (aktif: boolean) => void
   ariaLabel?: string
@@ -190,16 +72,11 @@ type FotoInputProps = {
   petunjuk?: string
 }
 
-type HasilPreview = {
-  file: File
-  url: string
-}
-
 export function FotoInput({
   value,
   previewUrl,
   onFile,
-  inputId,
+  inputId = 'foto-input',
   disabled,
   onWebcamAktif,
   ariaLabel = 'Foto',
@@ -215,10 +92,9 @@ export function FotoInput({
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
   const [hasilPreview, setHasilPreview] = useState<HasilPreview | null>(null)
-  const [memproses, setMemproses] = useState(false)
 
   const kartu = varian === 'kartu'
-  const nonaktif = disabled || memproses
+  const nonaktif = disabled
 
   const adaWebcam =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -275,21 +151,6 @@ export function FotoInput({
     }
   }, [value, previewUrl])
 
-  // Mematikan webcam dan membersihkan stream.
-  const matikanWebcam = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop())
-    streamRef.current = null
-    setWebcamAktif(false)
-  }
-
-  // Pastikan kamera mati ketika komponen dilepas.
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
-    }
-  }, [])
-
   // Menyalakan webcam laptop.
   const nyalakanWebcam = async () => {
     setGalat(null)
@@ -324,6 +185,13 @@ export function FotoInput({
     onWebcamAktif?.(webcamAktif)
   }, [webcamAktif, onWebcamAktif])
 
+  // Mematikan webcam dan membersihkan stream.
+  const matikanWebcam = () => {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    setWebcamAktif(false)
+  }
+
   // Mengambil foto dari webcam.
   const ambilFoto = async () => {
     if (!videoRef.current) return
@@ -336,22 +204,6 @@ export function FotoInput({
       onFile(file)
     } else {
       setGalat('Gagal mengambil foto. Silakan coba kembali.')
-    }
-  }
-
-  // Menerima file dari input galeri/kamera HP, mengompresnya dulu, baru
-  // diteruskan ke pemanggil sehingga validasi 2 MB memakai ukuran akhir.
-  const terimaFile = async (file: File) => {
-    setGalat(null)
-    setMemproses(true)
-
-    try {
-      const hasil = await kompresFoto(file)
-      onFile(hasil)
-    } catch {
-      setGalat('Foto gagal diproses. Coba pilih foto lain.')
-    } finally {
-      setMemproses(false)
     }
   }
 
@@ -396,7 +248,6 @@ export function FotoInput({
           </button>
         )
       )}
-
       <button
         type="button"
         disabled={nonaktif}
@@ -597,15 +448,17 @@ export function FotoInput({
   const kosongKecil = kartu && kosong === 'pill' && !webcamAktif && !value
   const pakaiJarak = !kartu || kosongKecil
 
+  // Pastikan kamera mati ketika komponen dilepas.
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+  }, [])
+
   return (
     <div className={pakaiJarak ? 'mt-3' : undefined}>
       {isi}
-
-      {memproses && (
-        <p role="status" className="mt-2 text-sm text-neutral-500">
-          Memproses foto…
-        </p>
-      )}
 
       {/* Input galeri/file */}
       <input
@@ -621,7 +474,7 @@ export function FotoInput({
           e.target.value = ''
 
           if (file) {
-            void terimaFile(file)
+            onFile(file)
           }
         }}
       />
@@ -640,13 +493,13 @@ export function FotoInput({
           e.target.value = ''
 
           if (file) {
-            void terimaFile(file)
+            onFile(file)
           }
         }}
       />
 
       {galat && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className="mt-2.5 text-sm text-red-600">
           {galat}
         </p>
       )}
