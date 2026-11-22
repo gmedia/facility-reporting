@@ -17,7 +17,13 @@
   --font-heading: var(--font-sans);
   --font-sans: 'Poppins', sans-serif;
   --font-jakarta: 'Plus Jakarta Sans', 'Poppins', sans-serif;
-  --color-forest: #0b3a33;
+  --color-canvas: #F2F3F5;
+  --color-forest: #113A2A;
+  --color-forest-dark: #0D2D20;
+  --color-sage: #6B7C74;
+  --color-sage-light: #7A8B82;
+  --color-sage-soft: #EEF3F0;
+  --color-terracotta: #E86A33;
   --color-forest-badge: #17403a;
   --color-lime: #b4f06b;
   --color-lime-deep: #9edb58;
@@ -83,6 +89,12 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-frame: 0 28px 72px -22px rgba(17, 58, 42, 0.10), 0 4px 16px -4px rgba(17, 58, 42, 0.04);
+  --shadow-bento: 0 14px 36px -12px rgba(17, 58, 42, 0.08), 0 2px 6px rgba(17, 58, 42, 0.03);
+  --shadow-bento-hover: 0 22px 44px -14px rgba(17, 58, 42, 0.14), 0 4px 12px rgba(17, 58, 42, 0.05);
+  --shadow-portrait: 0 28px 60px -18px rgba(13, 45, 32, 0.24);
+  --shadow-glass: 0 12px 30px -8px rgba(17, 58, 42, 0.14);
+  --shadow-badge: 0 4px 12px rgba(17, 58, 42, 0.06);
 }
 
 :root {
@@ -216,52 +228,6 @@
 }
 
 @layer utilities {
-  .reveal > :first-child {
-    transform: translateY(32px) scale(0.98);
-    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .reveal-visible > :first-child {
-    transform: translateY(0) scale(1);
-  }
-
-  .reveal:not(.reveal-visible) [data-stagger] > * {
-    translate: 0 18px;
-    transition: translate 600ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .reveal:not(.reveal-visible) [data-stagger] > :nth-child(2) {
-    transition-delay: 70ms;
-  }
-
-  .reveal:not(.reveal-visible) [data-stagger] > :nth-child(3) {
-    transition-delay: 140ms;
-  }
-
-  .reveal:not(.reveal-visible) [data-stagger] > :nth-child(4) {
-    transition-delay: 210ms;
-  }
-
-  .reveal:not(.reveal-visible) [data-stagger] > :nth-child(5) {
-    transition-delay: 280ms;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .reveal > :first-child {
-      transform: none;
-      transition: none;
-    }
-
-    .reveal-visible > :first-child {
-      transform: none;
-    }
-
-    .reveal:not(.reveal-visible) [data-stagger] > * {
-      translate: none;
-      transition: none;
-    }
-  }
-
   .rawat-hero-scrim {
     background:
       linear-gradient(
@@ -324,8 +290,269 @@
 
   @media (prefers-reduced-motion: reduce) {
     .animate-rise,
-    .animate-mask {
+    .animate-mask,
+    .animate-modal-in,
+    .animate-toast-up {
       animation: none;
     }
+  }
+
+  .shadow-frame {
+    box-shadow: 0 28px 72px -22px rgba(17, 58, 42, 0.10), 0 4px 16px -4px rgba(17, 58, 42, 0.04);
+  }
+  .shadow-bento {
+    box-shadow: 0 14px 36px -12px rgba(17, 58, 42, 0.08), 0 2px 6px rgba(17, 58, 42, 0.03);
+  }
+  .shadow-bento-hover {
+    box-shadow: 0 22px 44px -14px rgba(17, 58, 42, 0.14), 0 4px 12px rgba(17, 58, 42, 0.05);
+  }
+  .shadow-portrait {
+    box-shadow: 0 28px 60px -18px rgba(13, 45, 32, 0.24);
+  }
+  .shadow-glass {
+    box-shadow: 0 12px 30px -8px rgba(17, 58, 42, 0.14);
+  }
+  .shadow-badge {
+    box-shadow: 0 4px 12px rgba(17, 58, 42, 0.06);
+  }
+
+  .hero-dot-grid {
+    background-image: radial-gradient(
+      rgba(13, 63, 49, 0.14) 1px,
+      transparent 1px
+    );
+    background-size: 18px 18px;
+  }
+
+  .hero-tab {
+    position: relative;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .hero-tab:hover {
+    color: #ffffff;
+  }
+
+  .hero-tab[aria-selected='true'] {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    background-color: #ffffff;
+    color: #0f3b2e;
+  }
+
+  .hero-tab[aria-selected='true']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 16px;
+    inset-block-end: 0;
+    border-block-end: 3px solid #16a34a;
+  }
+
+  .hero-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scroll-progress-bar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      @keyframes scroll-progress-grow {
+        from {
+          transform: scaleX(0);
+        }
+
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      .scroll-progress-bar {
+        display: block;
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        height: 2.5px;
+        pointer-events: none;
+        background: linear-gradient(90deg, #0f3b2e 0%, #16a34a 58%, #4ade80 100%);
+        transform-origin: 0 50%;
+        animation: scroll-progress-grow auto linear;
+        animation-timeline: scroll(root block);
+      }
+    }
+
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+      @keyframes hero-photo-parallax {
+        from {
+          transform: translateY(0%) scale(1);
+        }
+
+        to {
+          transform: translateY(10%) scale(1.08);
+        }
+      }
+
+      @keyframes hero-bar-depth {
+        from {
+          transform: translateY(0);
+        }
+
+        to {
+          transform: translateY(-18px);
+        }
+      }
+
+      @keyframes editorial-focus-in {
+        from {
+          opacity: 0.6;
+          transform: translateY(20px) scale(0.96);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes editorial-glide-x {
+        from {
+          opacity: 0.55;
+          transform: translateX(20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes alur-rail-draw {
+        from {
+          transform: scaleY(0);
+        }
+
+        to {
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes alur-step-focus {
+        from {
+          opacity: 0.45;
+          transform: translateY(18px) scale(0.97);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes cta-window-parallax {
+        from {
+          transform: translateY(-10%);
+        }
+
+        to {
+          transform: translateY(10%);
+        }
+      }
+
+      .motion-hero-stage {
+        view-timeline: --hero-stage block;
+      }
+
+      .motion-hero-photo {
+        animation: hero-photo-parallax auto linear both;
+        animation-timeline: --hero-stage;
+        animation-range: exit 0% exit 100%;
+      }
+
+      .motion-hero-bar {
+        animation: hero-bar-depth auto linear both;
+        animation-timeline: view(block);
+        animation-range: exit 0% exit 100%;
+      }
+
+      .motion-denah {
+        animation: editorial-focus-in auto linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 36%;
+      }
+
+      .motion-layanan-card {
+        animation: editorial-glide-x auto linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 32%;
+      }
+
+      .motion-alur-section {
+        view-timeline: --alur-section block;
+        view-timeline-inset: 80px 0px;
+      }
+
+      .motion-alur-rail {
+        transform-origin: 50% 0%;
+        animation: alur-rail-draw auto linear both;
+        animation-timeline: --alur-section;
+        animation-range: contain 0% exit 35%;
+      }
+
+      .motion-alur-step {
+        animation: alur-step-focus auto linear both;
+        animation-timeline: view(block);
+        animation-range: entry 15% cover 42%;
+      }
+
+      .motion-form-card {
+        animation: editorial-focus-in auto linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 34%;
+      }
+
+      .motion-story-card {
+        animation: editorial-focus-in auto linear both;
+        animation-timeline: view(block);
+        animation-range: entry 0% cover 40%;
+      }
+
+      .motion-cta-banner {
+        view-timeline: --cta-banner block;
+      }
+
+      .motion-cta-photo {
+        animation: cta-window-parallax auto linear both;
+        animation-timeline: --cta-banner;
+        animation-range: cover 0% cover 100%;
+      }
+    }
+  }
+
+  @keyframes modalIn {
+    0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastUp {
+    0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .animate-modal-in {
+    animation: modalIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-toast-up {
+    animation: toastUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }

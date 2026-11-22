@@ -1,11 +1,66 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Wrench } from 'lucide-react'
-import heroKampusImage from '@/assets/landing/hero-kampus.jpg'
+import { Link, useNavigate } from '@tanstack/react-router'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  Calendar,
+  Check,
+  ChevronDown,
+  Clock,
+  Crosshair,
+  Menu,
+  User,
+  Wrench,
+  X,
+} from 'lucide-react'
 import ctaKampusImage from '@/assets/landing/cta-kampus.jpg'
+import figcraftCampusHeroImg from '@/assets/landing/figcraft-campus-hero.jpg'
 import { homeFor, meQueryOptions } from '@/features/auth/auth-query'
 import { statusQueryOptions } from '@/features/status/status-query'
+
+const HERO_CONTENT = {
+  titleLine1: 'Rusak?',
+  titleLine2: 'Lapor.',
+  subtitle:
+    'Laporkan kerusakan fasilitas kampus dalam 30 detik, pantau penanganan teknisi hingga tuntas.',
+  uptime: '98% Aktif',
+  technicians: '12 Teknisi Siaga',
+  image: figcraftCampusHeroImg,
+  imageAlt: 'Gedung Saintek modern tempat pemantauan fasilitas kampus',
+  liveTicket: {
+    code: 'LR-412',
+    title: 'AC Lab Komputer 2',
+    status: 'Diproses',
+    technician: 'Teknisi Budi S.',
+    updatedAt: '12 mnt lalu',
+  },
+} as const
+
+const HERO_LOCATIONS = [
+  { name: 'Gedung A · Lab 2', sub: 'Fakultas Saintek · Lt. 2', pin: 'Gedung Saintek, Lt. 2' },
+  { name: 'Gedung B · Koridor Lt. 2', sub: 'Area Kelas & Lab', pin: 'Gedung B, Lt. 2' },
+  { name: 'Gedung C · Ruang Dosen', sub: 'Administrasi & Rapat', pin: 'Gedung C, Lt. 1' },
+  { name: 'Perpustakaan Pusat', sub: 'Zona Baca & Sanitasi', pin: 'Perpustakaan Pusat' },
+] as const
+
+const HERO_TABS = [
+  { id: 'lapor', label: 'Lapor Baru' },
+  { id: 'status', label: 'Cek Status' },
+  { id: 'fasilitas', label: 'Fasilitas' },
+] as const
+
+type HeroTabId = (typeof HERO_TABS)[number]['id']
+
+const MODAL_CATEGORIES = [
+  'Listrik & AC',
+  'Sanitasi & Air',
+  'Struktur & Ruang',
+  'Lainnya',
+] as const
+
+const MODAL_PRIORITIES = ['Normal', 'Mendesak'] as const
 
 const NAV_LINKS = [
   ['layanan', 'Layanan'],
@@ -41,45 +96,57 @@ const TESTIMONI = [
     quote:
       'Dulu keluhan mahasiswa masuk lewat grup WhatsApp dan sering tenggelam. Sekarang tinggal foto masalahnya — tiket sudah ada nomornya sebelum kelas berikutnya.',
     nama: 'Rina Kusuma',
-    peran: 'Administrasi akademik · Saintek',
+    peran: 'Administrasi akademik',
+    unit: 'Gedung A · Fakultas Saintek',
+    dampak: 'Tiket terbit < 1 menit',
     inisial: 'RK',
   },
   {
     quote:
       'Urgensi “bahaya keselamatan” bikin saya dapat telepon piket dalam hitungan menit, bukan shift berikutnya. Itu yang paling terasa bedanya.',
     nama: 'Dimas Prayoga',
-    peran: 'Staf laboratorium · Saintek',
+    peran: 'Staf laboratorium',
+    unit: 'Lab Kimia & Riset · Saintek',
+    dampak: 'Respons darurat instan',
     inisial: 'DP',
   },
   {
     quote:
       'Laporan bulanan yang dulu dua hari saya rekap manual, sekarang tinggal ekspor. Rapat pengelola jadi membahas solusi, bukan data.',
     nama: 'Ayu Larasati',
-    peran: 'Pengelola fakultas · Saintek',
+    peran: 'Pengelola fakultas',
+    unit: 'Tata Usaha · Fakultas Saintek',
+    dampak: 'Rekap bulanan 1 klik',
     inisial: 'AL',
   },
   {
     quote:
       'Teknisi kami bekerja sambil berdiri di ruang panel — formulirnya harus bisa dipakai dengan satu tangan. Ternyata memang dibuat sesederhana itu.',
     nama: 'Hartono Wijaya',
-    peran: 'Kepala teknisi · Saintek',
+    peran: 'Kepala teknisi',
+    unit: 'Tim Utilitas & Mekanikal',
+    dampak: 'Ramah dipakai di lapangan',
     inisial: 'HW',
   },
   {
     quote:
       'Filter AC tiap lab akhirnya terjadwal, bukan menunggu keluhan. Sejak itu keluhan “ruangan gerah” turun drastis saat praktikum.',
     nama: 'Maya Anggraini',
-    peran: 'Dosen · Laboratorium Saintek',
+    peran: 'Dosen praktikum',
+    unit: 'Laboratorium Komputer · Saintek',
+    dampak: 'Perawatan AC terjadwal',
     inisial: 'MA',
   },
   {
     quote:
       'Yang saya butuhkan bukan aplikasi keren, tapi bukti bahwa laporan saya dibaca. Status “Diproses” yang bisa saya cek sendiri itu sudah cukup.',
     nama: 'Reza Alfarizi',
-    peran: 'Mahasiswa · Saintek',
+    peran: 'Mahasiswa',
+    unit: 'Teknik Informatika · Saintek',
+    dampak: 'Status progres transparan',
     inisial: 'RA',
   },
-]
+] as const
 
 function ApiStatus() {
   const status = useQuery(statusQueryOptions)
@@ -93,14 +160,6 @@ function ApiStatus() {
   }
 
   return <span className="text-r-accent-glow">Sistem aktif</span>
-}
-
-function Avatar({ inisial }: { inisial: string }) {
-  return (
-    <span className="bg-r-sage text-r-fg inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[13px] font-semibold">
-      {inisial}
-    </span>
-  )
 }
 
 function BrandMark() {
@@ -120,13 +179,6 @@ type FormFields = {
   deskripsi: string
 }
 
-type Ticket = {
-  id: string
-  kategori: string
-  lokasi: string
-  sla: string
-}
-
 const EMPTY_FORM: FormFields = {
   lokasi: '',
   ruang: '',
@@ -136,26 +188,14 @@ const EMPTY_FORM: FormFields = {
   deskripsi: '',
 }
 
-function slaFor(urgensi: string): string {
-  if (urgensi === 'Bahaya') return '≤ 30 menit — piket keselamatan'
-  if (urgensi === 'Mendesak') return '≤ 2 jam — antrean prioritas'
-  return '≤ 24 jam — antrean normal'
-}
-
-function ticketId(): string {
-  const n = Math.floor(1000 + Math.random() * 8999)
-  return `RWT-2026-${n}`
-}
-
 const FIELD_CLASS =
-  'border-r-line bg-r-surface text-r-fg placeholder:text-r-muted/75 focus:border-r-accent-ink focus:shadow-[0_0_0_3px_var(--rawat-accent-soft)] focus:outline-none w-full rounded-lg border px-[13px] py-[11px] min-h-11 text-[14.5px] transition-[border-color,box-shadow]'
+  'border-r-line bg-r-surface text-r-fg placeholder:text-r-muted/75 focus:border-r-accent-ink focus:shadow-[0_0_0_3px_var(--rawat-accent-soft)] focus:outline-none w-full rounded-lg border px-3.5 py-2.5 min-h-11 text-[14px] transition-[border-color,box-shadow]'
 
 function ReportForm() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<FormFields>(EMPTY_FORM)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
   const [fotoName, setFotoName] = useState('Belum ada foto dipilih')
-  const [ticket, setTicket] = useState<Ticket | null>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
 
   function setField(name: keyof FormFields, value: string) {
     setForm((prev) => ({ ...prev, [name]: value }))
@@ -164,90 +204,7 @@ function ReportForm() {
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
-    const next: Record<string, boolean> = {
-      lokasi: form.lokasi === '',
-      ruang: form.ruang.trim().length < 2,
-      pelapor: form.pelapor.trim().length < 2,
-      kategori: form.kategori === '',
-      deskripsi: form.deskripsi.trim().length < 10,
-    }
-    setErrors(next)
-
-    const firstError = Object.keys(next).find((key) => next[key])
-    if (firstError) {
-      const el = document.querySelector<HTMLElement>(
-        `[data-field="${firstError}"] input, [data-field="${firstError}"] select, [data-field="${firstError}"] textarea`,
-      )
-      el?.focus()
-      return
-    }
-
-    setTicket({
-      id: ticketId(),
-      kategori: form.kategori,
-      lokasi: `${form.lokasi} · ${form.ruang.trim()}`,
-      sla: slaFor(form.urgensi),
-    })
-    window.setTimeout(() => panelRef.current?.focus(), 0)
-  }
-
-  function reset() {
-    setForm(EMPTY_FORM)
-    setErrors({})
-    setFotoName('Belum ada foto dipilih')
-    setTicket(null)
-  }
-
-  if (ticket) {
-    return (
-      <div
-        ref={panelRef}
-        role="status"
-        aria-live="polite"
-        tabIndex={-1}
-        className="focus:outline-none"
-      >
-        <div className="bg-r-fg text-r-surface mb-5 flex h-[46px] w-[46px] items-center justify-center rounded-full">
-          <Check className="h-[22px] w-[22px]" aria-hidden="true" />
-        </div>
-        <p className="text-r-fg text-[19px] font-semibold tracking-[-0.01em]">
-          Laporan tercatat.
-        </p>
-        <p className="text-r-muted mt-1.5 mb-5 text-[14px]">
-          Tiket menunggu verifikasi pengelola. Nomor di bawah ini bisa dipakai
-          untuk menanyakan progres ke pengelola fakultas.
-        </p>
-        {[
-          { label: 'Nomor tiket', value: ticket.id, mono: true },
-          { label: 'Kategori', value: ticket.kategori, mono: false },
-          { label: 'Lokasi', value: ticket.lokasi, mono: false },
-          { label: 'Target penanganan', value: ticket.sla, mono: false },
-        ].map((baris, index) => (
-          <div
-            key={baris.label}
-            className={`border-r-line flex flex-wrap justify-between gap-5 border-b py-3 text-[14px] ${
-              index === 0 ? 'mt-5 border-t' : ''
-            }`}
-          >
-            <span className="text-r-muted">{baris.label}</span>
-            <span
-              className={`text-r-fg font-semibold ${
-                baris.mono ? 'font-mono' : ''
-              }`}
-            >
-              {baris.value}
-            </span>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={reset}
-          className="bg-r-fg hover:bg-r-dark-hover text-r-surface mt-5 min-h-11 w-full rounded-lg px-[22px] py-3 text-[14.5px] font-semibold transition-colors active:translate-y-px"
-        >
-          Buat laporan lain
-        </button>
-      </div>
-    )
+    void navigate({ to: '/login' })
   }
 
   return (
@@ -356,7 +313,7 @@ function ReportForm() {
                   className="peer sr-only"
                 />
                 <span
-                  className={`border-r-line text-r-fg peer-checked:border-r-fg peer-checked:bg-r-fg peer-hover:border-r-accent-ink peer-focus-visible:outline-r-accent-ink inline-flex min-h-9 items-center rounded-full border bg-white px-[14px] py-1.5 text-[13.5px] font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
+                  className={`border-r-line text-r-fg peer-checked:border-r-fg peer-checked:bg-r-fg peer-hover:border-r-accent-ink peer-focus-visible:outline-r-accent-ink inline-flex min-h-9 items-center rounded-lg border bg-white px-3.5 py-1.5 text-[13px] font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
                     errors.kategori ? 'border-r-accent-ink' : ''
                   }`}
                 >
@@ -387,7 +344,7 @@ function ReportForm() {
                   onChange={() => setField('urgensi', value)}
                   className="peer sr-only"
                 />
-                <span className="border-r-line text-r-fg peer-checked:border-r-fg peer-checked:bg-r-fg peer-hover:border-r-accent-ink peer-focus-visible:outline-r-accent-ink inline-flex min-h-9 items-center rounded-full border bg-white px-[14px] py-1.5 text-[13.5px] font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">
+                <span className="border-r-line text-r-fg peer-checked:border-r-fg peer-checked:bg-r-fg peer-hover:border-r-accent-ink peer-focus-visible:outline-r-accent-ink inline-flex min-h-9 items-center rounded-lg border bg-white px-3.5 py-1.5 text-[13px] font-medium transition-colors peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">
                   {label}
                 </span>
               </label>
@@ -456,12 +413,12 @@ function ReportForm() {
           Kirim laporan
         </button>
         <p className="text-r-muted text-xs">
-          Prototipe demonstrasi — laporan tidak dikirim ke sistem mana pun.{' '}
+          Anda akan diarahkan ke halaman masuk untuk mengirim laporan resmi.{' '}
           <Link
             to="/login"
             className="text-r-accent-ink font-semibold underline"
           >
-            Masuk untuk laporan nyata
+            Masuk sekarang
           </Link>
           .
         </p>
@@ -816,8 +773,8 @@ function LayananSection() {
   const [zona, setZona] = useState<string>('listrik')
 
   return (
-    <section id="layanan" data-reveal className="reveal scroll-mt-20">
-      <div className="mx-auto max-w-[1160px] px-7 py-[clamp(52px,7vw,88px)]">
+    <section id="layanan" className="scroll-mt-20">
+      <div className="mx-auto max-w-[1160px] px-7 pt-5 pb-[clamp(52px,7vw,88px)] sm:pt-7">
         <div className="grid gap-8 lg:grid-cols-2 lg:items-end">
           <div>
             <p className="text-r-accent-ink mb-2 text-[13.5px] font-semibold">
@@ -834,7 +791,7 @@ function LayananSection() {
         </div>
 
         <div className="mt-12 grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
+          <div className="motion-denah">
             <DenahGedung zona={zona} onPilih={setZona} />
             <p className="text-r-muted mt-4 text-[13.5px] leading-[1.5]">
               Denah ilustratif satu gedung fakultas berlantai tiga. Ketuk titik
@@ -852,7 +809,7 @@ function LayananSection() {
                   type="button"
                   aria-pressed={dipilih}
                   onClick={() => setZona(kategori.id)}
-                  className={`focus-visible:outline-r-accent-ink mb-3 block w-full rounded-[14px] px-5 py-5 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  className={`motion-layanan-card focus-visible:outline-r-accent-ink mb-3 block w-full rounded-[14px] px-5 py-5 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${
                     dipilih ? 'bg-r-beige' : 'hover:bg-r-sage/60'
                   }`}
                 >
@@ -896,38 +853,6 @@ function LayananSection() {
   )
 }
 
-function useSectionReveal() {
-  useEffect(() => {
-    const sections = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-reveal]'),
-    )
-
-    const reduced = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    ).matches
-
-    if (reduced || typeof IntersectionObserver === 'undefined') {
-      sections.forEach((section) => section.classList.add('reveal-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          entry.target.classList.add('reveal-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
-    )
-
-    sections.forEach((section) => observer.observe(section))
-
-    return () => observer.disconnect()
-  }, [])
-}
-
 function useActiveSection() {
   const [active, setActive] = useState<string | null>(null)
 
@@ -960,196 +885,1007 @@ function useActiveSection() {
 }
 
 export function LandingPage() {
-  useSectionReveal()
+  const navigate = useNavigate()
   const activeSection = useActiveSection()
   const [testiIndex, setTestiIndex] = useState(0)
   const { data: user } = useQuery(meQueryOptions)
 
+  const [heroTab, setHeroTab] = useState<HeroTabId>('lapor')
+  const [heroLocationIndex, setHeroLocationIndex] = useState(0)
+  const [heroDateMode, setHeroDateMode] = useState<'today' | 'yesterday'>('today')
+  const [heroSlaMode, setHeroSlaMode] = useState<'prioritas' | 'siaga'>('prioritas')
+  const [statusLookupCode, setStatusLookupCode] = useState('LR-412')
+
+  const [selectedCategory, setSelectedCategory] = useState<string>('Listrik & AC')
+  const [selectedPriority, setSelectedPriority] = useState<'Normal' | 'Mendesak'>('Normal')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalLocation, setModalLocation] = useState('')
+  const [modalIssue, setModalIssue] = useState('')
+  const [modalError, setModalError] = useState<string | null>(null)
+  const ticketCount = 3
+  const [toasts, setToasts] = useState<Array<{ id: number; message: string }>>([])
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const locationInputRef = useRef<HTMLInputElement>(null)
+  const heroTabRefs = useRef<Array<HTMLButtonElement | null>>([])
+
+  const currentHeroLocation = HERO_LOCATIONS[heroLocationIndex]!
+
+  const showToast = (message: string) => {
+    const id = Date.now() + Math.random()
+    setToasts((prev) => [...prev, { id, message }])
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 3600)
+  }
+
+  const handleOpenReportModal = (category?: string, prefillLocation?: string) => {
+    if (
+      category &&
+      MODAL_CATEGORIES.includes(category as (typeof MODAL_CATEGORIES)[number])
+    ) {
+      setSelectedCategory(category)
+    }
+    if (prefillLocation !== undefined) {
+      setModalLocation(prefillLocation)
+    }
+    setModalError(null)
+    setIsModalOpen(true)
+  }
+
+  const handleHeroTabKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    let nextIndex: number | null = null
+    if (e.key === 'ArrowRight') nextIndex = (index + 1) % HERO_TABS.length
+    else if (e.key === 'ArrowLeft')
+      nextIndex = (index - 1 + HERO_TABS.length) % HERO_TABS.length
+    else if (e.key === 'Home') nextIndex = 0
+    else if (e.key === 'End') nextIndex = HERO_TABS.length - 1
+
+    if (nextIndex !== null) {
+      e.preventDefault()
+      setHeroTab(HERO_TABS[nextIndex]!.id)
+      heroTabRefs.current[nextIndex]?.focus()
+    }
+  }
+
+  const handleCloseReportModal = () => {
+    setIsModalOpen(false)
+    setModalError(null)
+  }
+
+  const handleReportSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsModalOpen(false)
+    setModalError(null)
+    void navigate({ to: '/login' })
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        handleCloseReportModal()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
+
+  useEffect(() => {
+    if (isModalOpen) {
+      const timer = setTimeout(() => {
+        locationInputRef.current?.focus()
+      }, 60)
+      return () => clearTimeout(timer)
+    }
+  }, [isModalOpen])
+
   return (
-    <div className="bg-r-bg font-jakarta text-r-fg antialiased">
-      <header className="border-r-line bg-r-surface/90 sticky top-0 z-40 border-b backdrop-blur-[12px]">
-        <div className="flex items-center justify-between gap-5 px-6 py-3 lg:px-8">
-          <a href="#top" className="flex items-center gap-2.5">
-            <BrandMark />
-            <span className="leading-[1.15]">
-              <span className="text-r-fg block text-base font-bold tracking-[-0.01em]">
-                Rawat
-              </span>
-              <span className="text-r-muted block text-[10.5px] tracking-[0.02em]">
-                Pelaporan fasilitas
-              </span>
-            </span>
-          </a>
-
+    <div className="min-h-screen bg-[#F7FAF8] font-jakarta text-[#0F3B2E] antialiased selection:bg-[#0F3B2E] selection:text-white">
+      {/* ===================================================================== */}
+      {/* 1. MINIMALIST TOP NAVBAR (FigCraft Page 1 — Green Brand Identity)     */}
+      {/* ===================================================================== */}
+      <header className="sticky top-0 z-40 w-full border-b border-[#E3EDE8] bg-[#F7FAF8]/92 backdrop-blur-md">
+        <div className="w-full px-5 py-3.5 sm:px-8 lg:px-10 xl:px-12">
           <nav
-            aria-label="Navigasi utama"
-            className="hidden items-center gap-8 lg:flex"
+            className="flex items-center justify-between gap-4"
+            aria-label="Navigasi Utama"
           >
-            {NAV_LINKS.map(([id, label]) => (
+            {/* Left: Brand Logo */}
+            <div className="flex items-center gap-8">
               <a
-                key={id}
-                href={`#${id}`}
-                aria-current={activeSection === id ? 'true' : undefined}
-                className={`py-1.5 text-sm font-medium transition-colors ${
-                  activeSection === id
-                    ? 'text-r-fg'
-                    : 'text-r-muted hover:text-r-fg'
-                }`}
+                href="#top"
+                className="group flex items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F3B2E]"
               >
-                {label}
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[#0F3B2E] transition-transform duration-200 group-hover:scale-105">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full bg-[#4ADE80]"
+                    aria-hidden="true"
+                  />
+                </span>
+                <span className="text-[18px] font-bold tracking-[-0.03em] text-[#0F3B2E]">
+                  Facility Reporting
+                </span>
               </a>
-            ))}
-          </nav>
 
-          <Link
-            to={(user ? homeFor(user.role) : '/login') as never}
-            className="bg-r-fg hover:bg-r-dark-hover text-r-surface inline-flex min-h-10 items-center rounded-full px-[18px] py-2 text-sm font-semibold transition-colors active:translate-y-px"
-          >
-            {user ? 'Buka dashboard' : 'Lapor masalah'}
-          </Link>
-        </div>
-      </header>
-
-      <main id="content">
-        <nav
-          aria-label="Navigasi bagian"
-          className="border-r-line mx-auto flex max-w-[1160px] flex-wrap gap-2 border-b px-6 py-2 lg:hidden"
-        >
-          {NAV_LINKS.map(([id, label]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              aria-current={activeSection === id ? 'true' : undefined}
-              className={`rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-                activeSection === id
-                  ? 'border-r-fg bg-r-fg text-r-surface'
-                  : 'border-r-line text-r-muted'
-              }`}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-        <section
-          id="top"
-          aria-label="Hero"
-          className="bg-r-fg relative isolate grid min-h-[clamp(620px,92svh,1000px)] overflow-hidden pt-[clamp(56px,9vw,120px)] pb-[clamp(72px,10vw,128px)]"
-        >
-          <div aria-hidden="true" className="absolute inset-0 -z-20">
-            <img
-              src={heroKampusImage}
-              alt=""
-              fetchPriority="high"
-              decoding="async"
-              className="h-full w-full object-cover object-center"
-            />
-          </div>
-          <div
-            aria-hidden="true"
-            className="rawat-hero-scrim absolute inset-0 -z-10"
-          />
-
-          <div className="grid w-full items-end gap-[clamp(28px,4vw,56px)] pr-[clamp(24px,4vw,80px)] pl-[clamp(28px,10vw,180px)] lg:grid-cols-[1.2fr_330px]">
-            <div className="max-w-[620px] self-center">
-              <p className="text-r-accent-glow mb-2 text-[13.5px] font-semibold">
-                Pelaporan fasilitas terpadu
-              </p>
-              <h1 className="text-[clamp(52px,7vw,104px)] leading-[1.04] font-semibold tracking-[-0.022em] text-white">
-                Fasilitas rusak? Cukup satu laporan.
-              </h1>
-              <p className="text-r-on-dark-soft mt-5 max-w-[46ch] text-[17px] leading-[1.6]">
-                Pilih gedung dan ruang, tulis masalahnya, lampirkan foto. Tiket
-                langsung masuk ke piket teknisi — Anda memantau statusnya sampai
-                selesai.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  to={(user ? '/lapor' : '/login') as never}
-                  className="bg-r-accent hover:bg-r-btn-hover text-r-fg inline-flex min-h-11 items-center rounded-lg border border-transparent px-[22px] py-3 text-[14.5px] font-semibold transition-colors active:translate-y-px"
-                >
-                  Buat laporan baru
-                </Link>
+              <div className="hidden items-center gap-6 lg:flex">
                 <a
-                  href="#lapor"
-                  className="border-surface inline-flex min-h-11 items-center rounded-lg border px-[22px] py-3 text-[14.5px] font-semibold text-white transition-colors hover:bg-white/15"
+                  href="#layanan"
+                  aria-current={activeSection === 'layanan' ? 'true' : undefined}
+                  className={`text-[13px] font-medium transition-colors hover:text-[#0F3B2E] ${
+                    activeSection === 'layanan'
+                      ? 'font-semibold text-[#0F3B2E]'
+                      : 'text-[#466457]'
+                  }`}
                 >
-                  Lihat cara kerjanya
+                  Layanan
+                </a>
+                <a
+                  href="#dampak"
+                  aria-current={activeSection === 'dampak' ? 'true' : undefined}
+                  className={`text-[13px] font-medium transition-colors hover:text-[#0F3B2E] ${
+                    activeSection === 'dampak'
+                      ? 'font-semibold text-[#0F3B2E]'
+                      : 'text-[#466457]'
+                  }`}
+                >
+                  Alur Tiket
+                </a>
+                <a
+                  href="#cerita"
+                  aria-current={activeSection === 'cerita' ? 'true' : undefined}
+                  className={`text-[13px] font-medium transition-colors hover:text-[#0F3B2E] ${
+                    activeSection === 'cerita'
+                      ? 'font-semibold text-[#0F3B2E]'
+                      : 'text-[#466457]'
+                  }`}
+                >
+                  Cerita
                 </a>
               </div>
             </div>
-          </div>
-        </section>
 
+            {/* Right: Lapor Fasilitas Pill, Bell & Profile */}
+            <div className="flex items-center gap-2.5 sm:gap-4">
+              <Link
+                to={(user ? homeFor(user.role) : '/login') as never}
+                className="hidden items-center rounded-full border border-[#C4DDD0] bg-white px-4 py-2 text-[12.5px] font-semibold text-[#0F3B2E] shadow-xs transition-all hover:border-[#0F3B2E] hover:bg-[#F0F7F3] sm:inline-flex"
+              >
+                {user ? 'Buka dashboard' : 'Lapor masalah'}
+              </Link>
+
+              {/* Notification Bell with Live Emerald Indicator */}
+              <button
+                type="button"
+                onClick={() =>
+                  showToast(
+                    `Terdapat ${ticketCount} laporan aktif yang sedang dipantau teknisi`,
+                  )
+                }
+                aria-label="Lihat laporan aktif"
+                className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#C4DDD0] bg-white text-[#0F3B2E] transition-colors hover:border-[#0F3B2E] hover:bg-[#F0F7F3]"
+              >
+                <Bell className="h-4 w-4" aria-hidden="true" />
+                <span className="absolute -top-0.5 -right-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#22C55E] px-1 text-[10px] leading-none font-bold text-white ring-2 ring-[#F7FAF8]">
+                  {ticketCount}
+                </span>
+              </button>
+
+              {/* Profile Icon */}
+              <Link
+                to={(user ? homeFor(user.role) : '/login') as never}
+                aria-label={user ? 'Akun pengguna' : 'Masuk akun'}
+                className="hidden h-9 w-9 items-center justify-center rounded-full border border-[#C4DDD0] bg-white text-[#0F3B2E] transition-colors hover:border-[#0F3B2E] hover:bg-[#F0F7F3] sm:inline-flex"
+              >
+                <User className="h-4 w-4" aria-hidden="true" />
+              </Link>
+
+              {/* Mobile Menu Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-label="Buka menu navigasi"
+                aria-expanded={mobileMenuOpen}
+                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[#C4DDD0] bg-white text-[#0F3B2E] transition-colors hover:bg-[#F0F7F3] md:hidden"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Menu className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </nav>
+
+          {/* Mobile Dropdown Navigation */}
+          {mobileMenuOpen && (
+            <div className="pt-3 md:hidden">
+              <div className="flex flex-col gap-1 border-t border-[#E3EDE8] pt-3">
+                <a
+                  href="#layanan"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl px-3 py-2 text-sm font-semibold text-[#0F3B2E] hover:bg-[#E7F2EC]"
+                >
+                  Layanan
+                </a>
+                <a
+                  href="#dampak"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl px-3 py-2 text-sm font-medium text-[#466457] hover:bg-[#E7F2EC]"
+                >
+                  Alur Tiket
+                </a>
+                <a
+                  href="#cerita"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-xl px-3 py-2 text-sm font-medium text-[#466457] hover:bg-[#E7F2EC]"
+                >
+                  Cerita
+                </a>
+                <Link
+                  to={(user ? homeFor(user.role) : '/login') as never}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mt-1 rounded-xl bg-[#0F3B2E] px-3 py-2.5 text-center text-sm font-semibold text-white"
+                >
+                  {user ? 'Buka dashboard' : 'Lapor masalah'}
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="scroll-progress-bar" aria-hidden="true" />
+      </header>
+
+      {/* ===================================================================== */}
+      {/* 2. HERO SECTION (FigCraft Page 1 — Architectural Green Edition)       */}
+      {/* ===================================================================== */}
+      <section
+        id="top"
+        className="relative w-full overflow-x-clip bg-[#F7FAF8] pt-4 pb-12 sm:pt-6 sm:pb-16"
+      >
+        {/* Monochromatic Sage Campus Map Backdrop (z-0, extends down to right above Layanan) */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-[440px] bottom-0 z-0 overflow-hidden bg-[#F1F7F4] sm:top-[520px] lg:top-[580px] xl:top-[640px] 2xl:top-[690px]"
+        >
+          <svg
+            viewBox="0 0 1200 390"
+            preserveAspectRatio="xMidYMid slice"
+            className="h-full w-full opacity-95"
+          >
+            <g fill="none" strokeLinecap="round">
+              <path
+                d="M0 40 L480 210 L920 380"
+                stroke="#DCEAE2"
+                strokeWidth="10"
+              />
+              <path d="M180 0 L620 390" stroke="#DCEAE2" strokeWidth="8" />
+              <path
+                d="M0 290 L520 120 L1200 180"
+                stroke="#DCEAE2"
+                strokeWidth="7"
+              />
+              <path
+                d="M340 390 L760 60 L1200 30"
+                stroke="#DCEAE2"
+                strokeWidth="9"
+              />
+              <path d="M1010 0 L980 390" stroke="#DCEAE2" strokeWidth="8" />
+              <path
+                d="M60 160 L340 60 M140 240 L440 130 M580 260 L920 140 M720 360 L1140 220"
+                stroke="#E5F0EA"
+                strokeWidth="4"
+              />
+              <path
+                d="M80 0 L190 360 M310 20 L430 380 M810 10 L890 380 M1110 40 L1160 360"
+                stroke="#E5F0EA"
+                strokeWidth="3"
+              />
+            </g>
+            <rect
+              x="110"
+              y="175"
+              width="90"
+              height="44"
+              rx="6"
+              fill="#E3EFE8"
+              transform="rotate(-18 155 197)"
+            />
+            <rect
+              x="680"
+              y="200"
+              width="110"
+              height="52"
+              rx="6"
+              fill="#E3EFE8"
+              transform="rotate(14 735 226)"
+            />
+            <rect
+              x="860"
+              y="145"
+              width="84"
+              height="40"
+              rx="6"
+              fill="#E3EFE8"
+              transform="rotate(-10 902 165)"
+            />
+            <text
+              x="86"
+              y="196"
+              fill="#9DB7A9"
+              fontSize="10"
+              fontWeight="600"
+              letterSpacing="1.2"
+              transform="rotate(18 86 196)"
+            >
+              JL. KAMPUS II SAINTEK
+            </text>
+            <text
+              x="618"
+              y="232"
+              fill="#9DB7A9"
+              fontSize="10"
+              fontWeight="600"
+              letterSpacing="1.2"
+              transform="rotate(-26 618 232)"
+            >
+              KORIDOR LAB SAINTEK
+            </text>
+            <text
+              x="450"
+              y="290"
+              fill="#9DB7A9"
+              fontSize="10"
+              fontWeight="600"
+              letterSpacing="1.2"
+              transform="rotate(10 450 290)"
+            >
+              GEDUNG A · KULIAH
+            </text>
+            <text
+              x="996"
+              y="246"
+              fill="#9DB7A9"
+              fontSize="10"
+              fontWeight="600"
+              letterSpacing="1.2"
+            >
+              PERPUSTAKAAN PUSAT
+            </text>
+          </svg>
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#F7FAF8] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-[#F7FAF8] to-transparent" />
+        </div>
+
+        {/* 2A. ROUNDED ARCHITECTURAL HERO BANNER CARD (z-10, floats cleanly above map) */}
+        <div className="relative z-10 w-full px-3 sm:px-5 lg:px-6 xl:px-8">
+          <div className="motion-hero-stage relative overflow-clip rounded-[28px] bg-[#DCE6F0] shadow-[0_24px_56px_-24px_rgba(15,59,46,0.24)] lg:rounded-[32px]">
+            <div className="relative min-h-[480px] sm:min-h-[560px] lg:h-[640px] xl:h-[710px] 2xl:h-[760px]">
+              {/* Full-Bleed Architectural Hero Photo */}
+              <img
+                src={HERO_CONTENT.image}
+                alt={HERO_CONTENT.imageAlt}
+                fetchPriority="high"
+                decoding="sync"
+                className="motion-hero-photo absolute inset-0 h-full w-full object-cover object-right"
+              />
+
+              {/* Left-to-Center Editorial Typography Block */}
+              <div className="animate-rise relative z-10 flex max-w-[1060px] flex-col p-8 pb-32 sm:p-12 sm:pb-40 lg:px-16 lg:pt-20 lg:pb-48 xl:px-20 xl:pt-24">
+                {/* Editorial Architectural Kicker */}
+                <p className="mb-4 inline-flex items-center gap-3 text-[11.5px] font-semibold tracking-[0.14em] text-[#3B5D4F] uppercase sm:mb-5 sm:text-[12px]">
+                  <span
+                    aria-hidden="true"
+                    className="h-px w-7 bg-[#0F3B2E]/45"
+                  />
+                  <span>Pelaporan Fasilitas Kampus</span>
+                </p>
+
+                <h1 className="flex flex-wrap items-baseline gap-x-[0.2em] text-[clamp(4.25rem,9.2vw,9rem)] leading-[0.94] font-extrabold tracking-[-0.045em] text-[#0F3B2E] sm:flex-nowrap">
+                  <span className="sr-only">
+                    Fasilitas rusak? Cukup satu laporan —{' '}
+                  </span>
+                  <span>{HERO_CONTENT.titleLine1}</span>
+                  <span className="text-[#15803D]">
+                    {HERO_CONTENT.titleLine2}
+                  </span>
+                </h1>
+
+                {/* Horizontal Subtitle + Live Facility Metrics Row */}
+                <div className="mt-6 flex flex-col gap-5 sm:mt-8 sm:flex-row sm:items-center sm:gap-9 lg:gap-11">
+                  <p className="max-w-[34ch] text-[16px] leading-[1.55] font-medium text-[#2E5244] sm:text-[17.5px] xl:text-[19px]">
+                    {HERO_CONTENT.subtitle}
+                  </p>
+
+                  <span
+                    aria-hidden="true"
+                    className="hidden h-11 w-px shrink-0 bg-[#0F3B2E]/20 sm:block"
+                  />
+
+                  <div className="flex flex-wrap items-center gap-x-7 gap-y-2 sm:gap-x-9">
+                    <div className="flex flex-col">
+                      <span className="text-[18px] leading-tight font-extrabold tracking-[-0.02em] text-[#15803D] sm:text-[20px] xl:text-[22px]">
+                        {HERO_CONTENT.uptime}
+                      </span>
+                      <span className="mt-0.5 text-[12px] font-medium text-[#466457]">
+                        Kondisi fasilitas
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[18px] leading-tight font-extrabold tracking-[-0.02em] text-[#0F3B2E] sm:text-[20px] xl:text-[22px]">
+                        {HERO_CONTENT.technicians}
+                      </span>
+                      <span className="mt-0.5 text-[12px] font-medium text-[#466457]">
+                        Siap ditugaskan
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Editorial 3-Step Flow Strip */}
+                <ol className="mt-7 flex w-fit flex-wrap items-center gap-x-5 gap-y-2 border-t border-[#0F3B2E]/15 pt-5 text-[13px] font-medium text-[#2E5244] sm:mt-9 sm:gap-x-7 sm:text-[14px]">
+                  <li className="inline-flex items-center gap-2">
+                    <span className="font-mono text-[11.5px] font-bold tracking-[0.06em] text-[#15803D]">
+                      01
+                    </span>
+                    <span>Foto &amp; lokasi</span>
+                  </li>
+                  <li
+                    aria-hidden="true"
+                    className="hidden h-px w-5 bg-[#0F3B2E]/25 sm:block"
+                  />
+                  <li className="inline-flex items-center gap-2">
+                    <span className="font-mono text-[11.5px] font-bold tracking-[0.06em] text-[#15803D]">
+                      02
+                    </span>
+                    <span>Verifikasi cepat</span>
+                  </li>
+                  <li
+                    aria-hidden="true"
+                    className="hidden h-px w-5 bg-[#0F3B2E]/25 sm:block"
+                  />
+                  <li className="inline-flex items-center gap-2">
+                    <span className="font-mono text-[11.5px] font-bold tracking-[0.06em] text-[#15803D]">
+                      03
+                    </span>
+                    <span>Teknisi tangani</span>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Floating Live-Ticket Glassmorphism Card (Desktop only, bridges sky & architecture) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusLookupCode(HERO_CONTENT.liveTicket.code)
+                  setHeroTab('status')
+                }}
+                aria-label={`Lacak tiket aktif #${HERO_CONTENT.liveTicket.code} (${HERO_CONTENT.liveTicket.title})`}
+                className="group absolute right-8 bottom-[184px] z-20 hidden max-w-[350px] cursor-pointer flex-col gap-2.5 rounded-[22px] border border-white/75 bg-white/84 px-6 py-4.5 text-left shadow-[0_18px_42px_-12px_rgba(15,59,46,0.24)] backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F3B2E] lg:flex xl:right-14 xl:bottom-[204px]"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="inline-flex items-center gap-1.5 font-mono text-[11.5px] font-bold tracking-[0.04em] text-[#0F3B2E]">
+                    <span className="h-2 w-2 rounded-full bg-[#16A34A]" />
+                    #{HERO_CONTENT.liveTicket.code}
+                  </span>
+                  <span className="rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-semibold text-[#15803D]">
+                    {HERO_CONTENT.liveTicket.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[14.5px] leading-snug font-bold text-[#0F3B2E]">
+                    {HERO_CONTENT.liveTicket.title}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-[#466457]">
+                    {HERO_CONTENT.liveTicket.technician} ·{' '}
+                    {HERO_CONTENT.liveTicket.updatedAt}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#15803D] transition-colors group-hover:text-[#0F3B2E]">
+                  Cek progres tiket
+                  <ArrowRight
+                    className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 2B. FLOATING QUICK REPORT BAR + LOCATION PILL & MAP PIN (z-20, floats above Hero & Map) */}
+        <div className="motion-hero-bar relative z-20 -mt-24 pb-10 sm:-mt-32 sm:pb-14 lg:-mt-40 xl:-mt-44">
+          <div className="mx-auto w-full max-w-[1520px] px-4 sm:px-8 lg:px-12 xl:px-16">
+            {/* Attached Single-Row Accessible Tablist */}
+            <div
+              role="tablist"
+              aria-label="Mode layanan cepat fasilitas"
+              className="no-scrollbar inline-flex max-w-full overflow-x-auto rounded-t-[20px] bg-[#0F3B2E]"
+              {...({ focusgroup: 'tablist nomemory' } as Record<string, string>)}
+            >
+              {HERO_TABS.map((tab, index) => {
+                const isSelected = heroTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    ref={(el) => {
+                      heroTabRefs.current[index] = el
+                    }}
+                    id={`hero-tab-${tab.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    onClick={() => setHeroTab(tab.id)}
+                    onKeyDown={(e) => handleHeroTabKeyDown(e, index)}
+                    {...(isSelected
+                      ? ({ focusgroupstart: '' } as Record<string, string>)
+                      : {})}
+                    className="hero-tab flex shrink-0 cursor-pointer items-center gap-2 px-4 py-3 text-[13px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#4ADE80] sm:gap-2.5 sm:px-9 sm:py-4 sm:text-[15px]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`h-2.5 w-2.5 rounded-xs ${
+                        isSelected ? 'bg-[#15803D]' : 'rounded-full bg-[#86EFAC]'
+                      }`}
+                    />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Main White Floating Bar Card */}
+            <div className="rounded-b-[26px] rounded-tr-[26px] border border-[#DCEAE2] bg-white p-5 shadow-[0_22px_50px_-16px_rgba(15,59,46,0.2)] sm:p-7 lg:p-8">
+              {/* TAB PANEL 1: LAPOR BARU */}
+              <div
+                role="tabpanel"
+                aria-labelledby="hero-tab-lapor"
+                hidden={heroTab !== 'lapor'}
+              >
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.95fr_1.35fr] lg:gap-5">
+                  {/* Field 1: Gedung & Ruang */}
+                  <div className="rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] px-5 py-4 transition-colors focus-within:border-[#0F3B2E] focus-within:bg-white sm:px-6 sm:py-5">
+                    <label
+                      htmlFor="hero-building-select"
+                      className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]"
+                    >
+                      Gedung &amp; Ruang
+                    </label>
+                    <div className="mt-1">
+                      <select
+                        id="hero-building-select"
+                        value={heroLocationIndex}
+                        onChange={(e) =>
+                          setHeroLocationIndex(Number(e.target.value))
+                        }
+                        className="w-full cursor-pointer bg-transparent text-[17px] font-bold tracking-[-0.015em] text-[#0F3B2E] focus:outline-none sm:text-[18.5px]"
+                      >
+                        {HERO_LOCATIONS.map((loc, idx) => (
+                          <option key={loc.name} value={idx}>
+                            {loc.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="mt-2 text-[12.5px] text-[#466457] sm:text-[13px]">
+                      {currentHeroLocation.sub}
+                    </p>
+                  </div>
+
+                  {/* Field 2: Kategori & Urgensi */}
+                  <div className="rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] px-5 py-4 transition-colors focus-within:border-[#0F3B2E] focus-within:bg-white sm:px-6 sm:py-5">
+                    <label
+                      htmlFor="hero-category-select"
+                      className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]"
+                    >
+                      Kategori &amp; Urgensi
+                    </label>
+                    <div className="mt-1">
+                      <select
+                        id="hero-category-select"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full cursor-pointer bg-transparent text-[17px] font-bold tracking-[-0.015em] text-[#0F3B2E] focus:outline-none sm:text-[18.5px]"
+                      >
+                        {MODAL_CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3.5 text-[12.5px] sm:text-[13px]">
+                      {MODAL_PRIORITIES.map((level) => {
+                        const active = selectedPriority === level
+                        return (
+                          <button
+                            key={level}
+                            type="button"
+                            onClick={() => setSelectedPriority(level)}
+                            className={`cursor-pointer transition-colors ${
+                              active
+                                ? 'font-semibold text-[#0F3B2E] underline underline-offset-4'
+                                : 'font-medium text-[#7D9B8D] hover:text-[#0F3B2E]'
+                            }`}
+                          >
+                            {level}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Field 3: Tanggal Lapor & Target SLA */}
+                  <div className="grid grid-cols-2 divide-x divide-[#D4E6DC] rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] py-4 sm:py-5">
+                    <div className="px-5 sm:px-6">
+                      <span className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]">
+                        Tanggal Lapor
+                      </span>
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
+                        <span className="text-[16.5px] font-bold tracking-[-0.01em] text-[#0F3B2E] sm:text-[18px]">
+                          {heroDateMode === 'today' ? 'Kam, 22 Nov' : 'Rab, 21 Nov'}
+                        </span>
+                        <Calendar
+                          className="h-5 w-5 shrink-0 text-[#0F3B2E]"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center gap-3.5 text-[12.5px] sm:text-[13px]">
+                        <button
+                          type="button"
+                          onClick={() => setHeroDateMode('today')}
+                          className={`cursor-pointer ${
+                            heroDateMode === 'today'
+                              ? 'font-semibold text-[#466457] underline underline-offset-4'
+                              : 'text-[#7D9B8D] hover:text-[#0F3B2E]'
+                          }`}
+                        >
+                          Hari ini
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHeroDateMode('yesterday')}
+                          className={`cursor-pointer ${
+                            heroDateMode === 'yesterday'
+                              ? 'font-semibold text-[#466457] underline underline-offset-4'
+                              : 'text-[#7D9B8D] hover:text-[#0F3B2E]'
+                          }`}
+                        >
+                          Kemarin
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="px-5 sm:px-6">
+                      <span className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]">
+                        Target SLA
+                      </span>
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
+                        <span className="text-[16.5px] font-bold tracking-[-0.01em] text-[#15803D] sm:text-[18px]">
+                          {selectedPriority === 'Mendesak' ||
+                          heroSlaMode === 'prioritas'
+                            ? '≤ 2 Jam'
+                            : '≤ 24 Jam'}
+                        </span>
+                        <Clock
+                          className="h-5 w-5 shrink-0 text-[#15803D]"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center gap-3.5 text-[12.5px] sm:text-[13px]">
+                        <button
+                          type="button"
+                          onClick={() => setHeroSlaMode('prioritas')}
+                          className={`cursor-pointer ${
+                            heroSlaMode === 'prioritas'
+                              ? 'font-semibold text-[#466457] underline underline-offset-4'
+                              : 'text-[#7D9B8D] hover:text-[#0F3B2E]'
+                          }`}
+                        >
+                          Prioritas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHeroSlaMode('siaga')}
+                          className={`cursor-pointer ${
+                            heroSlaMode === 'siaga'
+                              ? 'font-semibold text-[#466457] underline underline-offset-4'
+                              : 'text-[#7D9B8D] hover:text-[#0F3B2E]'
+                          }`}
+                        >
+                          Siaga
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* TAB PANEL 2: CEK STATUS */}
+              <div
+                role="tabpanel"
+                aria-labelledby="hero-tab-status"
+                hidden={heroTab !== 'status'}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.2fr_1.8fr] lg:gap-5">
+                  <div className="rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] px-5 py-4 sm:px-6 sm:py-5">
+                    <label
+                      htmlFor="hero-ticket-code"
+                      className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]"
+                    >
+                      Nomor Tiket Laporan
+                    </label>
+                    <input
+                      id="hero-ticket-code"
+                      type="text"
+                      value={statusLookupCode}
+                      onChange={(e) => setStatusLookupCode(e.target.value)}
+                      placeholder="Contoh: LR-412"
+                      className="mt-1.5 w-full bg-transparent font-mono text-[17px] font-bold text-[#0F3B2E] focus:outline-none sm:text-[18.5px]"
+                    />
+                    <p className="mt-2 text-[12.5px] text-[#466457] sm:text-[13px]">
+                      Masukkan kode tiket untuk melacak progres teknisi
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] px-5 py-4 sm:px-6 sm:py-5">
+                    <div>
+                      <span className="block text-[11px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase sm:text-[11.5px]">
+                        Status Terkini · #{statusLookupCode || 'LR-412'}
+                      </span>
+                      <p className="mt-1.5 text-[16.5px] font-bold text-[#0F3B2E] sm:text-[18px]">
+                        Diproses — Teknisi Budi S. di lokasi
+                      </p>
+                      <p className="mt-1 text-[12.5px] text-[#466457] sm:text-[13px]">
+                        Gedung A · Lab Komputer 2 · Estimasi selesai ≤ 45 menit
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-[#DCFCE7] px-3.5 py-1.5 text-[13px] font-semibold text-[#15803D]">
+                      <span className="h-2 w-2 rounded-full bg-[#16A34A]" />
+                      Aktif ditangani
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* TAB PANEL 3: FASILITAS */}
+              <div
+                role="tabpanel"
+                aria-labelledby="hero-tab-fasilitas"
+                hidden={heroTab !== 'fasilitas'}
+              >
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-5">
+                  {[
+                    {
+                      zone: 'Listrik & AC',
+                      status: '98% Normal',
+                      pic: 'Tim Elektrikal · 5 teknisi',
+                    },
+                    {
+                      zone: 'Sanitasi & Air',
+                      status: '96% Normal',
+                      pic: 'Tim Plumbing · 3 teknisi',
+                    },
+                    {
+                      zone: 'Struktur & Ruang',
+                      status: '99% Normal',
+                      pic: 'Tim Sipil · 4 teknisi',
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.zone}
+                      type="button"
+                      onClick={() => handleOpenReportModal(item.zone)}
+                      className="cursor-pointer rounded-[16px] border border-[#D4E6DC] bg-[#F7FBF9] px-5 py-4 text-left transition-colors hover:border-[#0F3B2E] hover:bg-white sm:px-6 sm:py-5"
+                    >
+                      <span className="block text-[11px] font-semibold tracking-[0.08em] text-[#15803D] uppercase sm:text-[11.5px]">
+                        {item.status}
+                      </span>
+                      <span className="mt-1.5 block text-[17px] font-bold text-[#0F3B2E] sm:text-[18px]">
+                        {item.zone}
+                      </span>
+                      <span className="mt-1 block text-[12.5px] text-[#466457] sm:text-[13px]">
+                        {item.pic}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Overlapping Primary Deep Forest Green CTA Button */}
+            <div className="mt-4 flex justify-end sm:-mt-7 sm:pr-8">
+              <button
+                type="button"
+                onClick={() => {
+                  if (heroTab === 'status') {
+                    showToast(
+                      `Status tiket #${statusLookupCode || 'LR-412'}: Sedang ditangani Teknisi Budi S.`,
+                    )
+                    return
+                  }
+                  void navigate({ to: '/login' })
+                }}
+                className="group inline-flex cursor-pointer items-center gap-5 rounded-[18px] bg-[#0F3B2E] px-10 py-4.5 text-[16px] font-semibold text-white shadow-[0_16px_34px_-8px_rgba(15,59,46,0.5)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#14533F] focus-visible:ring-2 focus-visible:ring-[#0F3B2E] focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0 sm:px-12 sm:py-5 sm:text-[17px]"
+              >
+                <span>
+                  {heroTab === 'status' ? 'Lacak Tiket' : 'Kirim Laporan'}
+                </span>
+                <ArrowRight
+                  className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+
+            {/* Floating Active Location Pill + Center Emerald Map Pin */}
+            <div className="mt-7 grid grid-cols-1 items-center gap-5 sm:mt-8 sm:grid-cols-[1fr_auto_1fr]">
+              <div className="flex justify-center sm:justify-end sm:pr-8">
+                <div className="flex w-full max-w-[290px] items-center justify-between gap-4 rounded-[16px] border border-[#DCEBE3] bg-white px-5 py-3.5 shadow-[0_12px_28px_-10px_rgba(15,59,46,0.14)]">
+                  <div>
+                    <span className="block text-[9.5px] font-semibold tracking-[0.08em] text-[#6E8F7F] uppercase">
+                      Lokasi Aktif
+                    </span>
+                    <span className="mt-0.5 block text-[14.5px] font-bold tracking-[-0.015em] text-[#0F3B2E]">
+                      {currentHeroLocation.pin}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Ganti titik lokasi kampus"
+                    onClick={() => {
+                      const nextIdx =
+                        (heroLocationIndex + 1) % HERO_LOCATIONS.length
+                      setHeroLocationIndex(nextIdx)
+                      showToast(
+                        `Fokus peta dialihkan ke ${HERO_LOCATIONS[nextIdx]!.pin}`,
+                      )
+                    }}
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#15803D] transition-colors hover:bg-[#ECFDF5]"
+                  >
+                    <Crosshair className="h-4.5 w-4.5" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Center Emerald Radar Map Pin */}
+              <div
+                aria-hidden="true"
+                className="relative mx-auto flex h-14 w-14 items-center justify-center"
+              >
+                <span className="absolute inset-0 rounded-full bg-[#16A34A]/18" />
+                <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#0F3B2E] shadow-[0_6px_16px_rgba(15,59,46,0.34)]">
+                  <span className="h-3.5 w-3.5 rounded-full bg-white" />
+                </span>
+              </div>
+
+              <div className="hidden sm:block" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main id="content">
         <LayananSection />
 
-        <section id="dampak" data-reveal className="reveal scroll-mt-20">
+        <section id="dampak" className="motion-alur-section scroll-mt-20">
           <div className="bg-r-fg py-[clamp(52px,7vw,88px)] text-white">
-            <div className="mx-auto max-w-[1160px] px-7">
-              <div className="grid gap-[clamp(32px,5vw,72px)] lg:grid-cols-[0.85fr_1.15fr]">
+            <div className="mx-auto max-w-[1600px] px-7">
+              <div className="grid items-start gap-[clamp(32px,5vw,72px)] lg:grid-cols-[0.85fr_1.15fr]">
                 <div className="flex flex-col">
-                  <h2 className="text-[clamp(26px,3vw,34px)] leading-[1.18] font-semibold tracking-[-0.015em]">
-                    Setiap laporan bergerak sampai tuntas.
+                  <span className="text-r-accent text-xs font-semibold tracking-wider uppercase">
+                    Alur Tiket
+                  </span>
+                  <h2 className="mt-2 text-[clamp(26px,3vw,34px)] leading-[1.18] font-semibold tracking-[-0.015em]">
+                    Setiap laporan bergerak sampai tuntas
                   </h2>
                   <p className="text-r-on-dark-soft mt-3 max-w-[46ch] text-[17px] leading-[1.6]">
                     Bukan kotak surat. Empat status yang sama dipakai pelapor,
                     pengelola, dan teknisi — tidak ada tiket yang hilang di
                     percakapan pribadi.
                   </p>
-                  <p className="text-r-on-dark-soft mt-6 max-w-[42ch] text-[15px] leading-[1.6] lg:mt-auto lg:pt-8">
-                    <span className="mr-1.5 inline-block rounded-full bg-white/10 px-2.5 py-0.5 text-[13px] font-semibold text-white">
-                      Ditolak
-                    </span>
-                    Satu cabang di tahap verifikasi: laporan tidak valid keluar
-                    dari alur dan tidak masuk antrean teknisi.
-                  </p>
+
+                  <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-[14px] leading-relaxed text-r-on-dark-soft">
+                    <p className="font-medium text-white">Sistem penyaringan mandiri</p>
+                    <p className="mt-1">
+                      Setiap tiket melalui validasi pengelola sebelum diteruskan
+                      ke teknisi agar fasilitas darurat selalu diprioritaskan.
+                    </p>
+                  </div>
                 </div>
 
-                <ol data-stagger className="grid gap-2">
+                <ol className="relative flex flex-col">
+                  {/* Rel progres hijau emerald terisi kontinu saat di-scroll */}
+                  <div
+                    aria-hidden="true"
+                    className="motion-alur-rail pointer-events-none absolute top-5 bottom-12 left-[17.5px] z-[5] w-[2px] rounded-full bg-gradient-to-b from-[#4ADE80] via-[#22C55E] to-[#E8812F] sm:left-[19.5px]"
+                  />
                   {[
-                    [
-                      'Menunggu verifikasi',
-                      'Laporan masuk antrean pengelola. Duplikat dan laporan tanpa bukti disaring sebelum jadi tiket.',
-                    ],
-                    [
-                      'Valid',
-                      'Lokasi, kategori, dan urgensi dikunci. Tiket dapat nomor dan masuk hitungan pengelola.',
-                    ],
-                    [
-                      'Diproses',
-                      'Teknisi pemilik tiket bekerja di lapangan; pelapor melihat status yang sama.',
-                    ],
-                    [
-                      'Selesai',
-                      'Pekerjaan ditutup setelah pelapor dan pengelola sama-sama melihat hasilnya.',
-                    ],
-                  ].map(([status, isi], index) => {
-                    const akhir = index === 3
-                    const tone = [
-                      'bg-white/[0.05]',
-                      'bg-white/[0.09]',
-                      'bg-white/[0.14]',
-                      'bg-r-accent',
-                    ][index]
+                    {
+                      no: '01',
+                      status: 'Menunggu verifikasi',
+                      isi: 'Laporan masuk antrean pengelola. Duplikat dan laporan tanpa bukti disaring sebelum jadi tiket resmi.',
+                      cabang:
+                        'Cabang keluar: jika tidak valid, status berubah menjadi Ditolak dan tiket langsung diarsipkan.',
+                    },
+                    {
+                      no: '02',
+                      status: 'Valid',
+                      isi: 'Lokasi, kategori, dan urgensi dikunci. Tiket mendapatkan nomor unik dan masuk kalkulasi beban kerja tim.',
+                    },
+                    {
+                      no: '03',
+                      status: 'Diproses',
+                      isi: 'Teknisi pemilik tiket bekerja di lapangan; pelapor dapat memantau pergerakan status secara langsung.',
+                    },
+                    {
+                      no: '04',
+                      status: 'Selesai',
+                      isi: 'Pekerjaan ditutup setelah bukti perbaikan diunggah dan kedua belah pihak dapat melihat hasilnya.',
+                    },
+                  ].map((item, index) => {
+                    const isLast = index === 3
 
                     return (
                       <li
-                        key={status}
-                        className={`${tone} grid gap-1.5 rounded-[10px] px-5 py-4 sm:min-h-[122px] sm:grid-cols-[1fr_1.1fr] sm:items-center sm:gap-5 sm:px-6 sm:py-5`}
+                        key={item.status}
+                        className="motion-alur-step relative flex gap-4 pb-6 last:pb-0 sm:gap-5"
                       >
-                        <p
-                          className={`${akhir ? 'text-[clamp(22px,2.1vw,28px)]' : 'text-[clamp(19px,1.7vw,23px)]'} leading-[1.15] font-semibold ${
-                            akhir ? 'text-r-fg' : 'text-white'
+                        {/* Garis rel dasar penghubung vertikal */}
+                        {!isLast && (
+                          <div
+                            aria-hidden="true"
+                            className="absolute top-10 bottom-0 left-[18px] w-px bg-white/15 sm:left-[20px]"
+                          />
+                        )}
+
+                        {/* Indikator nomor / status */}
+                        <div
+                          className={`relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums transition-colors sm:size-10 ${
+                            isLast
+                              ? 'bg-r-accent text-r-fg shadow-lg shadow-black/20'
+                              : 'border border-white/20 bg-white/10 text-white'
                           }`}
                         >
-                          {status}
-                        </p>
-                        <p
-                          className={`text-[15px] leading-[1.5] ${
-                            akhir ? 'text-r-fg' : 'text-r-on-dark-soft'
+                          {isLast ? <Check className="size-4 stroke-[2.5]" /> : item.no}
+                        </div>
+
+                        {/* Kartu status */}
+                        <div
+                          className={`flex-1 rounded-xl p-4 sm:p-5 transition-colors ${
+                            isLast
+                              ? 'border border-r-accent/40 bg-white/[0.09]'
+                              : 'border border-white/10 bg-white/[0.04]'
                           }`}
                         >
-                          {isi}
-                        </p>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3
+                              className={`text-[18px] leading-tight font-semibold sm:text-[20px] ${
+                                isLast ? 'text-r-accent-glow' : 'text-white'
+                              }`}
+                            >
+                              {item.status}
+                            </h3>
+                            {isLast && (
+                              <span className="rounded-full bg-r-accent/20 px-2.5 py-0.5 text-[11px] font-semibold text-r-accent-glow">
+                                Tahap akhir
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-r-on-dark-soft mt-1.5 text-[14.5px] leading-relaxed">
+                            {item.isi}
+                          </p>
+
+                          {/* Percabangan khusus untuk verifikasi */}
+                          {item.cabang && (
+                            <div className="mt-3 flex items-start gap-2 border-t border-white/10 pt-2.5 text-[12.5px] text-r-on-dark-soft/85">
+                              <span className="mt-1 size-1.5 shrink-0 rounded-full bg-white/40" />
+                              <p>{item.cabang}</p>
+                            </div>
+                          )}
+                        </div>
                       </li>
                     )
                   })}
@@ -1159,12 +1895,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="lapor" data-reveal className="reveal scroll-mt-20">
-          <div className="mx-auto max-w-[1160px] px-7 py-[clamp(52px,7vw,88px)]">
+        <section id="lapor" className="scroll-mt-20">
+          <div className="mx-auto max-w-[1160px] px-7 pt-[clamp(52px,7vw,88px)] pb-[clamp(32px,4vw,48px)]">
             <div className="grid items-start gap-[clamp(32px,5vw,72px)] lg:grid-cols-[0.85fr_1.15fr]">
               <div className="lg:sticky lg:top-24">
-                <h2 className="text-[clamp(26px,3vw,34px)] leading-[1.18] font-semibold tracking-[-0.015em]">
-                  Lapor dalam tiga langkah, di bawah satu menit.
+                <span className="text-r-accent-ink text-xs font-semibold tracking-wider uppercase">
+                  Alur Cepat
+                </span>
+                <h2 className="mt-2 text-[clamp(26px,3vw,34px)] leading-[1.18] font-semibold tracking-[-0.015em]">
+                  Lapor dalam tiga langkah, di bawah satu menit
                 </h2>
                 <p className="text-r-muted mt-3 max-w-[46ch] text-[17px] leading-[1.6]">
                   Tidak perlu aplikasi tambahan. Formulir ini sama dengan yang
@@ -1172,36 +1911,36 @@ export function LandingPage() {
                   kuliah, dan papan pengumuman.
                 </p>
 
-                <ol className="mt-10 grid gap-8">
+                <ol className="mt-8 grid gap-5">
                   {[
                     {
-                      nomor: '1',
+                      nomor: '01',
                       judul: 'Sebutkan lokasinya',
-                      isi: 'Gedung dan ruang — sistem sudah memetakan zona per PIC.',
+                      isi: 'Pilih gedung dan ruang — sistem otomatis memetakan teknisi penanggung jawab zona.',
                     },
                     {
-                      nomor: '2',
+                      nomor: '02',
                       judul: 'Pilih kategori & urgensi',
-                      isi: 'Menentukan antrean teknisi: normal, mendesak, atau bahaya keselamatan.',
+                      isi: 'Menentukan prioritas penanganan: normal, mendesak, atau bahaya keselamatan.',
                     },
                     {
-                      nomor: '3',
+                      nomor: '03',
                       judul: 'Ikuti statusnya',
-                      isi: 'Dari menunggu verifikasi sampai selesai — semuanya tercatat.',
+                      isi: 'Dari verifikasi hingga tuntas — pembaruan status dapat dicek secara transparan.',
                     },
                   ].map((langkah) => (
                     <li
                       key={langkah.nomor}
-                      className="grid grid-cols-[1.75rem_1fr] items-baseline gap-4"
+                      className="flex items-start gap-4 rounded-xl border border-r-line/60 bg-r-surface/70 p-4 transition-colors"
                     >
-                      <span className="text-r-accent-ink font-mono text-[15px] font-semibold tabular-nums">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-r-line bg-white font-mono text-[12px] font-bold text-r-accent-ink tabular-nums">
                         {langkah.nomor}
                       </span>
                       <div>
-                        <h3 className="text-[17px] leading-[1.35] font-semibold">
+                        <h3 className="text-[15.5px] leading-snug font-semibold text-r-fg">
                           {langkah.judul}
                         </h3>
-                        <p className="text-r-muted mt-1 text-[16px] leading-[1.6]">
+                        <p className="text-r-muted mt-1 text-[14px] leading-relaxed">
                           {langkah.isi}
                         </p>
                       </div>
@@ -1210,106 +1949,113 @@ export function LandingPage() {
                 </ol>
               </div>
 
-              <div data-ui className="bg-r-beige rounded-[20px] p-2">
-                <div className="bg-r-surface rounded-[14px] p-[clamp(22px,3vw,32px)]">
-                  <ReportForm />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="cerita" data-reveal className="reveal scroll-mt-20">
-          <div className="mx-auto max-w-[1160px] px-7 py-[clamp(52px,7vw,88px)]">
-            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-              <div>
-                <p className="text-r-accent-ink mb-2 text-[13.5px] font-semibold">
-                  Cerita pengguna
-                </p>
-                <h2 className="max-w-[24ch] text-[clamp(26px,3vw,34px)] leading-[1.18] font-semibold tracking-[-0.015em]">
-                  Dioperasikan oleh tim yang setiap hari menjaga fasilitas
-                  kampus.
-                </h2>
-              </div>
-              <div className="lg:max-w-[34ch] lg:text-right">
-                <p className="text-r-muted text-[15px] leading-[1.6]">
-                  Enam suara dari Saintek — administrasi, laboratorium, teknisi,
-                  dosen, sampai mahasiswa.
-                </p>
-                <p className="text-r-muted mt-2 font-mono text-[11.5px]">
-                  kutipan ilustratif untuk demonstrasi
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-14 flex flex-col items-center gap-9">
               <div
-                key={testiIndex}
-                aria-live="polite"
-                className="animate-rise flex min-h-[clamp(260px,32vw,300px)] w-full max-w-[54ch] flex-col items-center justify-center gap-7"
+                data-ui
+                className="motion-form-card bg-r-surface rounded-2xl border border-r-line p-6 shadow-[0_8px_30px_rgb(15,59,46,0.06)] sm:p-8"
               >
-                <blockquote className="text-center text-[clamp(21px,2.4vw,31px)] leading-[1.4] font-medium tracking-[-0.015em]">
-                  {TESTIMONI[testiIndex]!.quote}
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <Avatar inisial={TESTIMONI[testiIndex]!.inisial} />
-                  <div className="text-left">
-                    <div className="text-r-fg text-sm font-semibold">
-                      {TESTIMONI[testiIndex]!.nama}
-                    </div>
-                    <div className="text-r-muted text-[12.5px]">
-                      {TESTIMONI[testiIndex]!.peran}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-5">
-                <button
-                  type="button"
-                  aria-label="Cerita sebelumnya"
-                  onClick={() =>
-                    setTestiIndex(
-                      (i) => (i + TESTIMONI.length - 1) % TESTIMONI.length,
-                    )
-                  }
-                  className="border-r-line text-r-muted hover:border-r-fg hover:text-r-fg flex h-11 w-11 items-center justify-center rounded-full border transition-colors active:translate-y-px"
-                >
-                  <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
-                </button>
-                <span className="text-r-muted font-mono text-[13px] tabular-nums">
-                  {String(testiIndex + 1).padStart(2, '0')} /{' '}
-                  {String(TESTIMONI.length).padStart(2, '0')}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Cerita berikutnya"
-                  onClick={() =>
-                    setTestiIndex((i) => (i + 1) % TESTIMONI.length)
-                  }
-                  className="border-r-line text-r-muted hover:border-r-fg hover:text-r-fg flex h-11 w-11 items-center justify-center rounded-full border transition-colors active:translate-y-px"
-                >
-                  <ArrowRight
-                    className="h-[18px] w-[18px]"
-                    aria-hidden="true"
-                  />
-                </button>
+                <ReportForm />
               </div>
             </div>
           </div>
         </section>
 
         <section
-          data-reveal
-          className="reveal bg-r-fg relative isolate overflow-hidden py-[clamp(72px,10vw,120px)] text-center"
+          id="cerita"
+          className="scroll-mt-20 border-t border-[#DCEAE2] bg-[#F7FAF8]"
         >
+          <div className="mx-auto max-w-[1080px] px-6 py-[clamp(64px,8vw,108px)] sm:px-8">
+            {/* Minimalist Editorial Header */}
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+              <div>
+                <p className="inline-flex items-center gap-3 text-[11.5px] font-semibold tracking-[0.14em] text-[#15803D] uppercase">
+                  <span
+                    aria-hidden="true"
+                    className="h-px w-6 bg-[#15803D]/55"
+                  />
+                  <span>Cerita Pengguna</span>
+                </p>
+                <h2 className="mt-3 text-[clamp(26px,3.2vw,38px)] leading-[1.15] font-bold tracking-[-0.025em] text-[#0F3B2E]">
+                  Suara dari lapangan kampus
+                </h2>
+              </div>
+              <p className="font-mono text-[13px] font-medium text-[#58786A] tabular-nums">
+                {String(testiIndex + 1).padStart(2, '0')}
+                <span className="mx-1.5 text-[#0F3B2E]/25">/</span>
+                {String(TESTIMONI.length).padStart(2, '0')}
+              </p>
+            </div>
+
+            {/* Single Refined Editorial Card (Deep Forest Green) */}
+            <figure className="motion-story-card mt-8 rounded-[28px] bg-[#0F3B2E] p-8 text-white shadow-[0_24px_56px_-22px_rgba(15,59,46,0.38)] sm:mt-10 sm:p-12 lg:p-16">
+              {/* Top Role & Impact Line */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/12 pb-6">
+                <span className="text-[12.5px] font-semibold tracking-[0.06em] text-[#86EFAC] uppercase">
+                  {TESTIMONI[testiIndex]!.peran}
+                </span>
+                <span className="text-[12.5px] font-medium text-white/65">
+                  {TESTIMONI[testiIndex]!.dampak}
+                </span>
+              </div>
+
+              {/* Quote Body */}
+              <div
+                key={testiIndex}
+                aria-live="polite"
+                className="animate-rise py-9 sm:py-12"
+              >
+                <blockquote className="text-[clamp(22px,2.5vw,32px)] leading-[1.42] font-semibold tracking-[-0.02em] text-white/95">
+                  “{TESTIMONI[testiIndex]!.quote}”
+                </blockquote>
+              </div>
+
+              {/* Bottom Attribution & Prev/Next Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-5 border-t border-white/12 pt-6">
+                <figcaption>
+                  <div className="text-[16px] font-bold text-white">
+                    {TESTIMONI[testiIndex]!.nama}
+                  </div>
+                  <div className="mt-0.5 text-[13.5px] text-white/65">
+                    {TESTIMONI[testiIndex]!.unit}
+                  </div>
+                </figcaption>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    aria-label="Cerita sebelumnya"
+                    onClick={() =>
+                      setTestiIndex(
+                        (i) => (i + TESTIMONI.length - 1) % TESTIMONI.length,
+                      )
+                    }
+                    className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition-colors hover:border-white hover:bg-white hover:text-[#0F3B2E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#86EFAC] active:translate-y-px"
+                  >
+                    <ArrowLeft className="size-4.5" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Cerita berikutnya"
+                    onClick={() =>
+                      setTestiIndex((i) => (i + 1) % TESTIMONI.length)
+                    }
+                    className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-white/5 text-white transition-colors hover:border-white hover:bg-white hover:text-[#0F3B2E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#86EFAC] active:translate-y-px"
+                  >
+                    <ArrowRight className="size-4.5" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </section>
+
+        <section className="motion-cta-banner bg-r-fg relative isolate overflow-clip py-[clamp(72px,10vw,120px)] text-center">
           <div aria-hidden="true" className="absolute inset-0 -z-20">
             <img
               src={ctaKampusImage}
               alt=""
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover object-[50%_58%]"
+              className="motion-cta-photo relative -top-[14%] h-[128%] w-full object-cover object-[50%_58%]"
             />
           </div>
           <div
@@ -1343,9 +2089,7 @@ export function LandingPage() {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
             <div>
               <div className="mb-3.5 flex items-center gap-2.5">
-                <span className="bg-r-surface text-r-fg flex h-[34px] w-[34px] items-center justify-center rounded-full">
-                  <Wrench className="h-[17px] w-[17px]" aria-hidden="true" />
-                </span>
+                <BrandMark />
                 <span className="leading-[1.15]">
                   <span className="block text-base font-bold tracking-[-0.01em]">
                     Rawat
@@ -1434,6 +2178,224 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ===================================================================== */}
+      {/* DEEP FOREST GREEN EDITORIAL REPORT MODAL                              */}
+      {/* ===================================================================== */}
+      {isModalOpen && (
+        <div
+          id="reportModal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modalTitle"
+        >
+          {/* Soft Backdrop */}
+          <div
+            className="fixed inset-0 bg-[#0a3127]/35 backdrop-blur-[3px]"
+            onClick={handleCloseReportModal}
+          />
+
+          {/* Modal Container */}
+          <div className="animate-modal-in relative z-10 w-full max-w-[500px] overflow-hidden rounded-[28px] border border-[#E5ECE8] bg-white p-6 shadow-2xl sm:p-7">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF3F0] px-3 py-1 text-[11px] font-semibold text-[#0d3f31]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#E86A33]" />
+                  Laporan Cepat
+                </span>
+                <h3
+                  id="modalTitle"
+                  className="mt-2.5 text-[22px] font-bold tracking-[-0.03em] text-[#0d3f31]"
+                >
+                  Buat Laporan{' '}
+                  <span className="font-light text-[#6B7C74]">Fasilitas</span>
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseReportModal}
+                aria-label="Tutup modal"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#EEF3F0] text-[#6B7C74] transition-colors hover:bg-[#0d3f31] hover:text-white"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleReportSubmit} className="mt-5 space-y-4">
+              {/* Category Pills */}
+              <div>
+                <label className="mb-2 block text-[12px] font-semibold text-[#0d3f31]">
+                  Kategori
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {MODAL_CATEGORIES.map((cat) => {
+                    const active = selectedCategory === cat
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all ${
+                          active
+                            ? 'border-[#0d3f31] bg-[#0d3f31] text-white'
+                            : 'border-[#DDE6E1] bg-white text-[#6B7C74] hover:border-[#0d3f31]/40 hover:text-[#0d3f31]'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Location / Room */}
+              <div>
+                <label
+                  htmlFor="locationField"
+                  className="mb-1.5 block text-[12px] font-semibold text-[#0d3f31]"
+                >
+                  Lokasi / Ruangan
+                </label>
+                <input
+                  id="locationField"
+                  ref={locationInputRef}
+                  type="text"
+                  required
+                  value={modalLocation}
+                  onChange={(e) => setModalLocation(e.target.value)}
+                  placeholder="Contoh: Gedung A • Lt. 3, Ruang Rapat Melati"
+                  className="w-full rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] placeholder:text-[#8E9F97] transition-colors focus:border-[#0d3f31] focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Priority Level */}
+              <div>
+                <label className="mb-2 block text-[12px] font-semibold text-[#0d3f31]">
+                  Tingkat Prioritas
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {MODAL_PRIORITIES.map((level) => {
+                    const active = selectedPriority === level
+                    const isUrgent = level === 'Mendesak'
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setSelectedPriority(level)}
+                        className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-[12.5px] font-medium transition-all ${
+                          active
+                            ? 'border-[#0d3f31] bg-[#0d3f31] text-white'
+                            : 'border-[#DDE6E1] bg-[#F8FAF9] text-[#6B7C74] hover:border-[#0d3f31]/40 hover:text-[#0d3f31]'
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            isUrgent
+                              ? 'bg-[#E86A33]'
+                              : active
+                                ? 'bg-emerald-400'
+                                : 'bg-[#6B7C74]/50'
+                          }`}
+                        />
+                        <span>{level}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Short Description */}
+              <div>
+                <label
+                  htmlFor="issueField"
+                  className="mb-1.5 block text-[12px] font-semibold text-[#0d3f31]"
+                >
+                  Deskripsi Singkat
+                </label>
+                <textarea
+                  id="issueField"
+                  rows={3}
+                  required
+                  value={modalIssue}
+                  onChange={(e) => setModalIssue(e.target.value)}
+                  placeholder="Jelaskan kendala fasilitas secara ringkas agar teknisi dapat segera menindaklanjuti..."
+                  className="w-full resize-none rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] placeholder:text-[#8E9F97] transition-colors focus:border-[#0d3f31] focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              {/* Validation Error Message */}
+              {modalError && (
+                <p className="rounded-xl bg-red-50 px-3.5 py-2 text-[12px] font-medium text-red-700">
+                  {modalError}
+                </p>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCloseReportModal}
+                  className="cursor-pointer rounded-full border border-[#DDE6E1] bg-white px-5 py-3 text-[13px] font-medium text-[#6B7C74] transition-colors hover:bg-[#EEF3F0] hover:text-[#0d3f31]"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#0d3f31] px-6 py-3 text-[13px] font-medium text-white transition-all hover:bg-[#0a3127] active:scale-[0.98]"
+                >
+                  <span>Kirim Laporan</span>
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 17 17 7m0 0H8m9 0v9"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* FLOATING DEEP FOREST GREEN TOAST CONTAINER                            */}
+      {/* ===================================================================== */}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed right-6 bottom-6 z-50 flex flex-col items-end gap-2.5"
+      >
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className="animate-toast-up pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full bg-[#0d3f31] px-5 py-3 text-[12.5px] font-medium text-white shadow-2xl"
+          >
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#E86A33]" />
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
