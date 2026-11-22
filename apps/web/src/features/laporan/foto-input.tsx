@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
 
@@ -116,11 +116,24 @@ export function FotoInput({
     previewUrlValid ||
     (value && hasilPreview?.file === value ? hasilPreview.url : '')
 
-  // Membuat preview dari File menggunakan FileReader.
+  // Object URL dibuat segera (saat render) biar pratinjau muncul tanpa
+  // menunggu FileReader selesai baca data URL.
+  const objectUrl = useMemo(() => {
+    if (!value || sanitasiUrl(previewUrl)) return null
+    return URL.createObjectURL(value)
+  }, [value, previewUrl])
+
+  // Revoke object URL saat tidak lagi diperlukan.
   useEffect(() => {
-    if (!value || sanitasiUrl(previewUrl)) {
-      return
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
+  }, [objectUrl])
+
+  // FileReader untuk pratinjau kualitas lebih tinggi (async, setState di
+  // callback bukan di body effect, jadi aman).
+  useEffect(() => {
+    if (!value || sanitasiUrl(previewUrl)) return
 
     let aktif = true
     const reader = new FileReader()
@@ -144,7 +157,6 @@ export function FotoInput({
 
     return () => {
       aktif = false
-
       if (reader.readyState === FileReader.LOADING) {
         reader.abort()
       }
