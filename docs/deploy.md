@@ -72,7 +72,7 @@ Kalau `VITE_API_BASE_URL` salah, aplikasi tetap tampil tetapi semua request gaga
 | `APP_KEY` | `base64:...` | Wajib. Jangan pernah commit |
 | `APP_URL` | `https://api.contoh.ac.id` | Dipakai untuk URL storage |
 | `FRONTEND_URL` | `https://app.contoh.ac.id` | CORS |
-| `SANCTUM_STATEFUL_DOMAINS` | `app.contoh.ac.id` | Tanpa skema, pisahkan koma |
+| `SANCTUM_STATEFUL_DOMAINS` | `app.contoh.ac.id` | Tanpa skema, pisahkan koma. **Wajib**, lihat catatan di bawah |
 | `SESSION_SAME_SITE` | `lax` / `none` | Lihat tabel di bawah |
 | `SESSION_SECURE_COOKIE` | `true` | Wajib `true` di HTTPS |
 | `DB_*` | | PostgreSQL |
@@ -87,6 +87,24 @@ Kalau `VITE_API_BASE_URL` salah, aplikasi tetap tampil tetapi semua request gaga
 
 Kalau ingin menghindari `SameSite=None`, arahkan salah satu domain ke domain sendiri
 (mis. `app.gmedia.id` + `api.gmedia.id`), atau proxy `/api` lewat Vercel `rewrites`.
+
+### Kalau login 200 tetapi request berikutnya 401
+
+Penyebab paling umum: `SANCTUM_STATEFUL_DOMAINS` tidak memuat domain frontend yang
+benar. Sanctum lalu menganggap request **bukan** dari frontend, session guard tidak
+diaktifkan, `Auth::attempt()` tidak menyimpan user ke sesi, dan tabel `sessions`
+hanya berisi baris dengan `user_id = NULL`.
+
+Cek cepat:
+
+```sql
+select id, user_id, ip_address from sessions order by last_activity desc limit 5;
+```
+
+Semua `user_id` NULL setelah login berarti env di atas salah. Set domain frontend
+(tanpa skema) lalu **redeploy** agar `config:cache` ulang. Middleware
+`EnsureFrontendRequestsAreStateful` dicocokkan dengan header `Origin`/`Referer`,
+jadi minta browser mengirimnya (fetch bawaan aplikasi sudah begitu).
 
 ---
 
@@ -125,7 +143,13 @@ Kalau ingin menghindari `SameSite=None`, arahkan salah satu domain ke domain sen
 
 - Image API memakai `php artisan serve` (satu proses). Cukup untuk demo dan
   penggunaan kecil; untuk trafik lebih besar ganti ke php-fpm + nginx atau Octane.
-- `SESSION_DRIVER=file` dan `CACHE_STORE=file` hanya aman untuk satu instance.
+- `SESSION_DRIVER=database` dipakai justru karena `artisan serve` menangani
+  request lewat banyak proses; `file` membuat sesi login tidak terbaca pada
+  request berikutnya. `CACHE_STORE=file` tetap hanya aman untuk satu instance——
+  ganti ke `database` atau `redis` kalau replika lebih dari satu.
+- `storage/app/public` bersifat sementara di platform tanpa volume
+  (Railway, Vercel). Foto bukti akan hilang setiap deploy ulang; pasang volume
+  atau pakai object storage (S3/R2) untuk data permanen.
 - Pencarian lokasi memakai Nominatim publik (batas ±1 request/detik). Untuk
   produksi, ganti dengan provider berbayar atau data lokasi kampus sendiri.
 - Laporan mewajibkan GPS di dalam radius kampus. Pastikan kebijakan ini memang

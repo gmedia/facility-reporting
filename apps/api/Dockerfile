@@ -30,8 +30,13 @@ RUN composer dump-autoload --no-dev --optimize --no-scripts
 # ---------------------------------------------------------------------------
 FROM php:8.5-cli-alpine
 
-RUN apk add --no-cache postgresql-dev icu-dev oniguruma-dev \
-    && docker-php-ext-install -j"$(nproc)" pdo_pgsql intl mbstring opcache pcntl
+# `mbstring` dan `opcache` sudah ada di image resmi. Jangan pakai `-j`:
+# target `install-modules` di helper Docker bisa balapan dan gagal dengan
+# "cp: can't stat 'modules/*'".
+RUN apk add --no-cache postgresql-dev icu-dev \
+    && docker-php-ext-install pdo_pgsql \
+    && docker-php-ext-install intl \
+    && docker-php-ext-install pcntl
 
 WORKDIR /var/www/html
 
