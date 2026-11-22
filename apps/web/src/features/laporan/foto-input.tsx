@@ -112,11 +112,12 @@ export function FotoInput({
   const adaKamera = perangkatSentuh || adaWebcam
 
   // Object URL dibuat segera (saat render) biar pratinjau muncul tanpa
-  // menunggu FileReader selesai baca data URL.
+  // menunggu FileReader selesai baca data URL. Selalu dibuat ketika value
+  // tersedia, tidak tergantung previewUrl dari parent.
   const objectUrl = useMemo(() => {
-    if (!value || sanitasiUrl(previewUrl)) return null
+    if (!value) return null
     return URL.createObjectURL(value)
-  }, [value, previewUrl])
+  }, [value])
 
   // Revoke object URL saat tidak lagi diperlukan.
   useEffect(() => {
@@ -135,6 +136,7 @@ export function FotoInput({
   const urlPratinjau =
     previewUrlValid ||
     objectUrl ||
+    (value ? URL.createObjectURL(value) : '') ||
     (value && hasilPreview?.file === value ? hasilPreview.url : '')
 
   // FileReader untuk pratinjau kualitas lebih tinggi (async, setState di
