@@ -51,7 +51,11 @@ function sanitasiUrl(url: string | null | undefined): string | null {
   if (!url) return null
   try {
     const u = new URL(url)
-    return u.protocol === 'https:' || u.protocol === 'http:' ? url : null
+    return u.protocol === 'https:' ||
+      u.protocol === 'http:' ||
+      u.protocol === 'blob:'
+      ? url
+      : null
   } catch {
     return null
   }
