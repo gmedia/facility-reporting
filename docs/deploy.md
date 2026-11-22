@@ -44,6 +44,20 @@ docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d --build
 
 Letakkan reverse proxy (Caddy/Nginx) di depan port `8000` untuk menangani HTTPS.
 
+Untuk mencoba stack ini di laptop (port `8000` pindah ke `18000` dan cookie
+`lax`/non-secure), tambahkan override sementara:
+
+```bash
+docker compose -p facilitydeploytest \
+  --env-file .env.test \
+  -f docker-compose.prod.yaml -f override.yaml up -d --build
+```
+
+Isi `override.yaml` minimal: `api.ports: ["18000:8000"]`,
+`SESSION_SAME_SITE=lax`, `SESSION_SECURE_COOKIE=false`,
+`SANCTUM_STATEFUL_DOMAINS=localhost:18000,127.0.0.1:18000`.
+Setelah selesai: `docker compose -p facilitydeploytest ... down -v`.
+
 ---
 
 ## 2. Deploy web ke Vercel
