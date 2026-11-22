@@ -58,9 +58,11 @@ function canvasKeBlob(
 
 // Memuat gambar dengan orientasi EXIF yang benar (foto kamera HP sering
 // disimpan miring dan diputar lewat metadata).
-async function muatGambar(
-  file: File,
-): Promise<{ sumber: CanvasImageSource; lebar: number; tinggi: number } | null> {
+async function muatGambar(file: File): Promise<{
+  sumber: CanvasImageSource
+  lebar: number
+  tinggi: number
+} | null> {
   try {
     const bitmap = await createImageBitmap(file, {
       imageOrientation: 'from-image',
