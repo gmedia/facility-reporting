@@ -264,7 +264,8 @@ function HeroAntrian({ ringkasan }: { ringkasan: RingkasanDashboard }) {
   return (
     <section
       aria-label="Perlu tindakan"
-      className="relative overflow-hidden rounded-[26px] bg-[#0f3d2e] px-8 py-7 text-white"
+      // Padding dikurangi di HP (px-5 py-6), kembali lega di sm ke atas.
+      className="relative overflow-hidden rounded-[26px] bg-[#0f3d2e] px-5 py-6 text-white sm:px-8 sm:py-7"
     >
       <span
         aria-hidden="true"
@@ -499,7 +500,8 @@ export function LaporanTerbaru({
       : `Menampilkan ${laporan.length} laporan`
 
   return (
-    <section className={cn('p-6', CARD_CLASS)}>
+    // Padding dikurangi di HP (p-4) supaya kolom teks lebih lebar.
+    <section className={cn('p-4 sm:p-6', CARD_CLASS)}>
       <div className="min-w-0">
         <h2 className="text-base font-semibold">Laporan terbaru</h2>
         <p className="text-sm text-neutral-500">{keterangan}</p>
@@ -541,24 +543,27 @@ export function LaporanTerbaru({
               <li
                 key={item.id}
                 className={cn(
-                  'grid grid-cols-[40px_56px_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:gap-x-4',
+                  'grid grid-cols-[28px_56px_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 px-1 py-3 sm:grid-cols-[40px_56px_minmax(0,1fr)] sm:px-3 md:items-center md:gap-x-4',
                   KOLOM_DESKTOP,
                 )}
               >
                 {/* Nomor urut: (halaman-1) * ukuran + index + 1. */}
-                <div className="relative z-10 text-center text-xs font-medium text-neutral-500 md:row-span-1">
+                <div className="relative z-10 pt-1 text-center text-xs font-medium text-neutral-500 md:pt-0">
                   {(halamanAktif - 1) * (ukuran ?? 5) + itemIndex + 1}
                 </div>
+
                 <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
 
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{item.deskripsi}</p>
-                  <p className="mt-0.5 truncate text-xs text-neutral-500">
+                  <p className="line-clamp-2 font-medium break-words md:truncate">
+                    {item.deskripsi}
+                  </p>
+                  <p className="mt-0.5 text-xs break-words text-neutral-500 md:truncate">
                     {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
                     {formatTanggal(item.created_at)}
                   </p>
                   {item.pelapor && (
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                    <p className="mt-0.5 line-clamp-1 text-xs text-neutral-500">
                       Pelapor:{' '}
                       <span className="font-semibold text-[#0f3d2e]">
                         {item.pelapor.name}
@@ -567,11 +572,18 @@ export function LaporanTerbaru({
                   )}
                 </div>
 
-                <div className="col-start-2 md:col-start-auto">
-                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
-                </div>
-                <div className="col-start-2 md:col-start-auto">
-                  <StatusBadge status={item.status} />
+                {/* HP: kedua badge satu baris di bawah teks (kolom ke-3).
+                    Desktop: `md:contents` melepas pembungkus ini sehingga
+                    badge kembali jadi sel grid Prioritas dan Status. */}
+                <div className="col-start-3 flex flex-wrap items-center gap-1.5 md:col-start-auto md:contents">
+                  <div className="md:col-start-auto">
+                    <PrioritasBadge
+                      kategori={item.prioritas_kategori ?? null}
+                    />
+                  </div>
+                  <div className="md:col-start-auto">
+                    <StatusBadge status={item.status} />
+                  </div>
                 </div>
               </li>
             ))}

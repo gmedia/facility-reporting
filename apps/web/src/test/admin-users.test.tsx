@@ -62,6 +62,13 @@ function mockGet(handlers: Record<string, () => unknown>) {
   }) as never)
 }
 
+async function baris(email: string) {
+  const all = await screen.findAllByText(email, { exact: true })
+  const inRow = all.find((el) => el.closest('tr'))
+  if (!inRow) throw new Error(`Email ${email} not found in table row`)
+  return inRow.closest('tr') as HTMLElement
+}
+
 function renderAt(path: string) {
   const router = createRouter({
     routeTree,
@@ -130,7 +137,13 @@ describe('dashboard CRUD admin', () => {
     renderAt('/admin')
 
     expect(
-      await screen.findByText('superadmin@facility.test'),
+      await screen.findAllByText('superadmin@facility.test', { exact: true }),
+    ).toHaveLength(2)
+
+    expect(
+      within(await baris('superadmin@facility.test')).getByText(
+        'superadmin@facility.test',
+      ),
     ).toBeInTheDocument()
 
     const nav = within(
@@ -218,19 +231,19 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     })
   }
 
-  function baris(email: string) {
-    return screen.getByText(email).closest('tr') as HTMLElement
-  }
-
   it('user aktif menampilkan tombol Nonaktifkan, bukan Aktifkan', async () => {
     renderAt('/admin')
 
     expect(
-      await screen.findByRole('button', { name: 'Nonaktifkan' }),
+      within(await baris('superadmin@facility.test')).getByRole('button', {
+        name: 'Nonaktifkan',
+      }),
     ).toBeInTheDocument()
 
     expect(
-      screen.queryByRole('button', { name: 'Aktifkan' }),
+      within(await baris('superadmin@facility.test')).queryByRole('button', {
+        name: 'Aktifkan',
+      }),
     ).not.toBeInTheDocument()
   })
 
@@ -238,16 +251,14 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     mockDuaUser()
     renderAt('/admin')
 
-    await screen.findByText('nonaktif@facility.test')
-
     expect(
-      within(baris('nonaktif@facility.test')).getByRole('button', {
+      within(await baris('nonaktif@facility.test')).getByRole('button', {
         name: 'Aktifkan',
       }),
     ).toBeInTheDocument()
 
     expect(
-      within(baris('nonaktif@facility.test')).queryByRole('button', {
+      within(await baris('nonaktif@facility.test')).queryByRole('button', {
         name: 'Nonaktifkan',
       }),
     ).not.toBeInTheDocument()
@@ -257,7 +268,12 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     mockDuaUser()
     renderAt('/admin')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
+    fireEvent.click(
+      await within(await baris('superadmin@facility.test')).findByRole(
+        'button',
+        { name: 'Nonaktifkan' },
+      ),
+    )
 
     expect(
       await screen.findByText('Nonaktifkan akun admin?'),
@@ -269,7 +285,11 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
+    fireEvent.click(
+      await within(await baris('nonaktif@facility.test')).findByRole('button', {
+        name: 'Aktifkan',
+      }),
+    )
 
     expect(await screen.findByText('Aktifkan akun admin?')).toBeInTheDocument()
 
@@ -284,7 +304,12 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
     mockDuaUser()
     renderAt('/admin')
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Nonaktifkan' }))
+    fireEvent.click(
+      await within(await baris('superadmin@facility.test')).findByRole(
+        'button',
+        { name: 'Nonaktifkan' },
+      ),
+    )
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Ya, Nonaktifkan' }),
@@ -296,7 +321,11 @@ describe('tombol aktif/nonaktif akun (#115)', () => {
       }),
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Aktifkan' }))
+    fireEvent.click(
+      await within(await baris('nonaktif@facility.test')).findByRole('button', {
+        name: 'Aktifkan',
+      }),
+    )
 
     fireEvent.click(await screen.findByRole('button', { name: 'Ya, Aktifkan' }))
 

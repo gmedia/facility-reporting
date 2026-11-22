@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -301,44 +302,111 @@ function PasswordInput({
   )
 }
 
+// Validasi foto profil. Dipanggil saat file dipilih (supaya user langsung
+// tahu kalau ditolak) dan sekali lagi saat simpan sebagai jaring pengaman.
+// Mengembalikan pesan error, atau null kalau file lolos.
+function cekFoto(file: File): string | null {
+  if (file.size > BATAS_FOTO_BYTE) return 'Ukuran foto maksimal 2 MB'
+  if (!FOTO_MIME_IZIN.includes(file.type)) {
+    return 'Format foto harus JPG, PNG, atau WebP'
+  }
+  return null
+}
+
 // Tab "Profil": ganti foto profil (#93). Nama dan e-mail hanya
 // ditampilkan (tidak bisa diubah dari sini).
+//
+// Pratinjau instan: begitu file dipilih, avatar langsung menampilkan
+// gambarnya lewat object URL lokal (belum diunggah). Foto baru benar-benar
+// tersimpan setelah "Simpan foto". Tombol "Batal" membuang pilihan.
+//
+// Validasi ukuran/format dijalankan saat file dipilih, jadi user langsung
+// tahu kalau fotonya ditolak, tidak perlu menunggu klik "Simpan foto".
 function TabProfil({ user }: { user: User }) {
   const update = useUpdateFoto()
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
 
-  const onPilih = (event: ChangeEvent<HTMLInputElement>) => {
-    setFile(event.target.files?.[0] ?? null)
+  // Object URL untuk pratinjau. Disimpan di state (supaya render ulang)
+  // dan di ref (supaya bisa di-revoke saat diganti / komponen ditutup).
+  const [preview, setPreview] = useState<string | null>(null)
+  const previewRef = useRef<string | null>(null)
+
+  const gantiPreview = (urlBaru: string | null) => {
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    previewRef.current = urlBaru
+    setPreview(urlBaru)
+  }
+
+  // Bersihkan object URL terakhir saat tab Profil ditutup.
+  useEffect(() => {
+    return () => {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current)
+    }
+  }, [])
+
+  // Kembalikan semuanya ke keadaan awal: tanpa file, tanpa pratinjau,
+  // tanpa pesan error, dan input file asli dikosongkan.
+  const reset = () => {
+    setFile(null)
     setGalat(null)
+    gantiPreview(null)
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  const onPilih = (event: ChangeEvent<HTMLInputElement>) => {
+    const dipilih = event.target.files?.[0] ?? null
+
+    // Dialog dibatalkan / tidak ada file: anggap tidak ada pilihan.
+    if (!dipilih) {
+      reset()
+      return
+    }
+
+    // Validasi langsung. File yang ditolak tidak disimpan di state,
+    // jadi tombol Simpan tidak mungkin mengirim file yang salah.
+    const pesan = cekFoto(dipilih)
+    if (pesan) {
+      reset()
+      setGalat(pesan)
+      toast.error(pesan)
+      return
+    }
+
+    setFile(dipilih)
+    setGalat(null)
+    gantiPreview(URL.createObjectURL(dipilih))
+  }
+
+  const onBatal = () => {
+    reset()
   }
 
   const onSimpan = async () => {
-    // Validasi ukuran/tipe di sini, bukan di server: sama seperti
-    // laporan-form, biar user tahu sebelum menunggu 422.
     if (!file) {
       setGalat('Pilih dulu foto yang akan dipakai')
       return
     }
-    if (file.size > BATAS_FOTO_BYTE) {
-      setGalat('Ukuran foto maksimal 2 MB')
-      return
-    }
-    if (!FOTO_MIME_IZIN.includes(file.type)) {
-      setGalat('Format foto harus JPG, PNG, atau WebP')
+
+    // Jaring pengaman: file sudah divalidasi saat dipilih.
+    const pesan = cekFoto(file)
+    if (pesan) {
+      setGalat(pesan)
       return
     }
 
     try {
       await update.mutateAsync(file)
       toast.success('Foto profil berhasil diperbarui')
-      setFile(null)
-      if (inputRef.current) inputRef.current.value = ''
+      reset()
     } catch (error) {
       setGalat(fieldErrors(error)?.foto?.[0] ?? errorMessage(error))
     }
   }
+
+  // Prioritas tampilan avatar: pratinjau file baru > foto tersimpan > inisial.
+  const srcAvatar = preview ?? (user.foto ? fotoUrl(user.foto) : null)
 
   return (
     <div>
@@ -348,10 +416,14 @@ function TabProfil({ user }: { user: User }) {
       />
 
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        {user.foto ? (
+        {srcAvatar ? (
           <img
-            src={fotoUrl(user.foto)}
-            alt={`Foto profil ${user.name}`}
+            src={srcAvatar}
+            alt={
+              preview
+                ? 'Pratinjau foto profil baru'
+                : `Foto profil ${user.name}`
+            }
             className="size-[108px] shrink-0 rounded-full object-cover ring-1 ring-black/5"
           />
         ) : (
@@ -379,6 +451,7 @@ function TabProfil({ user }: { user: User }) {
               type="button"
               variant="outline"
               onClick={() => inputRef.current?.click()}
+              disabled={update.isPending}
               className="h-11 rounded-xl px-5 text-sm font-semibold"
             >
               Pilih foto
@@ -388,16 +461,35 @@ function TabProfil({ user }: { user: User }) {
             </span>
           </div>
 
-          <div>
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
               onClick={onSimpan}
-              disabled={update.isPending}
+              disabled={update.isPending || !file}
               className={TOMBOL_UTAMA_CLASS}
             >
               {update.isPending ? 'Menyimpan...' : 'Simpan foto'}
             </Button>
+
+            {file && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onBatal}
+                disabled={update.isPending}
+                className="h-11 rounded-xl px-5 text-sm font-semibold"
+              >
+                Batal
+              </Button>
+            )}
           </div>
+
+          {preview && !galat && (
+            <p className="text-sm text-neutral-500">
+              Ini baru pratinjau. Klik &quot;Simpan foto&quot; untuk memakainya,
+              atau &quot;Batal&quot; kalau tidak jadi ganti.
+            </p>
+          )}
 
           {galat && (
             <p role="alert" className="text-destructive text-sm">

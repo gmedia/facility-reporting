@@ -116,13 +116,58 @@ function BarisAdmin({
     <div className="flex items-center gap-2">
       <AvatarAdmin nama={nama} foto={foto} className="size-7" />
       <div className="min-w-0">
-        <p className="truncate text-[13px] leading-tight font-medium">{nama}</p>
+        <p className="text-[13px] leading-tight font-medium break-words">
+          {nama}
+        </p>
         <p className="text-[11px] leading-tight text-neutral-500">
           {peran}
           {waktu ? ` · ${formatWaktu(waktu)}` : ''}
         </p>
       </div>
     </div>
+  )
+}
+
+// Jejak admin satu laporan. Dipakai tabel (desktop) dan kartu (HP).
+function JejakAdmin({ item }: { item: Laporan }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {item.diverifikasi_oleh && (
+        <BarisAdmin
+          nama={item.diverifikasi_oleh}
+          foto={item.diverifikasi_oleh_foto}
+          peran={item.status === 'ditolak' ? 'Menolak' : 'Verifikasi'}
+          waktu={item.diverifikasi_pada}
+        />
+      )}
+      {item.status === 'selesai' && item.diselesaikan_oleh && (
+        <BarisAdmin
+          nama={item.diselesaikan_oleh}
+          foto={item.diselesaikan_oleh_foto}
+          peran="Selesai"
+          waktu={item.diselesaikan_pada}
+        />
+      )}
+    </div>
+  )
+}
+
+// Judul + kategori/lokasi/tanggal + pelapor. Dipakai tabel dan kartu.
+function InfoLaporan({ item }: { item: Laporan }) {
+  return (
+    <>
+      <p className="font-medium break-words">{item.deskripsi}</p>
+      <p className="mt-0.5 text-xs text-neutral-500">
+        {KATEGORI_LABEL[item.kategori as LaporanKategori] ?? item.kategori} ·{' '}
+        {item.lokasi} · {formatTanggal(item.created_at)}
+      </p>
+      {item.pelapor && (
+        <p className="mt-0.5 text-xs text-neutral-500">
+          Pelapor:{' '}
+          <span className="font-semibold uppercase">{item.pelapor.name}</span>
+        </p>
+      )}
+    </>
   )
 }
 
@@ -198,10 +243,10 @@ export function SemuaLaporanPage({ user }: { user: User }) {
       header={
         <div className="flex w-full items-center justify-between gap-3 py-2">
           <div className="min-w-0">
-            <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+            <h1 className="text-base leading-tight font-bold tracking-tight sm:text-lg">
               Semua Laporan
             </h1>
-            <p className="truncate text-xs text-neutral-500">
+            <p className="line-clamp-2 text-xs text-neutral-500">
               Seluruh laporan · Semua gedung
             </p>
           </div>
@@ -209,10 +254,12 @@ export function SemuaLaporanPage({ user }: { user: User }) {
             type="button"
             onClick={() => unduhCsv(hasil)}
             disabled={hasil.length === 0}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0f3d2e] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b2f23] disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Ekspor CSV"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#0f3d2e] px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0b2f23] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
           >
             <Download aria-hidden="true" className="size-4" />
-            Ekspor CSV
+            <span className="hidden sm:inline">Ekspor CSV</span>
+            <span className="sm:hidden">CSV</span>
           </button>
         </div>
       }
@@ -378,9 +425,68 @@ function Konten({
         }}
       />
 
-      {/* Tabel */}
-      <div className="overflow-x-auto rounded-[22px] border border-neutral-200/70 bg-white shadow-sm">
-        <table className="w-full min-w-[820px] border-collapse text-sm">
+      {/* ============ HP: daftar kartu (tanpa scroll samping) ============ */}
+      <div className="flex flex-col gap-3 md:hidden">
+        <div className="flex items-center gap-4 px-1 text-xs text-neutral-500">
+          <span>Urutkan:</span>
+          <HeaderUrut
+            label="Prioritas"
+            kunci="prioritas"
+            urut={urut}
+            onUrut={ubahUrut}
+          />
+          <HeaderUrut
+            label="Status"
+            kunci="status"
+            urut={urut}
+            onUrut={ubahUrut}
+          />
+        </div>
+
+        {hasil.length === 0 ? (
+          <p className="rounded-[22px] border border-neutral-200/70 bg-white px-3 py-10 text-center text-sm text-neutral-400 shadow-sm">
+            Tidak ada laporan yang cocok.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {hasil.map((item, index) => (
+              <li
+                key={item.id}
+                className="rounded-[22px] border border-neutral-200/70 bg-white p-3.5 shadow-sm"
+              >
+                <div className="flex gap-3">
+                  <span className="mt-1 w-4 shrink-0 text-xs text-neutral-400 tabular-nums">
+                    {index + 1}
+                  </span>
+                  <div className="shrink-0">
+                    <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
+                  </div>
+                  <div className="min-w-0 flex-1 text-sm">
+                    <InfoLaporan item={item} />
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <PrioritasBadge kategori={item.prioritas_kategori ?? null} />
+                  <StatusBadge status={item.status} />
+                </div>
+
+                {adaAdmin &&
+                  (item.diverifikasi_oleh ||
+                    (item.status === 'selesai' && item.diselesaikan_oleh)) && (
+                    <div className="mt-3 border-t border-neutral-100 pt-3">
+                      <JejakAdmin item={item} />
+                    </div>
+                  )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* ============ Tablet/desktop: tabel ============ */}
+      <div className="hidden overflow-x-auto rounded-[22px] border border-neutral-200/70 bg-white shadow-sm md:block">
+        <table className="w-full min-w-[720px] border-collapse text-sm">
           <thead>
             <tr className="bg-[#faf7ee] text-left text-xs font-semibold">
               <th className="w-12 px-3 py-3 text-center">No</th>
@@ -425,46 +531,11 @@ function Konten({
                     <FotoThumb foto={item.foto} onBuka={onBukaFoto} />
                   </td>
                   <td className="px-3 py-3">
-                    <p className="font-medium">{item.deskripsi}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">
-                      {KATEGORI_LABEL[item.kategori as LaporanKategori] ??
-                        item.kategori}{' '}
-                      · {item.lokasi} · {formatTanggal(item.created_at)}
-                    </p>
-                    {item.pelapor && (
-                      <p className="mt-0.5 text-xs text-neutral-500">
-                        Pelapor:{' '}
-                        <span className="font-semibold uppercase">
-                          {item.pelapor.name}
-                        </span>
-                      </p>
-                    )}
+                    <InfoLaporan item={item} />
                   </td>
                   {adaAdmin && (
                     <td className="px-3 py-3">
-                      <div className="flex flex-col gap-1.5">
-                        {item.diverifikasi_oleh && (
-                          <BarisAdmin
-                            nama={item.diverifikasi_oleh}
-                            foto={item.diverifikasi_oleh_foto}
-                            peran={
-                              item.status === 'ditolak'
-                                ? 'Menolak'
-                                : 'Verifikasi'
-                            }
-                            waktu={item.diverifikasi_pada}
-                          />
-                        )}
-                        {item.status === 'selesai' &&
-                          item.diselesaikan_oleh && (
-                            <BarisAdmin
-                              nama={item.diselesaikan_oleh}
-                              foto={item.diselesaikan_oleh_foto}
-                              peran="Selesai"
-                              waktu={item.diselesaikan_pada}
-                            />
-                          )}
-                      </div>
+                      <JejakAdmin item={item} />
                     </td>
                   )}
                   <td className="px-3 py-3">

@@ -105,7 +105,7 @@ export function FotoInput({
   ariaLabel = 'Foto',
   varian = 'pill',
   kosong = 'kartu',
-  petunjuk = 'Arahkan ke hasil perbaikan, lalu tekan tombol bulat',
+  petunjuk = 'Arahkan ke hasil perbaikan, lalu tekan tombol kamera',
 }: FotoInputProps) {
   const galeriRef = useRef<HTMLInputElement>(null)
   const kameraHpRef = useRef<HTMLInputElement>(null)
@@ -298,43 +298,48 @@ export function FotoInput({
 
     if (webcamAktif) {
       isi = (
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="size-full object-cover"
-          />
+        <div className="flex flex-col gap-3">
+          {/* Preview: tinggi di HP (3:4), lebar di layar besar (4:3) */}
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black sm:aspect-[4/3]">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="size-full object-cover"
+            />
 
-          {/* Sudut bidik kamera */}
-          <i className="pointer-events-none absolute top-[20%] left-[14%] size-6.5 rounded-tl-lg border-t-[3px] border-l-[3px] border-white/85" />
-          <i className="pointer-events-none absolute top-[20%] right-[14%] size-6.5 rounded-tr-lg border-t-[3px] border-r-[3px] border-white/85" />
-          <i className="pointer-events-none absolute bottom-[24%] left-[14%] size-6.5 rounded-bl-lg border-b-[3px] border-l-[3px] border-white/85" />
-          <i className="pointer-events-none absolute right-[14%] bottom-[24%] size-6.5 rounded-br-lg border-r-[3px] border-b-[3px] border-white/85" />
+            {/* Sudut bidik kamera (diberi jarak dari petunjuk atas) */}
+            <i className="pointer-events-none absolute top-[22%] left-[12%] size-6 rounded-tl-lg border-t-[3px] border-l-[3px] border-white/85" />
+            <i className="pointer-events-none absolute top-[22%] right-[12%] size-6 rounded-tr-lg border-t-[3px] border-r-[3px] border-white/85" />
+            <i className="pointer-events-none absolute bottom-[12%] left-[12%] size-6 rounded-bl-lg border-b-[3px] border-l-[3px] border-white/85" />
+            <i className="pointer-events-none absolute right-[12%] bottom-[12%] size-6 rounded-br-lg border-r-[3px] border-b-[3px] border-white/85" />
 
-          {/* Petunjuk kamera */}
-          <div className="absolute inset-x-3 top-3 rounded-full bg-[#0a140f]/70 px-3 py-1 text-center text-xs text-white">
-            {petunjuk}
+            {/* Petunjuk: boleh 2 baris, tidak dipotong */}
+            <div className="pointer-events-none absolute inset-x-3 top-3 rounded-2xl bg-[#0a140f]/70 px-3 py-1.5 text-center text-xs leading-snug font-medium text-white">
+              {petunjuk}
+            </div>
           </div>
 
-          {/* Kontrol kamera */}
-          <div className="absolute inset-x-0 bottom-0 flex items-center bg-gradient-to-t from-[#050f0a]/75 to-transparent px-4 pt-10 pb-5">
+          {/* Kontrol di LUAR video: tombol bulat selalu tepat di tengah */}
+          <div className="relative flex h-16 items-center">
             <button
               type="button"
               onClick={matikanWebcam}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-2 text-sm font-medium whitespace-nowrap text-white backdrop-blur-sm transition hover:bg-white/30"
+              className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3.5 py-2 text-sm font-medium whitespace-nowrap text-neutral-700 transition hover:bg-neutral-200"
             >
               <X aria-hidden="true" className="size-4" />
-              Tutup kamera
+              Tutup
             </button>
 
             <button
               type="button"
               aria-label="Ambil foto"
               onClick={() => void ambilFoto()}
-              className="absolute bottom-5 left-1/2 size-15.5 -translate-x-1/2 rounded-full bg-[#1f6b4f] ring-4 ring-white transition active:scale-90"
-            />
+              className="absolute left-1/2 grid size-16 -translate-x-1/2 place-items-center rounded-full border-4 border-white bg-[#1f6b4f] shadow-md ring-2 ring-[#1f6b4f] transition active:scale-90"
+            >
+              <Camera aria-hidden="true" className="size-6 text-white" />
+            </button>
           </div>
         </div>
       )

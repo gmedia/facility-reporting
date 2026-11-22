@@ -70,10 +70,10 @@ export function LokasiPage({ user }: { user: User }) {
       user={user}
       header={
         <div className="min-w-0 py-2">
-          <h1 className="truncate text-lg leading-tight font-bold tracking-tight">
+          <h1 className="text-base leading-tight font-bold tracking-tight sm:text-lg">
             Lokasi Akun
           </h1>
-          <p className="truncate text-xs text-neutral-500">
+          <p className="line-clamp-2 text-xs text-neutral-500">
             Atur titik pusat dan radius, lalu pantau lokasi pelapor
           </p>
         </div>
@@ -201,7 +201,10 @@ function PanelPeta() {
   }
 
   return (
-    <section aria-label="Titik pusat dan radius" className={cn('p-6', CARD)}>
+    <section
+      aria-label="Titik pusat dan radius"
+      className={cn('p-4 sm:p-6', CARD)}
+    >
       <h2 className="text-base font-semibold">Titik pusat dan radius</h2>
       <p className="text-sm text-neutral-500">
         Cari tempat, klik di peta, atau pakai lokasimu sekarang untuk menentukan
@@ -462,7 +465,7 @@ function PanelPelapor() {
 
   return (
     <>
-      <section aria-label="Lokasi pelapor" className={cn('p-6', CARD)}>
+      <section aria-label="Lokasi pelapor" className={cn('p-4 sm:p-6', CARD)}>
         <h2 className="text-base font-semibold">Lokasi pelapor</h2>
         <p className="text-sm text-neutral-500">
           {summary.outside} dari {summary.total} pelapor berada di luar radius{' '}
@@ -473,7 +476,7 @@ function PanelPelapor() {
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <label className="relative min-w-[14rem] flex-1">
+          <label className="relative w-full min-w-0 flex-1 basis-full sm:basis-56">
             <span className="sr-only">Cari pelapor</span>
             <Search
               aria-hidden="true"
@@ -502,7 +505,7 @@ function PanelPelapor() {
                   aria-pressed={dipilih}
                   onClick={() => pilihFilter(f.value)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25',
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25 sm:px-3.5 sm:text-sm',
                     dipilih
                       ? 'border-[#0f3d2e] bg-[#0f3d2e] font-medium text-white'
                       : 'border-[#efe9d8] hover:border-[#d9d2bd] hover:bg-[#faf3e5]',
@@ -523,7 +526,7 @@ function PanelPelapor() {
           </div>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4">
           {hasil.length === 0 ? (
             <p className="py-8 text-center text-sm text-neutral-400">
               {rows.length === 0
@@ -531,71 +534,89 @@ function PanelPelapor() {
                 : 'Tidak ada pelapor yang cocok. Ubah filter atau kata kunci.'}
             </p>
           ) : (
-            <table className="w-full min-w-[560px] text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs font-semibold tracking-wider text-neutral-500 uppercase">
-                  <th scope="col" className="w-12 py-2.5 pr-2">
-                    No
-                  </th>
-                  <th scope="col" className="py-2.5 pr-3">
-                    Pelapor
-                  </th>
-                  <th scope="col" className="py-2.5 pr-3">
-                    Jarak
-                  </th>
-                  <th scope="col" className="py-2.5 pr-3">
-                    Terakhir
-                  </th>
-                  <th scope="col" className="py-2.5">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tampak.map((r, index) => (
-                  <tr
-                    key={r.id}
-                    className="border-b border-neutral-100 last:border-0"
-                  >
-                    <td className="py-3 pr-2 text-neutral-500 tabular-nums">
-                      {halamanEfektif * perHalaman + index + 1}
-                    </td>
-                    <td className="py-3 pr-3">
-                      <span className="block font-medium">{r.name}</span>
-                      {r.nim && (
-                        <span className="block text-xs text-neutral-500">
-                          NIM {r.nim}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-3 tabular-nums">
-                      {r.distance_m === null
-                        ? '–'
-                        : `${r.distance_m.toLocaleString('id-ID')} m`}
-                    </td>
-                    <td className="py-3 pr-3 text-neutral-500">
-                      {r.last_location_at ? (
-                        <span title={formatWaktu(r.last_location_at)}>
-                          {waktuRelatif(r.last_location_at)}
-                        </span>
-                      ) : (
-                        '–'
-                      )}
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={cn(
-                          'inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap',
-                          STATUS_PILL[r.status],
-                        )}
-                      >
-                        {STATUS_LABEL[r.status]}
-                      </span>
-                    </td>
+            // Di HP kolom "Terakhir" disembunyikan supaya Jarak dan Status
+            // muat tanpa scroll samping. Di layar >= sm tampil semua.
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm sm:min-w-[560px]">
+                <thead>
+                  <tr className="border-b border-neutral-200 text-left text-[11px] font-semibold tracking-wider text-neutral-500 uppercase sm:text-xs">
+                    <th scope="col" className="w-8 py-2.5 pr-2 sm:w-12">
+                      No
+                    </th>
+                    <th scope="col" className="py-2.5 pr-3">
+                      Pelapor
+                    </th>
+                    <th scope="col" className="py-2.5 pr-3 whitespace-nowrap">
+                      Jarak
+                    </th>
+                    <th
+                      scope="col"
+                      className="hidden py-2.5 pr-3 sm:table-cell"
+                    >
+                      Terakhir
+                    </th>
+                    <th scope="col" className="py-2.5">
+                      Status
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tampak.map((r, index) => (
+                    <tr
+                      key={r.id}
+                      className="border-b border-neutral-100 align-top last:border-0"
+                    >
+                      <td className="py-3 pr-2 text-neutral-500 tabular-nums">
+                        {halamanEfektif * perHalaman + index + 1}
+                      </td>
+                      <td className="py-3 pr-3">
+                        <span className="block font-medium break-words">
+                          {r.name}
+                        </span>
+                        {r.nim && (
+                          <span className="block text-xs text-neutral-500">
+                            NIM {r.nim}
+                          </span>
+                        )}
+                        {/* "Terakhir" dipindah ke bawah nama di HP */}
+                        {r.last_location_at && (
+                          <span
+                            title={formatWaktu(r.last_location_at)}
+                            className="block text-xs text-neutral-400 sm:hidden"
+                          >
+                            {waktuRelatif(r.last_location_at)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-3 whitespace-nowrap tabular-nums">
+                        {r.distance_m === null
+                          ? '–'
+                          : `${r.distance_m.toLocaleString('id-ID')} m`}
+                      </td>
+                      <td className="hidden py-3 pr-3 text-neutral-500 sm:table-cell">
+                        {r.last_location_at ? (
+                          <span title={formatWaktu(r.last_location_at)}>
+                            {waktuRelatif(r.last_location_at)}
+                          </span>
+                        ) : (
+                          '–'
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={cn(
+                            'inline-flex rounded-full px-2.5 py-1 text-center text-[11px] leading-tight font-semibold sm:px-3 sm:text-xs sm:whitespace-nowrap',
+                            STATUS_PILL[r.status],
+                          )}
+                        >
+                          {STATUS_LABEL[r.status]}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </section>

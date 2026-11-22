@@ -615,11 +615,12 @@ export function VerifikasiPage({ user }: { user: User }) {
               }
             />
 
-            {/* Tab: Antrian laporan / Tertahan / Riwayat laporan. */}
+            {/* Tab bergaya tombol pill: Antrian laporan / Tertahan /
+                Riwayat laporan. Tiap fitur berdiri sebagai tombol sendiri. */}
             <div
               role="tablist"
               aria-label="Jenis daftar laporan"
-              className="flex flex-wrap gap-1 border-b border-[#efe9d8]"
+              className="flex flex-wrap gap-2.5"
             >
               <TabTombol
                 aktif={tab === 'antrian'}
@@ -786,12 +787,14 @@ export function VerifikasiPage({ user }: { user: User }) {
                       <li
                         key={item.id}
                         className={cn(
-                          'relative grid grid-cols-[2.5rem_3.5rem_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1.5 px-4 py-3 hover:bg-[#faf3e5]',
+                          // HP: items-start supaya nomor dan foto rata atas
+                          // di samping teks; desktop kembali items-center.
+                          'relative grid grid-cols-[1.75rem_3.5rem_minmax(0,1fr)] items-start gap-x-3 gap-y-1.5 px-3 py-3 hover:bg-[#faf3e5] sm:grid-cols-[2.5rem_3.5rem_minmax(0,1fr)] sm:gap-x-3.5 sm:px-4 md:items-center',
                           tab === 'tertahan' ? KOLOM_TERTAHAN : KOLOM,
                         )}
                       >
                         {/* Nomor urut: halamanEfektif * perHalaman + index + 1. */}
-                        <div className="relative z-10 row-span-3 text-center text-[#5f655d] md:row-span-1">
+                        <div className="relative z-10 row-span-3 pt-1 text-center text-sm text-[#5f655d] md:row-span-1 md:pt-0">
                           {halamanEfektif * perHalaman + itemIndex + 1}
                         </div>
                         {/* z-10 supaya foto tetap bisa diklik walau seluruh
@@ -806,10 +809,12 @@ export function VerifikasiPage({ user }: { user: User }) {
                           onClick={() => setPilihId(item.id)}
                           className="min-w-0 text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
                         >
-                          <span className="block truncate font-medium text-[#1d2b26]">
+                          {/* HP: judul maks 2 baris, meta boleh turun baris.
+                              Desktop: satu baris dengan ellipsis. */}
+                          <span className="line-clamp-2 block font-medium break-words text-[#1d2b26] md:line-clamp-1">
                             {item.deskripsi}
                           </span>
-                          <span className="mt-0.5 block truncate text-xs text-[#8a8f87]">
+                          <span className="mt-0.5 block text-xs break-words text-[#8a8f87] md:truncate">
                             {kategoriLabel(item.kategori)} · {item.lokasi} ·{' '}
                             {formatTanggal(item.created_at)}
                           </span>
@@ -820,19 +825,24 @@ export function VerifikasiPage({ user }: { user: User }) {
                           )}
                         </button>
 
-                        <div className="col-start-2 md:col-start-auto">
-                          <PrioritasBadge
-                            kategori={item.prioritas_kategori ?? null}
-                          />
-                        </div>
-
-                        <div className="col-start-2 md:col-start-auto">
-                          <StatusPill status={item.status} />
+                        {/* HP: kedua badge satu baris di kolom teks (kolom
+                            ke-3). Desktop: `md:contents` melepas pembungkus
+                            ini sehingga badge kembali jadi sel grid
+                            Prioritas dan Status. */}
+                        <div className="col-start-3 flex flex-wrap items-center gap-1.5 md:col-start-auto md:contents">
+                          <div>
+                            <PrioritasBadge
+                              kategori={item.prioritas_kategori ?? null}
+                            />
+                          </div>
+                          <div>
+                            <StatusPill status={item.status} />
+                          </div>
                         </div>
 
                         {/* BARU: kolom lama tertahan + tanggal terakhir diubah. */}
                         {tab === 'tertahan' && (
-                          <div className="col-start-2 md:col-start-auto">
+                          <div className="col-start-3 md:col-start-auto">
                             <span
                               className={cn(
                                 'inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap',
@@ -975,8 +985,15 @@ function KepalaDaftar({
   )
 }
 
-// Tombol tab di atas daftar, lengkap dengan jumlah laporan per tab.
-// `peringatan` = angka jadi merah kalau jumlahnya lebih dari 0.
+// Tombol tab bergaya pill (lonjong, berborder), lengkap dengan jumlah
+// laporan per tab.
+//
+// Tab tidak aktif: latar putih, border abu, teks abu gelap; hover
+// memberi border hijau. Tab aktif: terisi hijau tua dengan teks putih,
+// jadi jelas mana yang sedang dibuka. Badge angka ikut menyesuaikan.
+// `peringatan` = kalau jumlahnya lebih dari 0, tombol diberi sentuhan
+// oranye (border dan badge) supaya admin langsung sadar ada laporan
+// tertahan.
 function TabTombol({
   aktif,
   jumlah,
@@ -990,6 +1007,8 @@ function TabTombol({
   onClick: () => void
   children: string
 }) {
+  const adaPeringatan = peringatan && jumlah > 0
+
   return (
     <button
       type="button"
@@ -997,19 +1016,25 @@ function TabTombol({
       aria-selected={aktif}
       onClick={onClick}
       className={cn(
-        '-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/25',
+        'inline-flex shrink-0 items-center gap-2.5 rounded-full border-[1.5px] px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#1f6b4f]/30',
         aktif
-          ? 'border-[#1f6b4f] text-[#1d2b26]'
-          : 'border-transparent text-[#8a8f87] hover:text-[#1d2b26]',
+          ? 'border-[#0f3d2e] bg-[#0f3d2e] text-white'
+          : adaPeringatan
+            ? 'border-amber-300 bg-white text-[#3f4a44] hover:border-amber-500 hover:bg-amber-50'
+            : 'border-[#cfd6d1] bg-white text-[#3f4a44] hover:border-[#1f6b4f] hover:bg-[#f3f8f5]',
       )}
     >
       {children}
       <span
         className={cn(
-          'rounded-full px-2 py-0.5 text-[11px] tabular-nums',
-          peringatan && jumlah > 0
-            ? 'bg-red-100 font-semibold text-red-800'
-            : 'bg-[#f1f5f3]',
+          'min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-bold tabular-nums',
+          aktif
+            ? adaPeringatan
+              ? 'bg-amber-400 text-[#3b2a00]'
+              : 'bg-white/20 text-white'
+            : adaPeringatan
+              ? 'bg-amber-100 text-amber-800'
+              : 'bg-[#eceee9] text-[#5f655d]',
         )}
       >
         {jumlah}
@@ -1532,13 +1557,13 @@ function BuktiDialog({
           />
 
           {galat ? (
-            <p role="alert" className="mt-2.5 text-xs text-red-600">
+            <p role="alert" className="mt-2.5 text-sm text-red-600">
               {galat}
             </p>
           ) : (
-            <p className="mt-2.5 text-xs text-neutral-500">
+            <p className="mt-2.5 text-sm text-neutral-500">
               {webcamAktif
-                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol bulat.'
+                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol kamera.'
                 : 'Format JPG, PNG, atau WebP. Maksimal 2 MB.'}
             </p>
           )}
