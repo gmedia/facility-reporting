@@ -1,9 +1,9 @@
 import { Controller, useForm } from 'react-hook-form'
-
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
 import { FotoInput } from './foto-input'
 import { LokasiKotak } from './lokasi-kotak'
 import { usePosisiPelapor } from './lokasi-pelapor'
+
 import {
   BATAS_FOTO_BYTE,
   FOTO_MIME_IZIN,
@@ -27,12 +29,11 @@ import {
   useCreateLaporan,
   type LaporanKategori,
 } from './laporan-query'
+
 import imageCompression from 'browser-image-compression'
 
 const LOKASI_VALUES = ['Gedung D', 'Gedung S'] as const
 
-// Daftar value + label untuk prop `items` di <Select>. Tanpa ini, trigger
-// menampilkan value mentah (mis. "elektronik"), bukan label ("Elektronik").
 const KATEGORI_ITEMS = KATEGORI_VALUES.map((value) => ({
   value,
   label: KATEGORI_LABEL[value],
@@ -51,32 +52,39 @@ const formSchema = z.object({
       (value): value is LaporanKategori => value in KATEGORI_LABEL,
       'Kategori tidak dikenal',
     ),
+
   lokasi: z
     .string()
     .trim()
     .min(1, 'Lokasi wajib diisi')
     .max(255, 'Lokasi maksimal 255 karakter'),
+
   deskripsi: z
     .string()
     .trim()
     .min(10, 'Deskripsi minimal 10 karakter')
     .max(2000, 'Deskripsi maksimal 2000 karakter'),
+
   foto: z
     .custom<FileList>()
     .optional()
     .refine((value) => (value?.length ?? 0) > 0, 'Foto wajib dilampirkan'),
+
   nilai_kerusakan: z.coerce
     .number()
     .min(1, 'Nilai kerusakan wajib diisi (1–5)')
     .max(5, 'Nilai kerusakan maksimal 5'),
+
   nilai_risiko: z.coerce
     .number()
     .min(1, 'Nilai risiko wajib diisi (1–5)')
     .max(5, 'Nilai risiko maksimal 5'),
+
   nilai_dampak: z.coerce
     .number()
     .min(1, 'Nilai dampak wajib diisi (1–5)')
     .max(5, 'Nilai dampak maksimal 5'),
+
   nilai_frekuensi: z.coerce
     .number()
     .min(1, 'Nilai frekuensi wajib diisi (1–5)')
@@ -138,6 +146,25 @@ function Wajib() {
   )
 }
 
+// Memastikan hasil kompresi menjadi File yang valid.
+function buatFileValid(file: Blob, namaAsli: string): File {
+  const mimeType = file.type || 'image/jpeg'
+
+  const ekstensi: Record<string, string> = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+  }
+
+  const namaTanpaEkstensi = namaAsli.replace(/\.[^/.]+$/, '')
+  const ekstensiBaru = ekstensi[mimeType] || '.jpg'
+
+  return new File([file], `${namaTanpaEkstensi}${ekstensiBaru}`, {
+    type: mimeType,
+    lastModified: Date.now(),
+  })
+}
+
 function SkalaNilai({
   name,
   value,
@@ -189,8 +216,7 @@ export function LaporanForm() {
   const navigate = useNavigate()
   const create = useCreateLaporan()
 
-  // Meminta izin lokasi begitu form terbuka. Tombol kirim terkunci sampai
-  // pelapor terdeteksi di dalam radius kampus.
+  // Meminta izin lokasi begitu form terbuka.
   const posisi = usePosisiPelapor()
 
   const {
@@ -201,6 +227,7 @@ export function LaporanForm() {
     formState: { isSubmitting },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
+
     defaultValues: {
       kategori: '',
       lokasi: '',
@@ -213,9 +240,8 @@ export function LaporanForm() {
     },
   })
 
+  // PROSES PENGIRIMAN LAPORAN
   const onSubmit = handleSubmit(async (values) => {
-    // Pengaman kedua: tombol sudah terkunci, tapi submit lewat Enter atau
-    // devtools tetap harus ditolak. Server tetap memvalidasi ulang jaraknya.
     if (!posisi.gps || !posisi.bisaKirim) {
       toast.error('Lokasimu belum terdeteksi di dalam radius kampus.')
       return
@@ -224,7 +250,9 @@ export function LaporanForm() {
     const file = values.foto?.[0]
 
     if (file && file.size > BATAS_FOTO_BYTE) {
-      setError('foto', { message: 'Ukuran foto maksimal 2 MB' })
+      setError('foto', {
+        message: 'Ukuran foto maksimal 2 MB',
+      })
       return
     }
 
@@ -241,7 +269,9 @@ export function LaporanForm() {
         latitude: posisi.gps.lat,
         longitude: posisi.gps.lng,
       })
+
       toast.success('Laporan berhasil dikirim')
+
       await navigate({ to: '/dashboard' })
     } catch (error) {
       const serverErrors = fieldErrors(error)
@@ -257,10 +287,9 @@ export function LaporanForm() {
           }
         }
 
-        // Penolakan jarak dari server (di luar radius) tidak punya field di
-        // form, jadi ditampilkan lewat toast.
         const pesanLokasi =
           serverErrors.latitude?.[0] ?? serverErrors.longitude?.[0]
+
         if (pesanLokasi) {
           toast.error(pesanLokasi)
           applied = true
@@ -280,7 +309,7 @@ export function LaporanForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
-      {/* Keterangan field wajib */}
+      {/* KETERANGAN FIELD WAJIB */}
       <p className="text-muted-foreground text-xs">
         <span aria-hidden="true" className="text-red-600">
           *
@@ -288,7 +317,7 @@ export function LaporanForm() {
         Wajib diisi
       </p>
 
-      {/* LOKASI PELAPOR (izin lokasi + jarak ke kampus) */}
+      {/* LOKASI PELAPOR */}
       <LokasiKotak posisi={posisi} />
 
       {/* KATEGORI */}
@@ -420,14 +449,17 @@ export function LaporanForm() {
                 value={terpilih}
                 disabled={busy}
                 ariaLabel="Foto laporan"
+                error={fieldState.error?.message}
                 onFile={async (file) => {
                   clearErrors('foto')
 
+                  // BATAL / HAPUS FOTO
                   if (!file) {
                     field.onChange(undefined)
                     return
                   }
 
+                  // VALIDASI FORMAT
                   if (!FOTO_MIME_IZIN.includes(file.type)) {
                     setError('foto', {
                       message: 'Format foto harus JPG, PNG, atau WebP',
@@ -435,50 +467,87 @@ export function LaporanForm() {
                     return
                   }
 
-                  // Kompresi foto di frontend sebelum upload (hemat bandwidth,
-                  // dan mencegah error 413 kalau file terlalu besar).
-                  let compressedFile: File
+                  // NOTIFIKASI PROSES
+                  toast.loading('Memproses foto...', {
+                    id: 'proses-foto',
+                  })
+
                   try {
-                    compressedFile = await imageCompression(file, {
-                      maxSizeMB: 1.9, // target < 2 MB
-                      maxWidthOrHeight: 1600, // max 1600px
+                    // KOMPRESI FOTO
+                    const hasilKompresi = await imageCompression(file, {
+                      maxSizeMB: 1.9,
+                      maxWidthOrHeight: 1600,
                       useWebWorker: true,
                       fileType: 'image/jpeg',
                       initialQuality: 0.85,
                     })
-                  } catch (e) {
-                    console.warn('Kompresi gagal, gunakan file asli:', e)
-                    compressedFile = file
-                  }
 
-                  // Validasi ulang setelah kompresi.
-                  if (compressedFile.size > BATAS_FOTO_BYTE) {
-                    setError('foto', {
-                      message: 'Ukuran foto maksimal 2 MB (setelah kompresi)',
+                    // PASTIKAN HASIL BERUPA BLOB
+                    if (!(hasilKompresi instanceof Blob)) {
+                      throw new Error('Hasil kompresi foto tidak valid.')
+                    }
+
+                    // UBAH HASIL KOMPRESI MENJADI FILE VALID
+                    const finalFile = buatFileValid(hasilKompresi, file.name)
+
+                    // VALIDASI UKURAN SETELAH KOMPRESI
+                    if (finalFile.size > BATAS_FOTO_BYTE) {
+                      throw new Error(
+                        'Ukuran foto maksimal 2 MB setelah kompresi.',
+                      )
+                    }
+
+                    // PASTIKAN FORMAT FOTO VALID
+                    if (!FOTO_MIME_IZIN.includes(finalFile.type)) {
+                      throw new Error('Format hasil foto tidak didukung.')
+                    }
+
+                    // MEMBUAT FILELIST
+                    const dt = new DataTransfer()
+
+                    // MASUKKAN FILE VALID KE DATATRANSFER
+                    dt.items.add(finalFile)
+
+                    // PASTIKAN FILELIST BERHASIL DIBUAT
+                    if (dt.files.length === 0) {
+                      throw new Error('Foto gagal dimasukkan ke formulir.')
+                    }
+
+                    // SIMPAN KE REACT HOOK FORM
+                    field.onChange(dt.files)
+
+                    toast.success('Foto berhasil ditambahkan.', {
+                      id: 'proses-foto',
                     })
-                    return
-                  }
+                  } catch (error) {
+                    console.error('Gagal menyimpan foto ke form:', error)
 
-                  // Membungkus File ke dalam FileList.
-                  const dt = new DataTransfer()
-                  dt.items.add(compressedFile)
-                  field.onChange(dt.files)
+                    const pesan =
+                      error instanceof Error
+                        ? error.message
+                        : 'Gagal menambahkan foto ke formulir.'
+
+                    setError('foto', {
+                      type: 'manual',
+                      message: pesan,
+                    })
+
+                    toast.error(pesan, {
+                      id: 'proses-foto',
+                    })
+                  }
                 }}
               />
 
               <p className="text-muted-foreground text-xs">
                 Wajib. JPG, PNG, atau WebP. Maksimal 2 MB.
               </p>
-
-              <FieldError
-                errors={fieldState.error ? [fieldState.error] : undefined}
-              />
             </Field>
           )
         }}
       />
 
-      {/* PENILAIAN SMART */}
+      {/* PENILAIAN KERUSAKAN */}
       <div className="border-t border-[#e5ece8] pt-6">
         <div className="mb-5">
           <h3 className="text-sm font-semibold text-[#173d30]">
