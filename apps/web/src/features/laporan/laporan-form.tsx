@@ -427,6 +427,7 @@ export function LaporanForm() {
 
                   if (!file) {
                     field.onChange(undefined)
+                    if (previewUrl) URL.revokeObjectURL(previewUrl)
                     setPreviewUrl(null)
                     return
                   }
@@ -445,7 +446,10 @@ export function LaporanForm() {
                     return
                   }
 
-                  // Preview menggunakan FileReader, bukan object URL.
+                  // Tampilkan pratinjau segera lewat Object URL.
+                  setPreviewUrl(URL.createObjectURL(file))
+
+                  // Preview menggunakan FileReader (fallback di atas object URL).
                   const reader = new FileReader()
 
                   reader.onload = () => {
