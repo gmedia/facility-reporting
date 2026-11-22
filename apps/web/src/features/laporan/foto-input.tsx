@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Camera, ImageIcon, Trash2, X } from 'lucide-react'
 
@@ -47,22 +47,6 @@ function formatUkuran(byte: number): string {
   return `${(byte / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function sanitasiUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  try {
-    const u = new URL(url)
-    return u.protocol === 'https:' ||
-      u.protocol === 'http:' ||
-      u.protocol === 'blob:'
-      ? url
-      : null
-  } catch {
-    return null
-  }
-}
-
-type HasilPreview = { file: File; url: string }
-
 interface FotoInputProps {
   value?: File | null
   previewUrl?: string | null
@@ -78,7 +62,6 @@ interface FotoInputProps {
 
 export function FotoInput({
   value,
-  previewUrl,
   onFile,
   inputId = 'foto-input',
   disabled,
@@ -95,7 +78,6 @@ export function FotoInput({
 
   const [webcamAktif, setWebcamAktif] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
-  const [hasilPreview, setHasilPreview] = useState<HasilPreview | null>(null)
 
   const kartu = varian === 'kartu'
   const nonaktif = disabled
@@ -111,66 +93,16 @@ export function FotoInput({
 
   const adaKamera = perangkatSentuh || adaWebcam
 
-  // Object URL dibuat segera (saat render) biar pratinjau muncul tanpa
-  // menunggu FileReader selesai baca data URL. Selalu dibuat ketika value
-  // tersedia, tidak tergantung previewUrl dari parent.
-  const objectUrl = useMemo(() => {
-    if (!value) return null
-    return URL.createObjectURL(value)
-  }, [value])
+  // Object URL dibuat segera dari value biar pratinjau muncul tanpa
+  // menunggu FileReader atau previewUrl dari parent.
+  const urlPratinjau = value ? URL.createObjectURL(value) : null
 
-  // Revoke object URL saat tidak lagi diperlukan.
+  // Revoke object URL lama saat value berubah.
   useEffect(() => {
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      if (urlPratinjau) URL.revokeObjectURL(urlPratinjau)
     }
-  }, [objectUrl])
-
-  // URL preview eksternal harus lolos validasi.
-  const previewUrlValid = sanitasiUrl(previewUrl)
-
-  // Hasil preview hanya digunakan untuk File yang sedang dipilih.
-  // Ini mencegah preview file sebelumnya muncul saat file berubah.
-  // Fallback ke objectUrl (dibuat dari value) biar pratinjau selalu muncul
-  // meski previewUrl dari parent belum siap.
-  const urlPratinjau =
-    previewUrlValid ||
-    objectUrl ||
-    (value ? URL.createObjectURL(value) : '') ||
-    (value && hasilPreview?.file === value ? hasilPreview.url : '')
-
-  // FileReader untuk pratinjau kualitas lebih tinggi (async, setState di
-  // callback bukan di body effect, jadi aman).
-  useEffect(() => {
-    if (!value || sanitasiUrl(previewUrl)) return
-
-    let aktif = true
-    const reader = new FileReader()
-
-    reader.onload = () => {
-      if (!aktif || typeof reader.result !== 'string') {
-        return
-      }
-
-      const urlAman = sanitasiUrl(reader.result)
-
-      if (urlAman) {
-        setHasilPreview({
-          file: value,
-          url: urlAman,
-        })
-      }
-    }
-
-    reader.readAsDataURL(value)
-
-    return () => {
-      aktif = false
-      if (reader.readyState === FileReader.LOADING) {
-        reader.abort()
-      }
-    }
-  }, [value, previewUrl])
+  }, [urlPratinjau])
 
   // Menyalakan webcam laptop.
   const nyalakanWebcam = async () => {

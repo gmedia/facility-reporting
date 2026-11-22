@@ -1,5 +1,5 @@
 import { Controller, useForm } from 'react-hook-form'
-import { useState } from 'react'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
@@ -213,8 +213,6 @@ export function LaporanForm() {
     },
   })
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
   const onSubmit = handleSubmit(async (values) => {
     // Pengaman kedua: tombol sudah terkunci, tapi submit lewat Enter atau
     // devtools tetap harus ditolak. Server tetap memvalidasi ulang jaraknya.
@@ -420,7 +418,6 @@ export function LaporanForm() {
                 petunjuk="Arahkan ke kerusakan, lalu tekan tombol kamera"
                 inputId="laporan-foto"
                 value={terpilih}
-                previewUrl={previewUrl}
                 disabled={busy}
                 ariaLabel="Foto laporan"
                 onFile={async (file) => {
@@ -428,8 +425,6 @@ export function LaporanForm() {
 
                   if (!file) {
                     field.onChange(undefined)
-                    if (previewUrl) URL.revokeObjectURL(previewUrl)
-                    setPreviewUrl(null)
                     return
                   }
 
@@ -463,20 +458,6 @@ export function LaporanForm() {
                     })
                     return
                   }
-
-                  // Tampilkan pratinjau segera lewat Object URL.
-                  setPreviewUrl(URL.createObjectURL(compressedFile))
-
-                  // Preview menggunakan FileReader (fallback di atas object URL).
-                  const reader = new FileReader()
-
-                  reader.onload = () => {
-                    setPreviewUrl(
-                      typeof reader.result === 'string' ? reader.result : null,
-                    )
-                  }
-
-                  reader.readAsDataURL(compressedFile)
 
                   // Membungkus File ke dalam FileList.
                   const dt = new DataTransfer()
