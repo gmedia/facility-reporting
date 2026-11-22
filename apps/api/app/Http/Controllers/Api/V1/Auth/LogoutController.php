@@ -15,8 +15,11 @@ class LogoutController extends Controller
     {
         Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Request stateless (mis. tanpa sesi Sanctum) tidak punya session store.
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['message' => 'Logged out.']);
     }
