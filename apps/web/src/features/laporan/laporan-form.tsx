@@ -27,6 +27,7 @@ import {
   useCreateLaporan,
   type LaporanKategori,
 } from './laporan-query'
+import imageCompression from 'browser-image-compression'
 
 const LOKASI_VALUES = ['Gedung D', 'Gedung S'] as const
 
@@ -422,7 +423,7 @@ export function LaporanForm() {
                 previewUrl={previewUrl}
                 disabled={busy}
                 ariaLabel="Foto laporan"
-                onFile={(file) => {
+                onFile={async (file) => {
                   clearErrors('foto')
 
                   if (!file) {
@@ -439,15 +440,32 @@ export function LaporanForm() {
                     return
                   }
 
-                  if (file.size > BATAS_FOTO_BYTE) {
+                  // Kompresi foto di frontend sebelum upload (hemat bandwidth,
+                  // dan mencegah error 413 kalau file terlalu besar).
+                  let compressedFile: File
+                  try {
+                    compressedFile = await imageCompression(file, {
+                      maxSizeMB: 1.9, // target < 2 MB
+                      maxWidthOrHeight: 1600, // max 1600px
+                      useWebWorker: true,
+                      fileType: 'image/jpeg',
+                      initialQuality: 0.85,
+                    })
+                  } catch (e) {
+                    console.warn('Kompresi gagal, gunakan file asli:', e)
+                    compressedFile = file
+                  }
+
+                  // Validasi ulang setelah kompresi.
+                  if (compressedFile.size > BATAS_FOTO_BYTE) {
                     setError('foto', {
-                      message: 'Ukuran foto maksimal 2 MB',
+                      message: 'Ukuran foto maksimal 2 MB (setelah kompresi)',
                     })
                     return
                   }
 
                   // Tampilkan pratinjau segera lewat Object URL.
-                  setPreviewUrl(URL.createObjectURL(file))
+                  setPreviewUrl(URL.createObjectURL(compressedFile))
 
                   // Preview menggunakan FileReader (fallback di atas object URL).
                   const reader = new FileReader()
@@ -458,11 +476,11 @@ export function LaporanForm() {
                     )
                   }
 
-                  reader.readAsDataURL(file)
+                  reader.readAsDataURL(compressedFile)
 
                   // Membungkus File ke dalam FileList.
                   const dt = new DataTransfer()
-                  dt.items.add(file)
+                  dt.items.add(compressedFile)
                   field.onChange(dt.files)
                 }}
               />
