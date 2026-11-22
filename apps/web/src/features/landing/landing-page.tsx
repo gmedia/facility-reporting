@@ -39,10 +39,26 @@ const HERO_CONTENT = {
 } as const
 
 const HERO_LOCATIONS = [
-  { name: 'Gedung A · Lab 2', sub: 'Fakultas Saintek · Lt. 2', pin: 'Gedung Saintek, Lt. 2' },
-  { name: 'Gedung B · Koridor Lt. 2', sub: 'Area Kelas & Lab', pin: 'Gedung B, Lt. 2' },
-  { name: 'Gedung C · Ruang Dosen', sub: 'Administrasi & Rapat', pin: 'Gedung C, Lt. 1' },
-  { name: 'Perpustakaan Pusat', sub: 'Zona Baca & Sanitasi', pin: 'Perpustakaan Pusat' },
+  {
+    name: 'Gedung A · Lab 2',
+    sub: 'Fakultas Saintek · Lt. 2',
+    pin: 'Gedung Saintek, Lt. 2',
+  },
+  {
+    name: 'Gedung B · Koridor Lt. 2',
+    sub: 'Area Kelas & Lab',
+    pin: 'Gedung B, Lt. 2',
+  },
+  {
+    name: 'Gedung C · Ruang Dosen',
+    sub: 'Administrasi & Rapat',
+    pin: 'Gedung C, Lt. 1',
+  },
+  {
+    name: 'Perpustakaan Pusat',
+    sub: 'Zona Baca & Sanitasi',
+    pin: 'Perpustakaan Pusat',
+  },
 ] as const
 
 const HERO_TABS = [
@@ -892,18 +908,27 @@ export function LandingPage() {
 
   const [heroTab, setHeroTab] = useState<HeroTabId>('lapor')
   const [heroLocationIndex, setHeroLocationIndex] = useState(0)
-  const [heroDateMode, setHeroDateMode] = useState<'today' | 'yesterday'>('today')
-  const [heroSlaMode, setHeroSlaMode] = useState<'prioritas' | 'siaga'>('prioritas')
+  const [heroDateMode, setHeroDateMode] = useState<'today' | 'yesterday'>(
+    'today',
+  )
+  const [heroSlaMode, setHeroSlaMode] = useState<'prioritas' | 'siaga'>(
+    'prioritas',
+  )
   const [statusLookupCode, setStatusLookupCode] = useState('LR-412')
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('Listrik & AC')
-  const [selectedPriority, setSelectedPriority] = useState<'Normal' | 'Mendesak'>('Normal')
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('Listrik & AC')
+  const [selectedPriority, setSelectedPriority] = useState<
+    'Normal' | 'Mendesak'
+  >('Normal')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLocation, setModalLocation] = useState('')
   const [modalIssue, setModalIssue] = useState('')
   const [modalError, setModalError] = useState<string | null>(null)
   const ticketCount = 3
-  const [toasts, setToasts] = useState<Array<{ id: number; message: string }>>([])
+  const [toasts, setToasts] = useState<Array<{ id: number; message: string }>>(
+    [],
+  )
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const locationInputRef = useRef<HTMLInputElement>(null)
   const heroTabRefs = useRef<Array<HTMLButtonElement | null>>([])
@@ -918,7 +943,10 @@ export function LandingPage() {
     }, 3600)
   }
 
-  const handleOpenReportModal = (category?: string, prefillLocation?: string) => {
+  const handleOpenReportModal = (
+    category?: string,
+    prefillLocation?: string,
+  ) => {
     if (
       category &&
       MODAL_CATEGORIES.includes(category as (typeof MODAL_CATEGORIES)[number])
@@ -982,7 +1010,7 @@ export function LandingPage() {
   }, [isModalOpen])
 
   return (
-    <div className="min-h-screen bg-[#F7FAF8] font-jakarta text-[#0F3B2E] antialiased selection:bg-[#0F3B2E] selection:text-white">
+    <div className="font-jakarta min-h-screen bg-[#F7FAF8] text-[#0F3B2E] antialiased selection:bg-[#0F3B2E] selection:text-white">
       {/* ===================================================================== */}
       {/* 1. MINIMALIST TOP NAVBAR (FigCraft Page 1 — Green Brand Identity)     */}
       {/* ===================================================================== */}
@@ -1012,7 +1040,9 @@ export function LandingPage() {
               <div className="hidden items-center gap-6 lg:flex">
                 <a
                   href="#layanan"
-                  aria-current={activeSection === 'layanan' ? 'true' : undefined}
+                  aria-current={
+                    activeSection === 'layanan' ? 'true' : undefined
+                  }
                   className={`text-[13px] font-medium transition-colors hover:text-[#0F3B2E] ${
                     activeSection === 'layanan'
                       ? 'font-semibold text-[#0F3B2E]'
@@ -1366,8 +1396,8 @@ export function LandingPage() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <span className="inline-flex items-center gap-1.5 font-mono text-[11.5px] font-bold tracking-[0.04em] text-[#0F3B2E]">
-                    <span className="h-2 w-2 rounded-full bg-[#16A34A]" />
-                    #{HERO_CONTENT.liveTicket.code}
+                    <span className="h-2 w-2 rounded-full bg-[#16A34A]" />#
+                    {HERO_CONTENT.liveTicket.code}
                   </span>
                   <span className="rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-semibold text-[#15803D]">
                     {HERO_CONTENT.liveTicket.status}
@@ -1402,7 +1432,10 @@ export function LandingPage() {
               role="tablist"
               aria-label="Mode layanan cepat fasilitas"
               className="no-scrollbar inline-flex max-w-full overflow-x-auto rounded-t-[20px] bg-[#0F3B2E]"
-              {...({ focusgroup: 'tablist nomemory' } as Record<string, string>)}
+              {...({ focusgroup: 'tablist nomemory' } as Record<
+                string,
+                string
+              >)}
             >
               {HERO_TABS.map((tab, index) => {
                 const isSelected = heroTab === tab.id
@@ -1427,7 +1460,9 @@ export function LandingPage() {
                     <span
                       aria-hidden="true"
                       className={`h-2.5 w-2.5 rounded-xs ${
-                        isSelected ? 'bg-[#15803D]' : 'rounded-full bg-[#86EFAC]'
+                        isSelected
+                          ? 'bg-[#15803D]'
+                          : 'rounded-full bg-[#86EFAC]'
                       }`}
                     />
                     <span>{tab.label}</span>
@@ -1437,7 +1472,7 @@ export function LandingPage() {
             </div>
 
             {/* Main White Floating Bar Card */}
-            <div className="rounded-b-[26px] rounded-tr-[26px] border border-[#DCEAE2] bg-white p-5 shadow-[0_22px_50px_-16px_rgba(15,59,46,0.2)] sm:p-7 lg:p-8">
+            <div className="rounded-tr-[26px] rounded-b-[26px] border border-[#DCEAE2] bg-white p-5 shadow-[0_22px_50px_-16px_rgba(15,59,46,0.2)] sm:p-7 lg:p-8">
               {/* TAB PANEL 1: LAPOR BARU */}
               <div
                 role="tabpanel"
@@ -1525,7 +1560,9 @@ export function LandingPage() {
                       </span>
                       <div className="mt-1.5 flex items-center justify-between gap-2">
                         <span className="text-[16.5px] font-bold tracking-[-0.01em] text-[#0F3B2E] sm:text-[18px]">
-                          {heroDateMode === 'today' ? 'Kam, 22 Nov' : 'Rab, 21 Nov'}
+                          {heroDateMode === 'today'
+                            ? 'Kam, 22 Nov'
+                            : 'Rab, 21 Nov'}
                         </span>
                         <Calendar
                           className="h-5 w-5 shrink-0 text-[#0F3B2E]"
@@ -1786,8 +1823,10 @@ export function LandingPage() {
                     percakapan pribadi.
                   </p>
 
-                  <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-[14px] leading-relaxed text-r-on-dark-soft">
-                    <p className="font-medium text-white">Sistem penyaringan mandiri</p>
+                  <div className="text-r-on-dark-soft mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-[14px] leading-relaxed">
+                    <p className="font-medium text-white">
+                      Sistem penyaringan mandiri
+                    </p>
                     <p className="mt-1">
                       Setiap tiket melalui validasi pengelola sebelum diteruskan
                       ke teknisi agar fasilitas darurat selalu diprioritaskan.
@@ -1848,14 +1887,18 @@ export function LandingPage() {
                               : 'border border-white/20 bg-white/10 text-white'
                           }`}
                         >
-                          {isLast ? <Check className="size-4 stroke-[2.5]" /> : item.no}
+                          {isLast ? (
+                            <Check className="size-4 stroke-[2.5]" />
+                          ) : (
+                            item.no
+                          )}
                         </div>
 
                         {/* Kartu status */}
                         <div
-                          className={`flex-1 rounded-xl p-4 sm:p-5 transition-colors ${
+                          className={`flex-1 rounded-xl p-4 transition-colors sm:p-5 ${
                             isLast
-                              ? 'border border-r-accent/40 bg-white/[0.09]'
+                              ? 'border-r-accent/40 border bg-white/[0.09]'
                               : 'border border-white/10 bg-white/[0.04]'
                           }`}
                         >
@@ -1868,7 +1911,7 @@ export function LandingPage() {
                               {item.status}
                             </h3>
                             {isLast && (
-                              <span className="rounded-full bg-r-accent/20 px-2.5 py-0.5 text-[11px] font-semibold text-r-accent-glow">
+                              <span className="bg-r-accent/20 text-r-accent-glow rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
                                 Tahap akhir
                               </span>
                             )}
@@ -1880,7 +1923,7 @@ export function LandingPage() {
 
                           {/* Percabangan khusus untuk verifikasi */}
                           {item.cabang && (
-                            <div className="mt-3 flex items-start gap-2 border-t border-white/10 pt-2.5 text-[12.5px] text-r-on-dark-soft/85">
+                            <div className="text-r-on-dark-soft/85 mt-3 flex items-start gap-2 border-t border-white/10 pt-2.5 text-[12.5px]">
                               <span className="mt-1 size-1.5 shrink-0 rounded-full bg-white/40" />
                               <p>{item.cabang}</p>
                             </div>
@@ -1931,13 +1974,13 @@ export function LandingPage() {
                   ].map((langkah) => (
                     <li
                       key={langkah.nomor}
-                      className="flex items-start gap-4 rounded-xl border border-r-line/60 bg-r-surface/70 p-4 transition-colors"
+                      className="border-r-line/60 bg-r-surface/70 flex items-start gap-4 rounded-xl border p-4 transition-colors"
                     >
-                      <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-r-line bg-white font-mono text-[12px] font-bold text-r-accent-ink tabular-nums">
+                      <span className="border-r-line text-r-accent-ink flex size-7 shrink-0 items-center justify-center rounded-md border bg-white font-mono text-[12px] font-bold tabular-nums">
                         {langkah.nomor}
                       </span>
                       <div>
-                        <h3 className="text-[15.5px] leading-snug font-semibold text-r-fg">
+                        <h3 className="text-r-fg text-[15.5px] leading-snug font-semibold">
                           {langkah.judul}
                         </h3>
                         <p className="text-r-muted mt-1 text-[14px] leading-relaxed">
@@ -1951,7 +1994,7 @@ export function LandingPage() {
 
               <div
                 data-ui
-                className="motion-form-card bg-r-surface rounded-2xl border border-r-line p-6 shadow-[0_8px_30px_rgb(15,59,46,0.06)] sm:p-8"
+                className="motion-form-card bg-r-surface border-r-line rounded-2xl border p-6 shadow-[0_8px_30px_rgb(15,59,46,0.06)] sm:p-8"
               >
                 <ReportForm />
               </div>
@@ -2279,7 +2322,7 @@ export function LandingPage() {
                   value={modalLocation}
                   onChange={(e) => setModalLocation(e.target.value)}
                   placeholder="Contoh: Gedung A • Lt. 3, Ruang Rapat Melati"
-                  className="w-full rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] placeholder:text-[#8E9F97] transition-colors focus:border-[#0d3f31] focus:bg-white focus:outline-none"
+                  className="w-full rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] transition-colors placeholder:text-[#8E9F97] focus:border-[#0d3f31] focus:bg-white focus:outline-none"
                 />
               </div>
 
@@ -2334,7 +2377,7 @@ export function LandingPage() {
                   value={modalIssue}
                   onChange={(e) => setModalIssue(e.target.value)}
                   placeholder="Jelaskan kendala fasilitas secara ringkas agar teknisi dapat segera menindaklanjuti..."
-                  className="w-full resize-none rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] placeholder:text-[#8E9F97] transition-colors focus:border-[#0d3f31] focus:bg-white focus:outline-none"
+                  className="w-full resize-none rounded-2xl border border-[#DDE6E1] bg-[#F8FAF9] px-4 py-3 text-[13.5px] text-[#0d3f31] transition-colors placeholder:text-[#8E9F97] focus:border-[#0d3f31] focus:bg-white focus:outline-none"
                 />
               </div>
 
