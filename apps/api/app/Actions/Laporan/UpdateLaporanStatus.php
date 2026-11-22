@@ -51,7 +51,12 @@ final class UpdateLaporanStatus
 
         // Simpan foto bukti yang di-upload (jika ada) sebelum dicek ke database
         if ($data->fotoBukti instanceof UploadedFile) {
-            $path = $data->fotoBukti->store('bukti', 'public');
+            // Hapus bukti lama kalau ada
+            if ($laporan->foto_bukti) {
+                $laporan->deleteFoto($laporan->foto_bukti);
+            }
+
+            $path = $laporan->storeFoto($data->fotoBukti, 'laporan/bukti');
 
             if ($path === false) {
                 throw new RuntimeException('Gagal menyimpan foto bukti.');

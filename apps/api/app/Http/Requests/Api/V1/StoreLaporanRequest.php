@@ -6,6 +6,7 @@ namespace App\Http\Requests\Api\V1;
 
 use App\Data\StoreLaporanData;
 use App\Enums\LaporanKategori;
+use App\Models\Laporan;
 use App\Models\LocationSetting;
 use App\Support\GeoDistance;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -96,8 +97,8 @@ class StoreLaporanRequest extends FormRequest
     {
         $foto = null;
         if ($this->hasFile('foto')) {
-            $fotoPath = $this->file('foto')->store('laporan', 'public');
-            $foto = $fotoPath !== false ? $fotoPath : null;
+            $laporan = new Laporan();
+            $foto = $laporan->storeFoto($this->file('foto'));
         }
 
         return new StoreLaporanData(
