@@ -194,11 +194,33 @@ export function FotoInput({
 
   // Menghubungkan stream ke elemen video dan memutarnya.
   useEffect(() => {
-    if (webcamAktif && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
-      void videoRef.current.play().catch((e) => {
+    if (!webcamAktif || !videoRef.current || !streamRef.current) {
+      return
+    }
+
+    const video = videoRef.current
+    video.srcObject = streamRef.current
+
+    // Tunggu video siap sebelum play, biar tidak hitam.
+    const handleLoadedMetadata = () => {
+      video.play().catch((e) => {
         console.warn('Gagal memutar video:', e)
       })
+    }
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata, {
+      once: true,
+    })
+
+    // Fallback: coba play langsung kalau metadata sudah load.
+    if (video.readyState >= 1) {
+      video.play().catch((e) => {
+        console.warn('Gagal memutar video (fallback):', e)
+      })
+    }
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
     }
   }, [webcamAktif])
 
