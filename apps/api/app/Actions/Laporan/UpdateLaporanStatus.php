@@ -11,7 +11,6 @@ use App\Models\LaporanStatusHistory;
 use App\Services\PrioritasService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 final class UpdateLaporanStatus
 {
@@ -57,10 +56,6 @@ final class UpdateLaporanStatus
             }
 
             $path = $laporan->storeFoto($data->fotoBukti, 'laporan/bukti');
-
-            if ($path === false) {
-                throw new RuntimeException('Gagal menyimpan foto bukti.');
-            }
 
             $laporan->foto_bukti = $path;
         }

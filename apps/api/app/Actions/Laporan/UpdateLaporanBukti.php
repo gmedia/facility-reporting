@@ -6,7 +6,6 @@ namespace App\Actions\Laporan;
 
 use App\Data\UpdateLaporanBuktiData;
 use App\Models\Laporan;
-use RuntimeException;
 
 final class UpdateLaporanBukti
 {
@@ -21,10 +20,6 @@ final class UpdateLaporanBukti
         }
 
         $path = $laporan->storeFoto($data->fotoBukti, 'laporan/bukti');
-
-        if ($path === false) {
-            throw new RuntimeException('Gagal menyimpan foto bukti.');
-        }
 
         $laporan->foto_bukti = $path;
         $laporan->save();

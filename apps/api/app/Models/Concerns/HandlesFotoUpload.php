@@ -6,6 +6,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
+use RuntimeException;
 
 trait HandlesFotoUpload
 {
@@ -25,10 +26,15 @@ trait HandlesFotoUpload
     {
         try {
             $manager = new ImageManager(new Driver);
-            $image = $manager->decode($file)->toJpeg($this::DEFAULT_QUALITY);
+            $image = $manager->read($file);
         } catch (\Throwable $e) {
             // Kalau gagal decode (mis. file palsu di test), gunakan file asli
-            return file_get_contents($file->getRealPath());
+            $contents = @file_get_contents($file->getRealPath());
+            if ($contents === false) {
+                throw new RuntimeException('Gagal membaca file foto: '.$e->getMessage());
+            }
+
+            return $contents;
         }
 
         // Resize kalau terlalu besar
@@ -38,14 +44,16 @@ trait HandlesFotoUpload
 
         // Turunkan quality sampai < 2MB
         $quality = $this::DEFAULT_QUALITY;
-        while ($image->toJpeg($quality)->size() > self::MAX_SIZE_KB * 1024) {
+        $encoded = $image->toJpeg($quality);
+        while ($encoded->size() > self::MAX_SIZE_KB * 1024) {
             $quality -= 5;
             if ($quality < $this::MIN_QUALITY) {
                 break;
             }
+            $encoded = $image->toJpeg($quality);
         }
 
-        return $image->toJpeg($quality)->toString();
+        return $encoded->toString();
     }
 
     /**
