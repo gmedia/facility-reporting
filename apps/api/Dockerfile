@@ -33,10 +33,21 @@ FROM php:8.5-cli-alpine
 # `mbstring` dan `opcache` sudah ada di image resmi. Jangan pakai `-j`:
 # target `install-modules` di helper Docker bisa balapan dan gagal dengan
 # "cp: can't stat 'modules/*'".
-RUN apk add --no-cache postgresql-dev icu-dev \
-    && docker-php-ext-install pdo_pgsql \
-    && docker-php-ext-install intl \
-    && docker-php-ext-install pcntl
+# `gd` dibutuhkan `intervention/image` untuk kompres foto laporan
+# (lihat App\Models\Concerns\HandlesFotoUpload), jadi libpng/libjpeg/freetype
+# ikut dipasang sebelum ekstensinya dikompilasi.
+#
+# PENTING: semua ekstensi harus di-install dalam SATU panggilan
+# `docker-php-ext-install`. Helper Docker menghapus `/usr/src/php` di akhir
+# pemanggilan pertama (`.docker-delete-me`), sehingga hasil
+# `docker-php-ext-configure gd` ikut hilang dan `gd` ter-build tanpa
+# JPEG/FreeType kalau `gd` di-install terpisah.
+RUN apk add --no-cache --virtual .build-deps \
+        postgresql-dev icu-dev libpng-dev libjpeg-turbo-dev freetype-dev \
+    && apk add --no-cache postgresql-libs icu-libs libpng libjpeg-turbo freetype \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_pgsql intl pcntl gd \
+    && apk del .build-deps
 
 WORKDIR /var/www/html
 
