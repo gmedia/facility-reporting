@@ -1,0 +1,28 @@
+# Vercel hanya membangun frontend (apps/web). Semua yang menjadi milik API,
+# artefak build, dependency, dan cache tidak perlu ikut terunggah.
+
+# Dependency & artefak build
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+**/.vite
+**/coverage
+
+# Backend Laravel: tidak dipakai runtime Vercel
+apps/api
+
+# Repo & dokumentasi
+.git
+.github
+tests
+docs
+*.md
+
+# Environment & lokal
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
