@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\LaporanStatus;
+use App\Models\Concerns\HandlesFotoUpload;
 use Database\Factories\LaporanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Laporan extends Model
 {
     /** @use HasFactory<LaporanFactory> */
-    use HasFactory;
+    use HandlesFotoUpload, HasFactory;
 
     protected static function booted(): void
     {

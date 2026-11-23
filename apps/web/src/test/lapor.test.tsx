@@ -65,6 +65,11 @@ vi.mock('@/lib/api/client', () => ({
 
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
 
+// Mock browser-image-compression: bypass kompresi di test, return file asli.
+vi.mock('browser-image-compression', () => ({
+  default: vi.fn(async (file) => file),
+}))
+
 // Base UI Select nge-render popup-nya lewat Portal dan bergantung ke pointer
 // event + layout API (getBoundingClientRect, scrollIntoView) yang gak tersedia
 // di jsdom. Jadi primitive Select-nya di-stub jadi <select> native di test ini.

@@ -35,6 +35,19 @@ const CARD_CLASS =
 
 const CATATAN_SALIN = 'Mahasiswa wajib mengganti password saat login pertama.'
 
+function susunPesan(hasil: HasilReset): string {
+  return [
+    'INFORMASI AKUN FACILITY REPORTING',
+    `Halo, ${hasil.name}.`,
+    'Akun Anda telah berhasil dibuat.',
+    `🆔 NIM: ${hasil.nim ?? '-'}`,
+    `🔑 Password: ${hasil.password}`,
+    '⚠️ Silakan login menggunakan NIM dan password di atas. Wajib mengganti password saat pertama kali masuk.',
+    'Jika mengalami kendala, silakan hubungi Admin.',
+    'Terima kasih.',
+  ].join('\n')
+}
+
 function inisial(name: string): string {
   return name
     .split(' ')
@@ -83,7 +96,7 @@ export function ReporterPasswordSection() {
   async function salinSemua() {
     if (!hasil) return
     try {
-      await navigator.clipboard.writeText(`${hasil.password}\n${CATATAN_SALIN}`)
+      await navigator.clipboard.writeText(susunPesan(hasil))
       setTersalin(true)
       setTimeout(() => setTersalin(false), 2000)
     } catch {
@@ -387,7 +400,8 @@ export function ReporterPasswordSection() {
           <div className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900">
             <p className="font-medium">{CATATAN_SALIN}</p>
             <p className="mt-0.5 text-amber-800/80">
-              Keterangan ini ikut tersalin bersama password.
+              Tombol "Salin semua" menyalin pesan lengkap berisi NIM dan
+              password.
             </p>
           </div>
 

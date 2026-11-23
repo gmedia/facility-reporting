@@ -11,7 +11,6 @@ use App\Models\LaporanStatusHistory;
 use App\Services\PrioritasService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 final class UpdateLaporanStatus
 {
@@ -51,11 +50,12 @@ final class UpdateLaporanStatus
 
         // Simpan foto bukti yang di-upload (jika ada) sebelum dicek ke database
         if ($data->fotoBukti instanceof UploadedFile) {
-            $path = $data->fotoBukti->store('bukti', 'public');
-
-            if ($path === false) {
-                throw new RuntimeException('Gagal menyimpan foto bukti.');
+            // Hapus bukti lama kalau ada
+            if ($laporan->foto_bukti) {
+                $laporan->deleteFoto($laporan->foto_bukti);
             }
+
+            $path = $laporan->storeFoto($data->fotoBukti, 'laporan/bukti');
 
             $laporan->foto_bukti = $path;
         }

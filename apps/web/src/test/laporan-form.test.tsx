@@ -65,6 +65,11 @@ vi.mock('@/lib/api/client', () => ({
 
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }))
 
+// Mock browser-image-compression: bypass kompresi di test, return file asli.
+vi.mock('browser-image-compression', () => ({
+  default: vi.fn(async (file) => file),
+}))
+
 // Base UI Select di-stub jadi <select> native (pola sama lapor.test.tsx):
 // popup Base UI butuh pointer/layout API yang tidak ada di jsdom.
 vi.mock('@/components/ui/select', () => {

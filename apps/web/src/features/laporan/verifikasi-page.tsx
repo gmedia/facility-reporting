@@ -18,6 +18,7 @@ import type { User } from '@/features/auth/auth-query'
 import { formatTanggal } from '@/features/dashboard/dashboard-query'
 import { DashboardShell } from '@/features/dashboard/dashboard-shell'
 import { LaporanMasukCard } from '@/features/dashboard/dashboard-summary'
+import imageCompression from 'browser-image-compression'
 
 import {
   hitungRingkasan,
@@ -1473,6 +1474,7 @@ function TolakDialog({
 // Header tetap di atas, hanya body yang scroll. bg-white ada di body
 // (bukan di wadah luar) supaya tidak ada tepi putih yang mengintip di
 // balik sudut header yang membulat.
+
 function BuktiDialog({
   id,
   pending,
@@ -1487,35 +1489,70 @@ function BuktiDialog({
   const [file, setFile] = useState<File | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
   const [webcamAktif, setWebcamAktif] = useState(false)
+  const [memprosesFoto, setMemprosesFoto] = useState(false)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !pending) onBatal()
+      if (event.key === 'Escape' && !pending && !memprosesFoto) {
+        onBatal()
+      }
     }
+
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onBatal, pending])
+  }, [onBatal, pending, memprosesFoto])
 
-  // Menerima File dari galeri, kamera HP, atau webcam laptop.
-  // null = user menekan "Hapus foto".
-  const onPilih = (dipilih: File | null) => {
+  // Menerima foto dari galeri, kamera HP, atau webcam laptop.
+  // Foto otomatis dikompres sebelum digunakan.
+  const onPilih = async (dipilih: File | null) => {
     setGalat(null)
 
     if (!dipilih) {
       setFile(null)
       return
     }
+
     if (!FOTO_MIME_IZIN.includes(dipilih.type)) {
       setFile(null)
       setGalat('Format tidak didukung. Pilih foto JPG, PNG, atau WebP.')
       return
     }
-    if (dipilih.size > BATAS_FOTO_BYTE) {
-      setFile(null)
-      setGalat('Ukuran foto lebih dari 2 MB. Pilih foto yang lebih kecil.')
-      return
+
+    setMemprosesFoto(true)
+    setFile(null)
+
+    try {
+      const hasilKompresi = await imageCompression(dipilih, {
+        maxSizeMB: 1.9,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+        initialQuality: 0.85,
+      })
+
+      if (hasilKompresi.size > BATAS_FOTO_BYTE) {
+        setGalat(
+          'Foto masih lebih dari 2 MB setelah dikompres. Coba gunakan foto lain.',
+        )
+        return
+      }
+
+      setFile(
+        new File(
+          [hasilKompresi],
+          `${dipilih.name.replace(/\.[^.]+$/, '')}.jpg`,
+          {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          },
+        ),
+      )
+    } catch (error) {
+      console.error('Gagal mengompres foto bukti:', error)
+      setGalat('Gagal memproses foto. Silakan pilih foto lain.')
+    } finally {
+      setMemprosesFoto(false)
     }
-    setFile(dipilih)
   }
 
   return (
@@ -1525,32 +1562,31 @@ function BuktiDialog({
       aria-labelledby="bukti-judul"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       onClick={() => {
-        if (!pending) onBatal()
+        if (!pending && !memprosesFoto) onBatal()
       }}
     >
       <div
         className="flex max-h-[90dvh] w-full max-w-120 flex-col overflow-hidden rounded-3xl shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        {/* Header gelap (tetap di atas, tidak ikut scroll) */}
+        {/* Header */}
         <div className="shrink-0 bg-[#0f3d2e] px-6 pt-5 pb-4.5 text-white">
           <h2 id="bukti-judul" className="text-lg font-semibold">
             Selesaikan laporan #{id}
           </h2>
+
           <p className="mt-0.5 text-sm text-emerald-100/80">
             Unggah foto bukti perbaikan. Foto ini wajib diisi.
           </p>
         </div>
 
-        {/* Body: hanya bagian ini yang bisa di-scroll */}
+        {/* Body */}
         <div className="overflow-y-auto bg-white px-6 pt-4.5 pb-5.5">
-          {/* Kotak 4:3 lengkap (kartu, kamera, dan pratinjau) digambar
-              FotoInput */}
           <FotoInput
             varian="kartu"
             inputId="bukti-foto"
             value={file}
-            disabled={pending}
+            disabled={pending || memprosesFoto}
             onFile={onPilih}
             onWebcamAktif={setWebcamAktif}
             ariaLabel="Foto bukti penyelesaian"
@@ -1562,30 +1598,37 @@ function BuktiDialog({
             </p>
           ) : (
             <p className="mt-2.5 text-sm text-neutral-500">
-              {webcamAktif
-                ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol kamera.'
-                : 'Format JPG, PNG, atau WebP. Maksimal 2 MB.'}
+              {memprosesFoto
+                ? 'Sedang mengompres foto...'
+                : webcamAktif
+                  ? 'Kamera aktif. Foto baru diambil setelah kamu menekan tombol kamera.'
+                  : 'Format JPG, PNG, atau WebP. Foto otomatis dikompres maksimal 2 MB.'}
             </p>
           )}
 
           <div className="mt-4 flex gap-2.5">
             <button
               type="button"
-              disabled={pending}
+              disabled={pending || memprosesFoto}
               onClick={onBatal}
               className="h-11 flex-1 rounded-2xl border border-neutral-300 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Batal
             </button>
+
             <button
               type="button"
-              disabled={pending || !file}
+              disabled={pending || memprosesFoto || !file}
               onClick={() => {
                 if (file) onKirim(file)
               }}
               className="h-11 flex-1 rounded-2xl bg-[#1f6b4f] text-sm font-semibold text-white transition hover:bg-[#0f3d2e] disabled:cursor-not-allowed disabled:bg-[#1f6b4f]/40"
             >
-              {pending ? 'Menyimpan...' : 'Tandai selesai'}
+              {pending
+                ? 'Menyimpan...'
+                : memprosesFoto
+                  ? 'Memproses foto...'
+                  : 'Tandai selesai'}
             </button>
           </div>
         </div>
