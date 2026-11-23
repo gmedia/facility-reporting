@@ -28,9 +28,10 @@ class CreateSuperAdmin extends Command
 
     public function handle(): int
     {
-        $email = (string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', ''));
-        $name = (string) ($this->option('name') ?: env('SUPERADMIN_NAME', 'Super Admin'));
-        $password = (string) ($this->option('password') ?: env('SUPERADMIN_PASSWORD', ''));
+        // Lewat config() supaya tetap terbaca saat konfigurasi di-cache.
+        $email = (string) ($this->option('email') ?: config('superadmin.email', ''));
+        $name = (string) ($this->option('name') ?: config('superadmin.name', 'Super Admin'));
+        $password = (string) ($this->option('password') ?: config('superadmin.password', ''));
 
         if ($email === '' && $this->input->isInteractive()) {
             $email = (string) $this->ask('Email superadmin');
