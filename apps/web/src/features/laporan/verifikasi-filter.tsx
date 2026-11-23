@@ -45,8 +45,10 @@ type Props = {
 }
 
 // Bar filter halaman Verifikasi: kolom cari + satu tombol Filter yang
-// membuka popup chip per grup. Filter yang aktif tetap kelihatan sebagai
-// chip di bawah bar walau popup tertutup.
+// membuka panel chip per grup. Di HP panel tampil sebagai bottom sheet
+// (penuh lebar, menempel di bawah layar); di layar >= 640px tampil sebagai
+// popup di bawah tombol. Filter yang aktif tetap kelihatan sebagai chip di
+// bawah bar walau panel tertutup.
 export function VerifikasiFilter({
   cari,
   onCari,
@@ -60,7 +62,7 @@ export function VerifikasiFilter({
 
   const aktif = grup.filter((g) => g.nilai !== SEMUA)
 
-  // Tutup popup kalau klik di luar atau tekan Esc.
+  // Tutup panel kalau klik di luar atau tekan Esc.
   useEffect(() => {
     if (!buka) return
 
@@ -82,6 +84,18 @@ export function VerifikasiFilter({
     }
   }, [buka])
 
+  // Cegah halaman di belakang ikut ter-scroll saat bottom sheet terbuka di HP.
+  useEffect(() => {
+    if (!buka) return
+    if (!window.matchMedia('(max-width: 639px)').matches) return
+
+    const lama = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = lama
+    }
+  }, [buka])
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -100,7 +114,7 @@ export function VerifikasiFilter({
           />
         </label>
 
-        <div ref={wadah} className="relative">
+        <div ref={wadah} className="sm:relative">
           <button
             ref={tombol}
             type="button"
@@ -123,16 +137,52 @@ export function VerifikasiFilter({
             )}
           </button>
 
-          {/* Selalu tetap ada di DOM agar accessible untuk testing dan screen reader.
-              Secara visual ditampilkan sebagai popup saat `buka` true. */}
+          {/* Backdrop gelap, hanya di HP, supaya sheet terasa modal dan
+              ketukan di luar menutupnya. */}
+          {buka && (
+            <div
+              aria-hidden="true"
+              onClick={() => setBuka(false)}
+              className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+            />
+          )}
+
+          {/* Selalu tetap ada di DOM agar accessible untuk testing dan screen
+              reader. HP: bottom sheet `fixed` menempel di bawah layar.
+              >= sm: popup `absolute` di bawah tombol. */}
           <div
             role="group"
             aria-label="Filter status"
             className={cn(
-              'absolute top-12 right-0 z-20 max-h-[70dvh] w-[19rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border-[1.5px] border-[#efe9d8] bg-white p-4 shadow-lg',
+              'z-50 overflow-y-auto bg-white shadow-lg',
+              // HP: bottom sheet
+              'fixed inset-x-0 bottom-0 max-h-[80dvh] rounded-t-3xl border-t-[1.5px] border-[#efe9d8] px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]',
+              // Layar lebar: popup di bawah tombol
+              'sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:bottom-auto sm:max-h-[70dvh] sm:w-[19rem] sm:rounded-2xl sm:border-[1.5px] sm:p-4',
               buka ? '' : 'hidden',
             )}
           >
+            {/* Header sheet (hanya HP): pegangan + judul + tombol tutup */}
+            <div className="sm:hidden">
+              <div
+                aria-hidden="true"
+                className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-[#d9d2bd]"
+              />
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-base font-semibold text-[#1d2b26]">
+                  Filter laporan
+                </span>
+                <button
+                  type="button"
+                  aria-label="Tutup filter"
+                  onClick={() => setBuka(false)}
+                  className="grid size-9 place-items-center rounded-full bg-[#f6f7f4] text-[#1d2b26] outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25"
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </button>
+              </div>
+            </div>
+
             {grup.map((g) => (
               <fieldset key={g.key} className="mb-4 last:mb-0">
                 <legend className="mb-2 text-sm text-[#8a8f87]">
@@ -150,7 +200,8 @@ export function VerifikasiFilter({
                         // Klik lagi pada chip yang aktif = lepas filter.
                         onClick={() => g.onPilih(dipilih ? SEMUA : o.value)}
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25',
+                          // min-h-10 = area ketuk nyaman di HP
+                          'inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/25 sm:min-h-0',
                           dipilih
                             ? (warna ??
                                 'border-[#0f3d2e] bg-[#0f3d2e] text-white') +
@@ -179,6 +230,16 @@ export function VerifikasiFilter({
                 </div>
               </fieldset>
             ))}
+
+            {/* Tombol Terapkan (hanya HP): filter sudah langsung berlaku,
+                tombol ini hanya menutup sheet. */}
+            <button
+              type="button"
+              onClick={() => setBuka(false)}
+              className="mt-4 h-11 w-full rounded-xl bg-[#0f3d2e] text-sm font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-[#0f3d2e]/40 sm:hidden"
+            >
+              Lihat {jumlah} laporan
+            </button>
           </div>
         </div>
 
