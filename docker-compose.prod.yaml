@@ -1,0 +1,72 @@
+# Menjalankan API + PostgreSQL di satu host (VPS).
+# Frontend tetap di Vercel / static host, atau bisa disajikan reverse proxy.
+#
+# Pemakaian:
+#   cp apps/api/.env.production.example .env.prod
+#   # isi nilainya, lalu:
+#   docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d --build
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-facility_reporting}
+      POSTGRES_USER: ${DB_USERNAME:-facility}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${DB_USERNAME:-facility} -d ${DB_DATABASE:-facility_reporting}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:?APP_URL wajib diisi}
+      APP_KEY: ${APP_KEY:?APP_KEY wajib diisi}
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${DB_DATABASE:-facility_reporting}
+      DB_USERNAME: ${DB_USERNAME:-facility}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD wajib diisi}
+      SESSION_DRIVER: ${SESSION_DRIVER:-file}
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-true}
+      SESSION_SAME_SITE: ${SESSION_SAME_SITE:-lax}
+      CACHE_STORE: ${CACHE_STORE:-file}
+      QUEUE_CONNECTION: sync
+      FILESYSTEM_DISK: local
+      FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL wajib diisi}
+      SANCTUM_STATEFUL_DOMAINS: ${SANCTUM_STATEFUL_DOMAINS:?SANCTUM_STATEFUL_DOMAINS wajib diisi}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-false}
+      PORT: "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Foto laporan & profil. Wajib volume, kalau tidak hilang saat container dibuat ulang.
+      - api_storage:/var/www/html/storage/app/public
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://127.0.0.1:8000/api/v1/status >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  api_storage:

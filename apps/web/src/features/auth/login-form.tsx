@@ -158,6 +158,12 @@ function pesanDariServer(error: unknown): string {
       return 'Email/NIM atau password salah.'
     }
 
+    // 419 = token CSRF tidak valid/kedaluwarsa (biasanya karena halaman
+    // dibiarkan terbuka terlalu lama). Password belum tentu salah.
+    if (status === 419) {
+      return 'Sesi halaman kedaluwarsa. Muat ulang halaman lalu coba lagi.'
+    }
+
     if ('message' in error && typeof error.message === 'string') {
       const pesan = error.message.toLowerCase()
       if (pesan.includes('invalid credentials')) {

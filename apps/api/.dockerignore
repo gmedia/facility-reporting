@@ -1,0 +1,20 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+vendor
+node_modules
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+public/storage
+# Cache hasil `artisan` di mesin lokal bisa mereferensikan paket dev yang tidak
+# diinstal di image (--no-dev). Biarkan dibuat ulang oleh entrypoint.
+bootstrap/cache/*.php
+tests
+.phpunit.result.cache
+.phpstan.cache
+.phpactor.json
