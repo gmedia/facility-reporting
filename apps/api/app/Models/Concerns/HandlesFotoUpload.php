@@ -4,14 +4,17 @@ namespace App\Models\Concerns;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 trait HandlesFotoUpload
 {
     protected const MAX_SIZE_KB = 2048;      // 2 MB
+
     protected const MAX_DIMENSION = 1600;    // px
+
     protected const DEFAULT_QUALITY = 80;
+
     protected const MIN_QUALITY = 40;
 
     /**
@@ -21,7 +24,7 @@ trait HandlesFotoUpload
     public function compressFoto(UploadedFile $file): string
     {
         try {
-            $manager = new ImageManager(new Driver());
+            $manager = new ImageManager(new Driver);
             $image = $manager->decode($file)->toJpeg($this::DEFAULT_QUALITY);
         } catch (\Throwable $e) {
             // Kalau gagal decode (mis. file palsu di test), gunakan file asli
@@ -37,7 +40,9 @@ trait HandlesFotoUpload
         $quality = $this::DEFAULT_QUALITY;
         while ($image->toJpeg($quality)->size() > self::MAX_SIZE_KB * 1024) {
             $quality -= 5;
-            if ($quality < $this::MIN_QUALITY) break;
+            if ($quality < $this::MIN_QUALITY) {
+                break;
+            }
         }
 
         return $image->toJpeg($quality)->toString();
@@ -49,7 +54,7 @@ trait HandlesFotoUpload
     public function storeFoto(UploadedFile $file, string $folder = 'laporan'): string
     {
         $binary = $this->compressFoto($file);
-        $filename = $folder . '/' . uniqid('foto_') . '.jpg';
+        $filename = $folder.'/'.uniqid('foto_').'.jpg';
 
         Storage::disk('public')->put($filename, $binary);
 

@@ -97,7 +97,7 @@ class StoreLaporanRequest extends FormRequest
     {
         $foto = null;
         if ($this->hasFile('foto')) {
-            $laporan = new Laporan();
+            $laporan = new Laporan;
             $foto = $laporan->storeFoto($this->file('foto'));
         }
 
