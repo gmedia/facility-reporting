@@ -45,6 +45,16 @@ api.use({
     if (token) request.headers.set('X-XSRF-TOKEN', token)
     return request
   },
+
+  // Laravel memanggil session()->regenerate() saat login, dan itu ikut
+  // memutar token CSRF. Kalau token di memori tidak diperbarui, request
+  // POST berikutnya (paling kelihatan: logout) kena 419 Page Expired.
+  // API mengirim token terbaru di header `XSRF-TOKEN` tiap respons cookies
+  // dibuat/diputar (lihat ExposeCsrfTokenHeader), jadi cukup ambil dari situ.
+  onResponse({ response }) {
+    const terbaru = response.headers.get('XSRF-TOKEN')
+    if (terbaru) csrfToken = decodeURIComponent(terbaru)
+  },
 })
 
 export async function initializeCsrf(): Promise<void> {
