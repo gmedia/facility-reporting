@@ -9,7 +9,6 @@ import {
   Check,
   ChevronDown,
   Clock,
-  Crosshair,
   Menu,
   User,
   Wrench,
@@ -42,22 +41,18 @@ const HERO_LOCATIONS = [
   {
     name: 'Gedung A · Lab 2',
     sub: 'Fakultas Saintek · Lt. 2',
-    pin: 'Gedung Saintek, Lt. 2',
   },
   {
     name: 'Gedung B · Koridor Lt. 2',
     sub: 'Area Kelas & Lab',
-    pin: 'Gedung B, Lt. 2',
   },
   {
     name: 'Gedung C · Ruang Dosen',
     sub: 'Administrasi & Rapat',
-    pin: 'Gedung C, Lt. 1',
   },
   {
     name: 'Perpustakaan Pusat',
     sub: 'Zona Baca & Sanitasi',
-    pin: 'Perpustakaan Pusat',
   },
 ] as const
 
@@ -1174,7 +1169,7 @@ export function LandingPage() {
       {/* ===================================================================== */}
       <section
         id="top"
-        className="relative w-full overflow-x-clip bg-[#F7FAF8] pt-3 pb-10 sm:pt-6 sm:pb-16"
+        className="relative w-full overflow-x-clip bg-[#F7FAF8] pt-3 pb-6 sm:pt-6 sm:pb-10"
       >
         {/* Monochromatic Sage Campus Map Backdrop (z-0, extends down to right above Layanan) */}
         <div
@@ -1443,8 +1438,8 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* 2B. FLOATING QUICK REPORT BAR + LOCATION PILL & MAP PIN (z-20, floats above Hero & Map) */}
-        <div className="motion-hero-bar relative z-20 -mt-16 pb-8 sm:-mt-28 sm:pb-14 lg:-mt-40 xl:-mt-44">
+        {/* 2B. FLOATING QUICK REPORT BAR (z-20, floats above Hero & Map) */}
+        <div className="motion-hero-bar relative z-20 -mt-16 pb-4 sm:-mt-28 sm:pb-8 lg:-mt-40 xl:-mt-44">
           <div className="mx-auto w-full max-w-[1520px] px-3 sm:px-8 lg:px-12 xl:px-16">
             {/* Attached Single-Row Accessible Tablist */}
             <div
@@ -1773,50 +1768,6 @@ export function LandingPage() {
                   aria-hidden="true"
                 />
               </button>
-            </div>
-
-            {/* Floating Active Location Pill + Center Emerald Map Pin */}
-            <div className="mt-5 flex items-center justify-center gap-3 sm:mt-8 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:gap-5">
-              <div className="flex min-w-0 flex-1 justify-center sm:flex-initial sm:justify-end sm:pr-8">
-                <div className="flex w-full max-w-[300px] items-center justify-between gap-3 rounded-[16px] border border-[#DCEBE3] bg-white px-4 py-3 shadow-[0_12px_28px_-10px_rgba(15,59,46,0.14)] sm:gap-4 sm:px-5 sm:py-3.5">
-                  <div className="min-w-0">
-                    <span className="block text-[9.5px] font-semibold tracking-[0.08em] text-[#5B7A6B] uppercase sm:text-[#6E8F7F]">
-                      Lokasi Aktif
-                    </span>
-                    <span className="mt-0.5 block truncate text-[14px] font-bold tracking-[-0.015em] text-[#0F3B2E] sm:text-[14.5px]">
-                      {currentHeroLocation.pin}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    aria-label="Ganti titik lokasi kampus"
-                    onClick={() => {
-                      const nextIdx =
-                        (heroLocationIndex + 1) % HERO_LOCATIONS.length
-                      setHeroLocationIndex(nextIdx)
-                      showToast(
-                        `Fokus peta dialihkan ke ${HERO_LOCATIONS[nextIdx]!.pin}`,
-                      )
-                    }}
-                    className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#146C34] transition-colors hover:bg-[#ECFDF5] sm:h-8 sm:w-8 lg:text-[#15803D]"
-                  >
-                    <Crosshair className="h-4.5 w-4.5" aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Center Emerald Radar Map Pin */}
-              <div
-                aria-hidden="true"
-                className="relative flex h-11 w-11 shrink-0 items-center justify-center sm:mx-auto sm:h-14 sm:w-14"
-              >
-                <span className="absolute inset-0 rounded-full bg-[#16A34A]/18" />
-                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#0F3B2E] shadow-[0_6px_16px_rgba(15,59,46,0.34)] sm:h-10 sm:w-10">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white sm:h-3.5 sm:w-3.5" />
-                </span>
-              </div>
-
-              <div className="hidden sm:block" />
             </div>
           </div>
         </div>
