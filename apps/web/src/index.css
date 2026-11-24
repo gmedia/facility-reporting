@@ -222,6 +222,7 @@
   }
   html {
     @apply scroll-smooth font-sans;
+    scroll-padding-top: 4.5rem;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -353,9 +354,15 @@
   .hero-tab[aria-selected='true']::after {
     content: '';
     position: absolute;
-    inset-inline: 16px;
+    inset-inline: 12px;
     inset-block-end: 0;
     border-block-end: 3px solid #16a34a;
+  }
+
+  @media (min-width: 640px) {
+    .hero-tab[aria-selected='true']::after {
+      inset-inline: 16px;
+    }
   }
 
   .hero-select {
@@ -508,9 +515,15 @@
       }
 
       .motion-layanan-card {
-        animation: editorial-glide-x auto linear both;
+        animation: editorial-focus-in auto linear both;
         animation-timeline: view(block);
         animation-range: entry 0% cover 32%;
+      }
+
+      @media (min-width: 1024px) {
+        .motion-layanan-card {
+          animation-name: editorial-glide-x;
+        }
       }
 
       .motion-alur-section {
