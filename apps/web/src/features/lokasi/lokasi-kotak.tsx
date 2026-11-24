@@ -42,7 +42,7 @@ function subteksDari(posisi: PosisiPelapor): string {
     case 'dalam':
       return 'Terdeteksi di area kampus'
     case 'luar':
-      return `Di luar radius ${posisi.radius} m dari kampus (${Math.round(posisi.jarak ?? 0)} m).`
+      return `Jarak ${Math.round(posisi.jarak ?? 0)} m dari kampus. Maksimal ${posisi.radius} m.`
     case 'memuat_batas':
       return 'Memeriksa posisimu…'
     case 'meminta':

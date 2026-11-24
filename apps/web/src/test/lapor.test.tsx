@@ -335,7 +335,7 @@ describe('halaman /lapor', () => {
     renderAt('/lapor')
 
     expect(
-      await screen.findByText(/Di luar radius 400 m dari kampus \(1200 m\)/),
+      await screen.findByText(/Jarak 1200 m dari kampus\. Maksimal 400 m\./),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Kirim Laporan' })).toBeDisabled()
   })
