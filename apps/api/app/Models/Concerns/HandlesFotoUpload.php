@@ -5,6 +5,7 @@ namespace App\Models\Concerns;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\ImageManager;
 use RuntimeException;
 
@@ -26,7 +27,7 @@ trait HandlesFotoUpload
     {
         try {
             $manager = new ImageManager(new Driver);
-            $image = $manager->read($file);
+            $image = $manager->decodeSplFileInfo($file);
         } catch (\Throwable $e) {
             // Kalau gagal decode (mis. file palsu di test), gunakan file asli
             $contents = @file_get_contents($file->getRealPath());
@@ -44,13 +45,13 @@ trait HandlesFotoUpload
 
         // Turunkan quality sampai < 2MB
         $quality = $this::DEFAULT_QUALITY;
-        $encoded = $image->toJpeg($quality);
+        $encoded = $image->encode(new JpegEncoder($quality));
         while ($encoded->size() > self::MAX_SIZE_KB * 1024) {
             $quality -= 5;
             if ($quality < $this::MIN_QUALITY) {
                 break;
             }
-            $encoded = $image->toJpeg($quality);
+            $encoded = $image->encode(new JpegEncoder($quality));
         }
 
         return $encoded->toString();
