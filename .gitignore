@@ -1,6 +1,8 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
+.vercel
 node_modules/
 vendor/
 .phpstan.cache/
@@ -10,3 +12,5 @@ coverage/
 apps/api/database/seeders/data/*
 !apps/api/database/seeders/data/contoh-mahasiswa.csv.example
 !apps/api/database/seeders/data/README.md
+
+.vercel
