@@ -1,28 +1,54 @@
+import { MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PosisiPelapor } from './lokasi-pelapor'
 
-const EMERALD = 'bg-emerald-100 text-emerald-800'
-const AMBER = 'bg-amber-100 text-amber-800'
-const RED = 'bg-red-100 text-red-800'
+type Nada = 'hijau' | 'kuning' | 'merah'
 
-function chipDari(posisi: PosisiPelapor): { teks: string; kelas: string } {
+const CHIP_KELAS: Record<Nada, string> = {
+  hijau: 'bg-emerald-100 text-emerald-800',
+  kuning: 'bg-amber-100 text-amber-800',
+  merah: 'bg-red-100 text-red-800',
+}
+
+const TITIK_KELAS: Record<Nada, string> = {
+  hijau: 'bg-emerald-500',
+  kuning: 'bg-amber-500',
+  merah: 'bg-red-500',
+}
+
+function chipDari(posisi: PosisiPelapor): { teks: string; nada: Nada } {
   switch (posisi.status) {
     case 'dalam':
-      return { teks: `Dalam radius ${posisi.radius} m`, kelas: EMERALD }
+      return { teks: `Dalam radius ${posisi.radius} m`, nada: 'hijau' }
     case 'luar':
-      return { teks: 'Di luar radius', kelas: RED }
+      return { teks: 'Di luar radius', nada: 'merah' }
     case 'ditolak':
-      return { teks: 'Ditolak', kelas: RED }
+      return { teks: 'Ditolak', nada: 'merah' }
     case 'tidak_didukung':
-      return { teks: 'Tidak didukung', kelas: RED }
+      return { teks: 'Tidak didukung', nada: 'merah' }
     case 'gagal':
-      return { teks: 'Gagal', kelas: RED }
+      return { teks: 'Gagal', nada: 'merah' }
     case 'galat_batas':
-      return { teks: 'Batas gagal dimuat', kelas: RED }
+      return { teks: 'Batas gagal dimuat', nada: 'merah' }
     case 'memuat_batas':
-      return { teks: 'Memeriksa…', kelas: AMBER }
+      return { teks: 'Memeriksa…', nada: 'kuning' }
     default:
-      return { teks: 'Menunggu izin', kelas: AMBER }
+      return { teks: 'Menunggu izin', nada: 'kuning' }
+  }
+}
+
+function subteksDari(posisi: PosisiPelapor): string {
+  switch (posisi.status) {
+    case 'dalam':
+      return 'Terdeteksi di area kampus'
+    case 'luar':
+      return `Jarak ${Math.round(posisi.jarak ?? 0)} m dari kampus. Maksimal ${posisi.radius} m.`
+    case 'memuat_batas':
+      return 'Memeriksa posisimu…'
+    case 'meminta':
+      return 'Menunggu izin lokasi'
+    default:
+      return 'Lokasi belum bisa dipastikan'
   }
 }
 
@@ -62,57 +88,59 @@ function bannerDari(posisi: PosisiPelapor): Banner | null {
         teks: 'Batas lokasi gagal dimuat, jadi laporan belum bisa dikirim.',
         aksi: { label: 'Muat ulang', klik: posisi.muatUlangBatas },
       }
-    case 'luar':
-      return {
-        nada: 'merah',
-        teks: `Di luar radius ${posisi.radius} m dari kampus (${Math.round(posisi.jarak ?? 0)} m). Laporan tidak bisa dikirim.`,
-      }
     default:
+      // Status 'luar' tidak pakai banner; keterangannya ada di subteks.
       return null
   }
 }
 
-function garisKoordinat(posisi: PosisiPelapor): string | null {
-  const { gps, jarak, radius } = posisi
-  if (!gps) return null
-
-  let teks = `Lat ${gps.lat.toFixed(7)} · Lng ${gps.lng.toFixed(7)}`
-  if (jarak !== null && radius !== null) {
-    teks += ` · ${Math.round(jarak)} m dari kampus (maks. ${radius} m)`
-  }
-  return `${teks} · akurasi ±${Math.round(gps.akurasi)} m`
-}
-
-// Kotak status lokasi di paling atas formulir /lapor. Hanya menampilkan
-// banner kalau ada masalah, supaya kotaknya tetap ringkas saat semuanya aman.
+// Kotak status lokasi di paling atas formulir /lapor. Detail koordinat
+// sengaja tidak ditampilkan; banner hanya muncul kalau ada masalah.
 export function LokasiKotak({ posisi }: { posisi: PosisiPelapor }) {
   const chip = chipDari(posisi)
   const banner = bannerDari(posisi)
-  const koordinat = garisKoordinat(posisi)
 
   return (
     <section
       aria-labelledby="lokasi-pelapor-judul"
       className="rounded-2xl border border-[#d7e2dc] p-3.5"
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3
-          id="lokasi-pelapor-judul"
-          className="text-sm font-semibold text-[#173d30]"
-        >
-          Lokasi pelapor
-          <span aria-hidden="true" className="ml-0.5 text-red-600">
-            *
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e8f3ee] text-[#0d3f31]"
+          >
+            <MapPin className="size-[18px]" />
           </span>
-        </h3>
+
+          <div className="min-w-0">
+            <h3
+              id="lokasi-pelapor-judul"
+              className="text-sm font-semibold text-[#173d30]"
+            >
+              Lokasi Anda
+              <span aria-hidden="true" className="ml-0.5 text-red-600">
+                *
+              </span>
+            </h3>
+            <p className="text-muted-foreground text-xs">
+              {subteksDari(posisi)}
+            </p>
+          </div>
+        </div>
 
         <span
           role="status"
           className={cn(
-            'rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-            chip.kelas,
+            'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+            CHIP_KELAS[chip.nada],
           )}
         >
+          <span
+            aria-hidden="true"
+            className={cn('size-1.5 rounded-full', TITIK_KELAS[chip.nada])}
+          />
           {chip.teks}
         </span>
       </div>
@@ -141,12 +169,6 @@ export function LokasiKotak({ posisi }: { posisi: PosisiPelapor }) {
             </>
           )}
         </div>
-      )}
-
-      {koordinat && (
-        <p className="mt-2.5 rounded-lg bg-[#e8f3ee] px-2.5 py-1.5 font-mono text-[11px] text-[#173d30]">
-          {koordinat}
-        </p>
       )}
     </section>
   )
